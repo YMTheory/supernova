@@ -1,0 +1,15 @@
+NMO for producing dataset :  2 IH
+dist:  3.0  kpc
+Test file:  ./dataset/fineSpec/3.0kpc/TEvisDATA_mod82503_cha1nue_mh2_data0.0eV_mh1_pdf0.0eV_3.0kpc_Ethr0.1MeV_group1_1DFitSummary_Tmax0.02.txt
+nGroups, nStatsPerGroup 1 100
+[0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+ 0. 0. 0. 0.]
+iPDF:  0
+fitS!=0: num, k, status 8 7 3
+fitS!=0: num, k, status 39 38 3
+fitS!=0: num, k, status 62 61 3
+fitS!=0: num, k, status 27 26 3
+fitS!=0: num, k, status 34 33 3

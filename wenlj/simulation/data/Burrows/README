@@ -1,0 +1,59 @@
+David Vartanyan in our group at Princeton has provided post-processed 
+spectra produced by Fornax for 1D and 2D runs implementing GR with 
+inelastic scattering off electrons and nucleons, as well as 
+accounting for the approximate axial-vector many-body correction 
+to neutrino scattering cross sections. Four progenitors (12, 15, 
+        20, 25 solar masses from Woosley, Heger 2007) are provided.
+
+We use M1 closure for radiative transfer with logarithmically-spaced 
+energy bins spanning 1-300 MeV for electron-neutrinos and 1-100 MeV 
+for anti-electron and "heavy" neutrinos, which included mu- ,tau- , 
+    and their anti- counterparts.
+
+    Our spatial resolution is 608x256 radial by polar cells in 2D, with 
+    our domain extending to 10,000 km. Runs were performed for roughly 
+    1 second minimum.  The 1D model employed 608 radial zones.  
+
+    A sample python script, sample_script.py, is attached. To run, 
+    download the directory and from the terminal execute
+
+    "python sample\_spectra.py --filename --time"
+
+    where filename and time are inputs to produce a plot of the spectra 
+    ($10^52$ erg/s/MeV) at the desired time and of the luminosity 
+    (in $10^52$ erg/s) as a function of time after bounce.
+
+Each file, either in the 1D directory (spherically symmetric, 
+        non-exploding) or the 2D directory (axially symmetric, exploding) 
+    contains a top line providing horizontally the time and central 
+    energy in each energy bin.  The following rows each provide the 
+    neutrino spectrum (for the given species) at the given time (in seconds
+            after bounce).  Twenty neutrino energy groups were used.
+
+    More specifically, the argument filename is a string containing the name of one the 
+    attached data files, e.g. 'spectra_share_12_0.dat', demarcated by 
+    quotes, where the 12 indicates the progenitor mass in solar masses, 
+    and the "0" electron-neutrinos ("1" indicates anti-electron and "2" 
+            indicates "heavy" neutrinos, respectively). The argument time is 
+    in seconds (e.g. 0.5) after bounce. The argument dt (eg 0.03), 
+    also in seconds indicates the running average time width used to 
+    smooth the luminosity. The current script will produce output for 
+    electron neutrinos but is easily adapted for the other species. 
+    The commented out header (3 lines) contains the neutrino energies 
+    at bin centers (MeV) and data description. The data has dimensions 
+    ntimesx21, where ntimes is the number of timeteps (in millisecond 
+            intervals). For each timestep, the first element in the row is the 
+    time at which the output is provide (in seconds) and the other 20 
+    columns the spectra (in $10^{52}$ erg/s/MeV) at that timestep for 
+    the particular neutrino type. The spectra is smooth by interpolation 
+    and the luminosity by a running average.
+
+    The file energies.dat is 2x60 ASCII file. The first row neutrino 
+    energies (MeV) at bin centers. The second row contains the bin widths 
+    (MeV). Please direct all questions to dvartany@princeton.edu.
+
+    I hope that these files prove useful.
+
+    Regards,
+
+    Adam Burrows

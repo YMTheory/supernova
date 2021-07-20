@@ -1,0 +1,34 @@
+#ifndef _SNBurrowsIntegFcn_hh
+#define _SNBurrowsIntegFcn_hh
+
+#include <vector>
+class TGraph;
+class SNBurrowsIntegFcn{
+    public:
+        SNBurrowsIntegFcn();
+        explicit SNBurrowsIntegFcn( int imode);
+        ~SNBurrowsIntegFcn();
+ 
+        void getTimeLimits(double& tmin, double& tmax, int type){
+            if(type < 2){
+                tmin = timeMin[type];
+                tmax = timeMax[type];
+            }
+            if(type >= 2){
+                tmin = timeMin[2];
+                tmax = timeMax[2];
+            }
+        }
+        
+        double getEnergySpectrum(double E,int itype);
+    private:
+        double timeMin[3];
+        double timeMax[3];
+
+        TGraph*   grLuminBin[3];//unnormalized energy spectrum
+        TGraph*   grAverageE[3];//time evolution for average energy
+        void readFluxGraph(int imode);
+        double getAverageEonOneTime(int itime, int nbins, double binEv[], std::vector<double> lumin[]);
+};
+
+#endif

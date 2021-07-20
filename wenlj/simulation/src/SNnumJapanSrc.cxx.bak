@@ -1,0 +1,117 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+#include "TVectorD.h"
+#include "TGraph.h"
+#include "TMath.h"
+#include "TSpline.h"
+
+#include "SNsource.hh"
+#include "SNnumJapanSrc.hh"
+
+SNnumJapanSrc::SNnumJapanSrc() : SNsource(){
+    grflux_antinue = NULL;
+    grflux_nue     = NULL;
+    grflux_nux     = NULL;
+}
+
+SNnumJapanSrc::SNnumJapanSrc(int imode) : SNsource(){
+    readFluxGraph(imode);
+}
+
+SNnumJapanSrc::~SNnumJapanSrc(){
+    if(grflux_antinue) delete grflux_antinue;
+    if(grflux_nue)     delete grflux_nue;
+    if(grflux_nux)     delete grflux_nux;
+}
+
+
+void SNnumJapanSrc::readFluxGraph(int imode){
+    std::ifstream fSNmod;
+    fSNmod.open(Form("/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Japan/integdata/integ%d.data",imode));
+    if(!fSNmod){
+        std::cout << "Error: /mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Japan/integdata/integ" << imode <<".data can't be opened!" << std::endl;
+        exit(-1);
+    }
+
+    //total number of neutrinos and energy for each flavor
+    fSNmod >> totNnue >> totNantinue >> totNnux >> Ea[0] >> Ea[1] >> Ea[2];
+    Ea[3] = Ea[2];
+    Ea[4] = Ea[2];
+    Ea[5] = Ea[2];
+
+    //average energy;
+    double index= 1./(1.6022e-6);
+    averagE[0] = index*Ea[0]/totNnue;
+    averagE[1] = index*Ea[1]/totNantinue;
+    averagE[2] = index*Ea[2]/totNnux;
+    averagE[3] = index*Ea[3]/totNnux;
+    averagE[4] = index*Ea[4]/totNnux;
+    averagE[5] = index*Ea[5]/totNnux;
+
+    //event flux distribution
+    std::vector<double> Evlow;
+    std::vector<double> Evup;
+    std::vector<double> fluxnue;
+    std::vector<double> fluxantinue;
+    std::vector<double> fluxnux;
+    double ievbinlow, ievbinup;
+    double influnue, influantinue, influnux;
+    double ieflunue, iefluantinue, ieflunux;
+    while(fSNmod >>ievbinlow >> ievbinup >> influnue  >> influantinue >> influnux >> ieflunue  >> iefluantinue >> ieflunux){
+
+        Evlow.push_back(ievbinlow);
+        Evup.push_back(ievbinup);
+        fluxnue.push_back(influnue);
+        fluxantinue.push_back(influantinue);
+        fluxnux.push_back(influnux);
+    }
+    fSNmod.close();
+
+    int nbins = Evup.size();
+    TVectorD vecEv(nbins);
+    TVectorD vecNflu_nue(nbins);
+    TVectorD vecNflu_antinue(nbins);
+    TVectorD vecNflu_nux(nbins);
+    for(int ib=0; ib<nbins; ib++){
+        vecEv[ib] = Evup[ib];
+        vecNflu_nue[ib]     = fluxnue[ib];
+        vecNflu_antinue[ib] = fluxantinue[ib];
+        vecNflu_nux[ib]     = fluxnux[ib];
+    }
+
+    grflux_nue     = new TGraph(vecEv, vecNflu_nue);
+    grflux_nue->SetName("grflux_nue");
+    grflux_antinue = new TGraph(vecEv, vecNflu_antinue);
+    grflux_antinue->SetName("grflux_antinue");
+    grflux_nux     = new TGraph(vecEv, vecNflu_nux);
+    grflux_nux->SetName("grflux_nux");
+}
+
+
+double SNnumJapanSrc::oneSNFluenceDet(double E, int type){
+    double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.096e21,2));//cm^-2
+    //double index = 1;
+    if(type == 0){
+        return index*grflux_nue->Eval(E,0,"s");
+    }
+    if(type == 1){
+        return index*grflux_antinue->Eval(E,0,"s");
+    }
+    else{
+        return index*grflux_nux->Eval(E,0,"s");
+    }
+
+    return 0;
+}
+
+double SNnumJapanSrc::totalSNFluenceDet(double E){
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDet(E,it);
+    }
+
+    return totflu;
+}

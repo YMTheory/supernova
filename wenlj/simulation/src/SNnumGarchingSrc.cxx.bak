@@ -1,0 +1,58 @@
+#include <iostream>
+
+#include "TGraph.h"
+#include "TF1.h"
+#include "TMath.h"
+#include "SNsource.hh"
+#include "SNGarchingIntegFcn.hh"
+#include "SNnumGarchingSrc.hh"
+
+SNnumGarchingSrc::SNnumGarchingSrc() : SNsource(){
+    pintegfcn = NULL;
+    fcn = NULL;
+}
+SNnumGarchingSrc::SNnumGarchingSrc(int imode) : SNsource(){
+    pintegfcn = new SNGarchingIntegFcn(imode);
+    fcn = new TF1("fcn",pintegfcn, &SNGarchingIntegFcn::fcnfluxtime,-1,12,2,"SNGarchingIntegFcn","fcnfluxtime");
+    if(pintegfcn && fcn)std::cout << "Garching integral function created!" << std::endl;
+}
+
+SNnumGarchingSrc::~SNnumGarchingSrc(){
+    if(fcn) delete fcn;
+}
+
+
+
+#include "Math/WrappedTF1.h"
+#include "Math/GSLIntegrator.h"
+double SNnumGarchingSrc::oneSNFluenceDet(double E, int type){
+    double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+    double tmin, tmax;
+    pintegfcn->getTimeLimits(tmin, tmax, type);
+    fcn->SetParameter(0,E);
+    fcn->SetParameter(1,type);
+    
+    ROOT::Math::WrappedTF1 wf1(*fcn);
+    ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+    ig.SetFunction(wf1);
+    ig.SetRelTolerance(1e-2);
+    double integ = ig.Integral(tmin, tmax);
+    return index*integ;
+    
+    //int np = 100;
+    //double *x = new double[np];
+    //double *w = new double[np];
+    //fcn->CalcGaussLegendreSamplingPoints(np,x,w,1e-9);
+    //return index*fcn->IntegralFast(np,x,w,tmin,tmax);
+}
+
+double SNnumGarchingSrc::totalSNFluenceDet(double E){
+    int ntype = 6;
+    double tfluence = 0;
+    for(int ii=0; ii<ntype; ii++){
+        tfluence += oneSNFluenceDet(E,ii);
+    }
+
+    return tfluence;
+}
+

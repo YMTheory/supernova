@@ -1,0 +1,121 @@
+#ifndef _SNdetect_hh
+#define _SNdetect_hh
+
+#include "TObject.h"
+
+class TRandom3;
+class SNeffectLS;
+class SNsource;
+class TF1;
+class TF2;
+class TF3;
+class TFile;
+class TGraph;
+
+class SNdetect : public TObject{
+    private:   
+        SNdetect();
+    public:
+       enum channelName {NuP, NuE, IBD};
+       
+       ~SNdetect();
+
+       static SNdetect* instance();
+
+       void initChannel(channelName cha);
+       void setChannel(channelName cha){ initChannel(cha);}
+       void setSrcModel(int imode);
+       channelName getChannel(){ return fchannel; }
+
+       //pointer
+       SNsource* getPointerSrc(){ return psrc; }
+       SNeffectLS* getPointerEffectLS(){ return peffLS;}
+       
+       //analytical energy distribution
+       double getXSweightedEvSpectrum(double Ev);
+       double getTSpectrum(double T);
+       double getEvisSpectrum(double Evis);
+       double getEobsSpectrum(double Eobs);
+       double getEventAboveEthrVis( double Ethr );//for Evis
+       double getEventAboveEthrObs( double Ethr );//for Eobs
+
+       //analytical time distribution
+       //number of events
+       double getXSweightedEvSpectrumAtTime(double time, double Ev);
+       double getTSpectrumAtTime(double time, double T);
+       double getEvisSpectrumAtTime(double time, double Evis);
+       double getEobsSpectrumAtTime(double time, double Eobs);
+       double getEventAboveEthrVisAtTime(double time,double Ethr);//number of events in LS w/o energy resolution at a specific time
+       double getEventAboveEthrObsAtTime(double time,double Ethr);//number of events in LS w/ energy resolution at a specific time
+       double getLumiAboveEthrObsAtTime(double time, double Ethr);
+       double getLumiAboveEthrVisAtTime(double time, double Ethr);
+       //luminosity=number*energy
+
+
+       //number of event at time for IH
+       double getXSweightedEvSpectrumAtTimeIH(double time, double Ev);
+       double getTSpectrumAtTimeIH(double time, double T);
+       double getEvisSpectrumAtTimeIH(double time, double Evis);
+       double getEobsSpectrumAtTimeIH(double time, double Eobs);
+       double getEventAboveEthrVisAtTimeIH(double time,double Ethr);//number of events in LS w/o energy resolution at a specific time
+       double getEventAboveEthrObsAtTimeIH(double time,double Ethr);//number of events in LS w/ energy resolution at a specific time
+       double getLumiAboveEthrVisAtTimeIH(double time, double Ethr);
+       double getLumiAboveEthrObsAtTimeIH(double time, double Ethr);
+
+       //number of event at time for NH
+       double getXSweightedEvSpectrumAtTimeNH(double time, double Ev);
+       double getTSpectrumAtTimeNH(double time, double T);
+       double getEvisSpectrumAtTimeNH(double time, double Evis);
+       double getEobsSpectrumAtTimeNH(double time, double Eobs);
+       double getEventAboveEthrVisAtTimeNH(double time,double Ethr);//number of events in LS w/o energy resolution at a specific time
+       double getEventAboveEthrObsAtTimeNH(double time,double Ethr);//number of events in LS w/ energy resolution at a specific time
+       double getLumiAboveEthrVisAtTimeNH(double time, double Ethr);
+       double getLumiAboveEthrObsAtTimeNH(double time, double Ethr);
+
+
+
+       //time interval
+       double getXSweightedEvSpectrumTimeInterval(double Ev, double tfirst, double tlast);
+       double getTSpectrumTimeInterval(double T,double tfirst, double tlast);
+       double getEvisSpectrumTimeInterval(double Evis, double tfirst, double tlast);
+       double getEobsSpectrumTimeInterval(double Eobs, double tfirst, double tlast);
+       double getEventAboveEthrVisTimeInterval( double Ethr, double tfirst, double tlast);//for Evis
+       double getEventAboveEthrObsTimInterval( double Ethr, double tfirst, double tlast);//for Eobs
+
+
+       //toyMC information
+       void initFCN();//fcn for random generation
+       void deletFCN();//delete pointers when exiting 
+       void resetFCN();//after change parameters in source or LS, should reset fcn
+       void getRandomEvTandType(double& Ev,double& T, int& Type);
+       void getRandomEvandT(double& Ev, double& T);
+       void getRandomFlatEvandT(double& Ev, double& T);
+       double getRandomEvis(double T);
+       double getRandomEobs(double Evis);
+
+       double getEvis(double T);
+       double getT(double Evis);
+
+
+    private:
+       static SNdetect* pdet ;
+       SNeffectLS*  peffLS;
+       SNsource*    psrc; 
+       channelName fchannel;//specific channel in this detection
+       
+       //for quenching of Nu-P ES channel
+       TFile* file;
+       TGraph* grquench;
+       TGraph* grquenchInv;
+
+       TF3* f3rndEvTType;
+       TF2* f2rndEvT;
+       TF2* f2rndFlatEvT;
+       TF1* f1rndEv;
+
+       ClassDef(SNdetect, 1);
+};
+
+
+
+#endif

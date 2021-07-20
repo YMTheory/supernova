@@ -1,0 +1,46 @@
+#ifndef _SNnumBurrowsSrc_hh
+#define _SNnumBurrowsSrc_hh
+
+
+
+class SNsource;
+class SNBurrowsIntegFcn;
+class TGraph;
+
+class SNnumBurrowsSrc : public SNsource{
+    public:
+        SNnumBurrowsSrc();
+        SNnumBurrowsSrc(int imode);
+        ~SNnumBurrowsSrc();
+
+        virtual double oneSNFluenceDet(double E, int type);
+        virtual double totalSNFluenceDet(double E);
+        virtual double oneSNFluenceDetTimeIntegE(double time, int type); 
+        virtual double totalSNFluenceDetTimeIntegE(double time);
+        
+        
+        virtual double oneSNFluenceIHDetTimeIntegE(double time, int type);
+        virtual double oneSNFluenceNHDetTimeIntegE(double time, int type);
+        virtual double oneSNFluenceIHDetAtTime(double time, double E, int type);
+        virtual double oneSNFluenceNHDetAtTime(double time, double E, int type);
+
+        
+        virtual double oneSNFluenceDetAtTime(double time, double E, int type);
+        virtual double totalSNFluenceDetAtTime(double time, double E);
+        virtual double oneSNFluenceDetTimeInterval(double E, double tfirst,double tlast, int type);
+        virtual double totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast);
+        virtual double oneSNLuminosityTime(double time, int type);
+        virtual double oneSNAverageETime(double time, int type);
+        virtual void getTimeRange(double& tmin, double& tmax, int type);
+
+    private:
+        void readSpectrum(int imode);
+        TGraph* grspectrum[3];
+
+    public:
+        ClassDef(SNnumBurrowsSrc, 1);
+};
+
+
+
+#endif

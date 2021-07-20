@@ -1,0 +1,99 @@
+#include <iostream>
+
+#include "TGraph.h"
+#include "TFile.h"
+#include "TF1.h"
+#include "TMath.h"
+#include "TString.h"
+
+#include "SNsource.hh"
+#include "SNnumBurrowsSrc.hh"
+
+SNnumBurrowsSrc::SNnumBurrowsSrc() : SNsource(){
+    for(int it=0; it<3; it++){
+        grspectrum[it] = NULL;
+    }
+}
+SNnumBurrowsSrc::SNnumBurrowsSrc(int imode) : SNsource(){
+    readSpectrum(imode);
+}
+
+SNnumBurrowsSrc::~SNnumBurrowsSrc(){
+}
+
+void SNnumBurrowsSrc::readSpectrum(int imode){
+    TString path="/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Burrows/energySpeFiles";
+    TFile* fin = TFile::Open(Form("%s/energySpecBurrows_%d.root",path.Data(),imode));
+    if(!fin){
+        printf("%s/energySpecBurrows_%d.root can't be opened!!\n",path.Data(), imode);
+        exit(-1);
+    }
+    for(int it=0; it<3; it++){
+        grspectrum[it] = (TGraph*)fin->Get(Form("grmod%dtype%d",imode, it));
+    }
+    fin->Close();
+}
+
+
+double SNnumBurrowsSrc::oneSNFluenceDet(double E, int type){
+    double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+    if(type < 2){
+        return index*grspectrum[type]->Eval(E,0,"S");
+    }
+    if(type >= 2){
+        return index*grspectrum[2]->Eval(E,0,"S");
+    }
+    return 0;
+}
+
+double SNnumBurrowsSrc::totalSNFluenceDet(double E){
+    int ntype = 6;
+    double tfluence = 0;
+    for(int ii=0; ii<ntype; ii++){
+        tfluence += oneSNFluenceDet(E,ii);
+    }
+    return tfluence;
+}
+
+double SNnumBurrowsSrc::oneSNAverageETime(double time, int type){
+    return 0;
+}
+
+
+double SNnumBurrowsSrc::oneSNFluenceDetTimeIntegE(double time, int type){
+    return -1;
+}
+double SNnumBurrowsSrc::totalSNFluenceDetTimeIntegE(double time){
+    return -1;
+}
+double SNnumBurrowsSrc::oneSNFluenceDetAtTime(double time, double E, int type){
+    return -1;
+}
+double SNnumBurrowsSrc::totalSNFluenceDetAtTime(double time, double E){
+    return -1;
+}
+double SNnumBurrowsSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type){
+    return -1;
+}
+double SNnumBurrowsSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast){
+    return -1;
+}
+double SNnumBurrowsSrc::oneSNLuminosityTime(double time, int type){
+    return -1;
+}
+double SNnumBurrowsSrc::oneSNFluenceIHDetTimeIntegE(double time, int type){
+    return 0;
+}
+double SNnumBurrowsSrc::oneSNFluenceNHDetTimeIntegE(double time, int type){
+    return 0;
+}
+double SNnumBurrowsSrc::oneSNFluenceIHDetAtTime(double time, double E, int type){
+    return 0;
+}
+
+double SNnumBurrowsSrc::oneSNFluenceNHDetAtTime(double time, double E, int type){
+    return 0;
+}
+void SNnumBurrowsSrc::getTimeRange(double& tmin, double& tmax, int type){
+
+}

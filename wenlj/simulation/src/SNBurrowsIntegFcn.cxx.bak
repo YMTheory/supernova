@@ -1,0 +1,218 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+#include "TVectorD.h"
+#include "TMath.h"
+#include "TGraph.h"
+#include "TGraph2D.h"
+
+#include "SNBurrowsIntegFcn.hh"
+
+SNBurrowsIntegFcn::SNBurrowsIntegFcn(){
+    for(int it=0;it<3;it++){
+        timeMin[it] = -999.;
+        timeMax[it] = -999.;
+        grLuminBin[it] = NULL;
+        grAverageE[it] = NULL;
+    }
+}
+
+SNBurrowsIntegFcn::SNBurrowsIntegFcn(int imode){
+    for(int it=0;it<3;it++){
+        timeMin[it] = -999.;
+        timeMax[it] = -999.;
+        grLuminBin[it] = NULL;
+        grAverageE[it] = NULL;
+    }
+    readFluxGraph(imode);
+}
+
+SNBurrowsIntegFcn::~SNBurrowsIntegFcn(){
+
+}
+
+void SNBurrowsIntegFcn::readFluxGraph(int imode){
+    if(imode<6000 || imode>7999){
+        std::cout << "Mode name Error: " << imode << " doesn't belong to Garching models!!" << std::endl;
+        exit(-1);
+    }
+
+    //read in data
+    TString path;
+    if(imode < 7000) 
+        path="/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Burrows/1D";
+    else 
+        path="/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Burrows/2D";
+   
+    //energy binning
+    std::ifstream fEnergybin;
+    fEnergybin.open(Form("%s/energies.dat",path.Data()));
+    if(!fEnergybin){
+        std::cout << "Error: " << " energies.dat of Burrows group can't be opened" << std::endl;
+        exit(-1);
+    }
+    const int nbin_Ev = 20;
+    double bin_Ev_nue[nbin_Ev]     = {0};
+    double bin_Ev_antinue[nbin_Ev] = {0};
+    double bin_Ev_nux[nbin_Ev]     = {0};
+    for(int ib=0; ib<(nbin_Ev*3); ib++){
+        if(ib<nbin_Ev)
+            fEnergybin>>bin_Ev_nue[ib];
+        if(ib>=nbin_Ev && ib<(nbin_Ev*2))
+            fEnergybin>>bin_Ev_antinue[ib-nbin_Ev];
+        if(ib>=(nbin_Ev*2) && ib<(nbin_Ev*3))
+            fEnergybin>>bin_Ev_nux[ib-nbin_Ev*2];
+    }
+
+    //luminosity information
+    std::ifstream fSNmod_antinue;
+    std::ifstream fSNmod_nue;
+    std::ifstream fSNmod_nux;
+    fSNmod_nue.open(Form("%s/spectra_share_%d_0.dat",path.Data(),(imode%1000)/10));
+    fSNmod_antinue.open(Form("%s/spectra_share_%d_1.dat",path.Data(),(imode%1000)/10));
+    fSNmod_nux.open(Form("%s/spectra_share_%d_2.dat",path.Data(),(imode%1000)/10));
+    if((!fSNmod_antinue) || (!fSNmod_nue) || (!fSNmod_nux)){
+        std::cout << "Error: " << imode << " files of Burrows group models can't be opened!" << std::endl;
+        exit(-1);
+    }
+
+    double itime;
+    //-----------------nu_e---------------//
+    std::vector<double> lumin_E_nue[nbin_Ev];
+    std::vector<double> time_nue;
+    while(fSNmod_nue >> itime){
+        time_nue.push_back(itime);
+        for(int ib=0; ib<nbin_Ev; ib++){
+            double ilumin;
+            fSNmod_nue >> ilumin;
+            lumin_E_nue[ib].push_back(ilumin);
+        }
+    }
+    timeMin[0] = time_nue[0];
+    timeMax[0] = time_nue[time_nue.size()-1];
+    //fix time, sum over energy to calculate average energy
+   
+    TVectorD vecAverageE_nue(time_nue.size());
+    TVectorD vecTime_nue(time_nue.size());
+    for(unsigned int itm=0; itm<time_nue.size(); itm++){
+        vecTime_nue[itm] = time_nue[itm];
+        vecAverageE_nue[itm] = getAverageEonOneTime(itm, nbin_Ev,bin_Ev_nue,lumin_E_nue);
+    }
+    grAverageE[0] = new TGraph(vecTime_nue, vecAverageE_nue);
+   
+    //sum over time
+    double totLumin_nue[nbin_Ev] = {0};
+    for(int ib=0; ib<nbin_Ev; ib++){
+        for(unsigned int itm=0; itm<(time_nue.size()-1); itm++){
+            if(lumin_E_nue[ib][itm]==0)
+                totLumin_nue[ib] += 0;
+            else
+                totLumin_nue[ib] += (lumin_E_nue[ib][itm]/vecAverageE_nue[itm])*(time_nue[itm+1]-time_nue[itm]);
+        }
+    }
+    grLuminBin[0] = new TGraph(nbin_Ev, bin_Ev_nue,totLumin_nue);
+    //-----------------anti_nu_e---------------//
+    std::vector<double> lumin_E_antinue[nbin_Ev];
+    std::vector<double> time_antinue;
+    while(fSNmod_antinue >> itime){
+        time_antinue.push_back(itime);
+        for(int ib=0; ib<nbin_Ev; ib++){
+            double ilumin;
+            fSNmod_antinue >> ilumin;
+            lumin_E_antinue[ib].push_back(ilumin);
+        }
+    }
+    timeMin[1] = time_antinue[0];
+    timeMax[1] = time_antinue[time_antinue.size()-1];
+    //fix time, sum over energy to calculate average energy
+    TVectorD vecAverageE_antinue(time_antinue.size());
+    TVectorD vecTime_antinue(time_antinue.size());
+    for(unsigned int itm=0; itm<time_antinue.size(); itm++){
+        vecTime_antinue[itm] = time_antinue[itm];
+        vecAverageE_antinue[itm] = getAverageEonOneTime(itm, nbin_Ev,bin_Ev_antinue,lumin_E_antinue);
+    }
+    grAverageE[1] = new TGraph(vecTime_antinue, vecAverageE_antinue);
+    
+    double totLumin_antinue[nbin_Ev] = {0};
+    for(int ib=0; ib<nbin_Ev; ib++){
+        for(unsigned int itm=0; itm<(time_antinue.size()-1); itm++){
+            if(lumin_E_antinue[ib][itm] == 0)
+                totLumin_antinue[ib] += 0;
+            else
+                totLumin_antinue[ib] += lumin_E_antinue[ib][itm]/vecAverageE_antinue[itm]*(time_antinue[itm+1]-time_antinue[itm]);
+        }
+    }
+    grLuminBin[1] = new TGraph(nbin_Ev, bin_Ev_antinue,totLumin_antinue);
+
+    //-----------------nu_x---------------//
+    std::vector<double> lumin_E_nux[nbin_Ev];
+    std::vector<double> time_nux;
+    while(fSNmod_nux >> itime){
+        time_nux.push_back(itime);
+        for(int ib=0; ib<nbin_Ev; ib++){
+            double ilumin;
+            fSNmod_nux >> ilumin;
+            lumin_E_nux[ib].push_back(ilumin);
+        }
+    }
+    timeMin[2] = time_nux[0];
+    timeMax[2] = time_nux[time_nux.size()-1];
+
+   
+    //fix time, sum over energy to calculate average energy
+    TVectorD vecAverageE_nux(time_nux.size());
+    TVectorD vecTime_nux(time_nux.size());
+    for(unsigned int itm=0; itm<time_nux.size(); itm++){
+        vecTime_nux[itm] = time_nux[itm];
+        vecAverageE_nux[itm] = getAverageEonOneTime(itm, nbin_Ev,bin_Ev_nux,lumin_E_nux);
+    }
+    grAverageE[2] = new TGraph(vecTime_nux, vecAverageE_nux);
+    
+    double totLumin_nux[nbin_Ev] = {0};
+    for(int ib=0; ib<nbin_Ev; ib++){
+        for(unsigned int itm=0; itm<(time_nux.size()-1); itm++){
+            if(lumin_E_nux[ib][itm]==0)
+                totLumin_nux[ib] += 0;
+            else
+                totLumin_nux[ib] += lumin_E_nux[ib][itm]/vecAverageE_nux[itm]*(time_nux[itm+1]-time_nux[itm]);
+        }
+    }
+    grLuminBin[2] = new TGraph(nbin_Ev, bin_Ev_nux,totLumin_nux);
+}
+
+double SNBurrowsIntegFcn::getEnergySpectrum(double E, int itype){
+    double flu = 0;
+    if(itype == 0)
+        flu = grLuminBin[0]->Eval(E,0,"S");
+    if(itype == 1)
+        flu = grLuminBin[1]->Eval(E,0,"S");
+    if(itype >= 2)
+        flu = grLuminBin[2]->Eval(E,0,"S");
+    return flu*1e50*6.24151*1e5;
+}
+
+
+
+
+double SNBurrowsIntegFcn::getAverageEonOneTime(int itime, int nbins, double binEv[], std::vector<double> lumin[]){
+    TVectorD vecEv(nbins);
+    TVectorD vecLum(nbins);
+    for(int ib=0; ib<nbins; ib++){
+        vecEv[ib]  = binEv[ib];
+        vecLum[ib] = lumin[ib][itime]; 
+    }
+    TGraph gr(vecEv, vecLum);
+    
+    double tot_EL = 0;
+    double tot_L  = 0;
+    int npnts = 1000;
+    double step = (binEv[nbins-1]-binEv[0])/npnts;
+    for(int ip=0; ip<npnts; ip++){
+        double binE = step*ip+binEv[0];
+        tot_L += step*gr.Eval(binE,0,"S");
+        tot_EL += step*gr.Eval(binE,0,"S")*binE;
+    }
+    
+    return tot_EL/tot_L;
+}

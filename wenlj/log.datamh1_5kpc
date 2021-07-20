@@ -1,0 +1,255 @@
+Test file:  ./dataset/fineSpec/5.0kpc/TEvisDATA_mod82503_cha1nue_mh1_data0.0eV_mh1_pdf0.0eV_5.0kpc_Ethr0.1MeV_group1_1DFitSummary_Tmax0.03.txt
+nGroups, nStatsPerGroup 1 500
+iPDF, tBins, minT, maxT 0 178 -0.00945 0.00835
+iPDF, tBins, minT, maxT 1 178 -0.00945 0.00845
+iPDF, tBins, minT, maxT 2 180 -0.00935 0.00865
+iPDF, tBins, minT, maxT 3 180 -0.00925 0.00875
+iPDF, tBins, minT, maxT 4 180 -0.00905 0.00895
+iPDF, tBins, minT, maxT 5 178 -0.00885 0.00895
+iPDF, tBins, minT, maxT 6 175 -0.00855 0.00895
+iPDF, tBins, minT, maxT 7 142 -0.00505 0.00915
+iPDF, tBins, minT, maxT 8 136 -0.00415 0.00945
+iPDF, tBins, minT, maxT 9 137 -0.00395 0.00975
+iPDF, tBins, minT, maxT 10 131 -0.00305 0.01005
+iPDF, tBins, minT, maxT 11 130 -0.00275 0.01025
+iPDF, tBins, minT, maxT 12 130 -0.00245 0.01055
+iPDF, tBins, minT, maxT 13 130 -0.00215 0.01085
+iPDF, tBins, minT, maxT 14 128 -0.00175 0.01105
+iPDF, tBins, minT, maxT 15 128 -0.00145 0.01135
+iPDF, tBins, minT, maxT 16 117 -5e-05 0.01165
+iPDF, tBins, minT, maxT 17 116 0.00035 0.01195
+iPDF, tBins, minT, maxT 18 114 0.00075 0.01225
+iPDF, tBins, minT, maxT 19 108 0.00175 0.01255
+iPDF, tBins, minT, maxT 20 126 0.00295 0.01555
+0
+nll profile not good, iData, kk: 0, 5,      0.006,      0.026
+nll profile not good, iData, kk: 3, 8,      0.010,      0.012
+nll profile not good, iData, kk: 5, 17,      0.018,      0.008
+nll profile not good, iData, kk: 6, 3,      0.038,      0.082
+nll profile not good, iData, kk: 7, 19,      0.782,      0.002
+nll profile not good, iData, kk: 8, 7,      0.022,      0.008
+nll profile not good, iData, kk: 9, 2,      0.014,      0.058
+nll profile not good, iData, kk: 12, 16,      0.910,      0.212
+nll profile not good, iData, kk: 19, 19,      0.948,      0.506
+20
+nll profile not good, iData, kk: 29, 17,      0.044,      0.020
+nll profile not good, iData, kk: 36, 11,      0.018,      0.096
+40
+nll profile not good, iData, kk: 41, 3,      0.062,      0.002
+nll profile not good, iData, kk: 41, 7,      0.016,      0.006
+nll profile not good, iData, kk: 46, 4,      0.016,      0.038
+nll profile not good, iData, kk: 47, 2,      0.060,      0.078
+nll profile not good, iData, kk: 57, 14,      0.282,      0.442
+60
+nll profile not good, iData, kk: 60, 19,      0.116,      0.370
+nll profile not good, iData, kk: 61, 2,      0.066,      0.028
+nll profile not good, iData, kk: 62, 2,      0.050,      0.002
+nll profile not good, iData, kk: 62, 17,      0.610,      0.076
+nll profile not good, iData, kk: 66, 13,      0.018,      0.362
+nll profile not good, iData, kk: 76, 2,      0.050,      0.026
+nll profile not good, iData, kk: 77, 2,      0.006,      0.062
+80
+nll profile not good, iData, kk: 80, 8,      0.044,      0.070
+nll profile not good, iData, kk: 81, 17,      0.002,      0.206
+nll profile not good, iData, kk: 83, 15,      0.400,      0.146
+nll profile not good, iData, kk: 84, 4,      0.042,      0.024
+nll profile not good, iData, kk: 93, 3,      0.044,      0.046
+nll profile not good, iData, kk: 93, 18,      0.228,      0.184
+nll profile not good, iData, kk: 94, 9,      0.150,      0.032
+nll profile not good, iData, kk: 98, 14,      0.350,      0.132
+100
+nll profile not good, iData, kk: 103, 16,      0.558,      0.220
+nll profile not good, iData, kk: 107, 16,      0.372,      0.366
+nll profile not good, iData, kk: 108, 4,      0.054,      0.002
+nll profile not good, iData, kk: 110, 3,      0.044,      0.062
+nll profile not good, iData, kk: 111, 5,      0.014,      0.018
+120
+nll profile not good, iData, kk: 122, 2,      0.002,      0.006
+nll profile not good, iData, kk: 123, 12,      0.396,      0.002
+nll profile not good, iData, kk: 125, 3,      0.026,      0.002
+nll profile not good, iData, kk: 125, 15,      0.288,      0.086
+nll profile not good, iData, kk: 127, 17,      0.304,      0.304
+nll profile not good, iData, kk: 131, 13,      0.054,      0.102
+nll profile not good, iData, kk: 133, 5,      0.038,      0.068
+nll profile not good, iData, kk: 133, 7,      0.074,      0.008
+nll profile not good, iData, kk: 139, 5,      0.016,      0.028
+140
+nll profile not good, iData, kk: 141, 18,      0.362,      0.054
+nll profile not good, iData, kk: 142, 4,      0.016,      0.050
+nll profile not good, iData, kk: 144, 7,      0.014,      0.004
+nll profile not good, iData, kk: 145, 16,      0.018,      0.398
+nll profile not good, iData, kk: 148, 4,      0.004,      0.060
+nll profile not good, iData, kk: 149, 4,      0.062,      0.010
+nll profile not good, iData, kk: 151, 3,      0.028,      0.020
+nll profile not good, iData, kk: 152, 2,      0.012,      0.092
+nll profile not good, iData, kk: 152, 9,      0.270,      0.028
+nll profile not good, iData, kk: 152, 16,      0.110,      0.140
+nll profile not good, iData, kk: 153, 5,      0.006,      0.010
+nll profile not good, iData, kk: 155, 5,      0.004,      0.006
+nll profile not good, iData, kk: 156, 17,      0.454,      0.098
+160
+nll profile not good, iData, kk: 161, 2,      0.084,      0.046
+nll profile not good, iData, kk: 163, 17,      0.294,      0.036
+nll profile not good, iData, kk: 164, 11,      0.496,      0.110
+nll profile not good, iData, kk: 168, 5,      0.058,      0.054
+nll profile not good, iData, kk: 168, 7,      0.060,      0.020
+nll profile not good, iData, kk: 172, 2,      0.008,      0.034
+nll profile not good, iData, kk: 175, 18,      0.586,      0.004
+nll profile not good, iData, kk: 176, 2,      0.020,      0.128
+nll profile not good, iData, kk: 178, 5,      0.002,      0.062
+nll profile not good, iData, kk: 179, 8,      0.278,      0.202
+180
+nll profile not good, iData, kk: 182, 5,      0.008,      0.030
+nll profile not good, iData, kk: 184, 3,      0.044,      0.016
+nll profile not good, iData, kk: 185, 19,      0.142,      0.166
+nll profile not good, iData, kk: 186, 2,      0.024,      0.134
+nll profile not good, iData, kk: 188, 17,      0.238,      0.112
+nll profile not good, iData, kk: 189, 17,      0.444,      0.026
+nll profile not good, iData, kk: 190, 7,      0.020,      0.040
+nll profile not good, iData, kk: 191, 12,      0.016,      0.026
+nll profile not good, iData, kk: 192, 19,      0.532,      0.018
+nll profile not good, iData, kk: 195, 13,      0.282,      0.020
+nll profile not good, iData, kk: 196, 16,      0.292,      0.114
+nll profile not good, iData, kk: 197, 10,      0.524,      0.118
+nll profile not good, iData, kk: 199, 18,      0.836,      0.454
+200
+nll profile not good, iData, kk: 200, 15,      0.338,      0.326
+nll profile not good, iData, kk: 203, 4,      0.008,      0.002
+nll profile not good, iData, kk: 204, 13,      0.010,      0.040
+nll profile not good, iData, kk: 205, 3,      0.008,      0.026
+nll profile not good, iData, kk: 210, 16,      0.034,      0.116
+nll profile not good, iData, kk: 211, 3,      0.022,      0.010
+nll profile not good, iData, kk: 212, 5,      0.030,      0.026
+nll profile not good, iData, kk: 212, 13,      0.092,      0.250
+nll profile not good, iData, kk: 214, 3,      0.044,      0.026
+220
+nll profile not good, iData, kk: 222, 4,      0.016,      0.034
+nll profile not good, iData, kk: 223, 2,      0.016,      0.074
+nll profile not good, iData, kk: 223, 11,      0.002,      0.456
+nll profile not good, iData, kk: 224, 7,      0.006,      0.012
+nll profile not good, iData, kk: 226, 13,      0.418,      0.020
+nll profile not good, iData, kk: 227, 3,      0.110,      0.020
+nll profile not good, iData, kk: 228, 8,      0.012,      0.014
+nll profile not good, iData, kk: 231, 12,      0.280,      0.078
+nll profile not good, iData, kk: 232, 5,      0.016,      0.008
+nll profile not good, iData, kk: 233, 6,      0.016,      0.010
+nll profile not good, iData, kk: 234, 15,      0.246,      0.278
+nll profile not good, iData, kk: 236, 16,      0.050,      0.108
+nll profile not good, iData, kk: 236, 19,      0.004,      0.096
+nll profile not good, iData, kk: 237, 13,      0.264,      0.176
+nll profile not good, iData, kk: 239, 5,      0.026,      0.020
+240
+nll profile not good, iData, kk: 240, 18,      0.170,      0.340
+nll profile not good, iData, kk: 241, 19,      1.004,      0.224
+nll profile not good, iData, kk: 244, 6,      0.002,      0.008
+nll profile not good, iData, kk: 244, 19,      0.210,      0.070
+nll profile not good, iData, kk: 248, 8,      0.018,      0.002
+nll profile not good, iData, kk: 250, 17,      0.648,      0.144
+nll profile not good, iData, kk: 253, 19,      0.716,      0.100
+nll profile not good, iData, kk: 254, 3,      0.054,      0.002
+nll profile not good, iData, kk: 254, 18,      0.278,      0.148
+nll profile not good, iData, kk: 255, 3,      0.090,      0.006
+nll profile not good, iData, kk: 258, 5,      0.028,      0.022
+nll profile not good, iData, kk: 258, 7,      0.008,      0.034
+nll profile not good, iData, kk: 259, 2,      0.028,      0.102
+260
+nll profile not good, iData, kk: 260, 11,      0.064,      0.118
+nll profile not good, iData, kk: 263, 13,      0.284,      0.158
+nll profile not good, iData, kk: 264, 9,      0.046,      0.238
+nll profile not good, iData, kk: 266, 7,      0.008,      0.036
+nll profile not good, iData, kk: 267, 3,      0.038,      0.004
+nll profile not good, iData, kk: 275, 13,      0.130,      0.188
+nll profile not good, iData, kk: 279, 4,      0.002,      0.028
+280
+nll profile not good, iData, kk: 282, 5,      0.064,      0.010
+nll profile not good, iData, kk: 286, 6,      0.008,      0.012
+nll profile not good, iData, kk: 290, 5,      0.012,      0.022
+nll profile not good, iData, kk: 293, 2,      0.004,      0.038
+nll profile not good, iData, kk: 297, 13,      0.248,      0.004
+300
+nll profile not good, iData, kk: 300, 11,      0.286,      0.054
+nll profile not good, iData, kk: 304, 2,      0.018,      0.020
+nll profile not good, iData, kk: 305, 13,      0.368,      0.038
+nll profile not good, iData, kk: 309, 5,      0.014,      0.032
+nll profile not good, iData, kk: 311, 18,      0.034,      0.112
+nll profile not good, iData, kk: 317, 17,      0.182,      0.440
+nll profile not good, iData, kk: 319, 8,      0.002,      0.022
+320
+nll profile not good, iData, kk: 321, 15,      0.832,      0.112
+nll profile not good, iData, kk: 322, 13,      0.004,      0.002
+nll profile not good, iData, kk: 323, 4,      0.046,      0.024
+nll profile not good, iData, kk: 324, 7,      1.830,      0.288
+nll profile not good, iData, kk: 326, 2,      0.040,      0.044
+nll profile not good, iData, kk: 330, 11,      0.316,      0.278
+nll profile not good, iData, kk: 333, 19,      0.248,      0.098
+nll profile not good, iData, kk: 334, 3,      0.008,      0.022
+nll profile not good, iData, kk: 335, 4,      0.020,      0.182
+nll profile not good, iData, kk: 337, 9,      0.348,      0.150
+340
+nll profile not good, iData, kk: 341, 6,      0.002,      0.022
+nll profile not good, iData, kk: 341, 18,      0.048,      0.012
+nll profile not good, iData, kk: 343, 17,      0.214,      0.232
+nll profile not good, iData, kk: 345, 4,      0.052,      0.004
+nll profile not good, iData, kk: 349, 8,      0.054,      0.098
+nll profile not good, iData, kk: 352, 2,      0.018,      0.026
+nll profile not good, iData, kk: 352, 15,      0.162,      0.058
+nll profile not good, iData, kk: 355, 4,      0.036,      0.002
+nll profile not good, iData, kk: 357, 2,      0.004,      0.004
+360
+nll profile not good, iData, kk: 363, 7,      0.022,      0.008
+nll profile not good, iData, kk: 366, 9,      0.234,      0.140
+nll profile not good, iData, kk: 370, 12,      0.210,      0.238
+nll profile not good, iData, kk: 372, 15,      0.582,      0.120
+nll profile not good, iData, kk: 373, 5,      0.004,      0.006
+380
+nll profile not good, iData, kk: 380, 13,      0.338,      0.002
+nll profile not good, iData, kk: 385, 16,      0.462,      0.162
+nll profile not good, iData, kk: 386, 13,      0.800,      0.246
+nll profile not good, iData, kk: 389, 9,      0.086,      0.260
+nll profile not good, iData, kk: 391, 2,      0.054,      0.014
+nll profile not good, iData, kk: 391, 18,      0.038,      0.008
+nll profile not good, iData, kk: 393, 5,      0.012,      0.020
+nll profile not good, iData, kk: 394, 3,      0.014,      0.010
+nll profile not good, iData, kk: 398, 14,      0.096,      0.094
+400
+nll profile not good, iData, kk: 400, 19,      0.124,      0.040
+nll profile not good, iData, kk: 401, 8,      0.194,      0.206
+nll profile not good, iData, kk: 403, 5,      0.010,      0.016
+nll profile not good, iData, kk: 412, 3,      0.010,      0.002
+nll profile not good, iData, kk: 412, 18,      0.028,      0.024
+nll profile not good, iData, kk: 414, 2,      0.014,      0.022
+nll profile not good, iData, kk: 414, 19,      0.078,      0.308
+nll profile not good, iData, kk: 417, 19,      0.498,      0.072
+nll profile not good, iData, kk: 418, 7,      0.024,      0.004
+420
+nll profile not good, iData, kk: 421, 13,      0.222,      0.014
+nll profile not good, iData, kk: 422, 3,      0.002,      0.006
+nll profile not good, iData, kk: 422, 7,      0.016,      0.224
+nll profile not good, iData, kk: 422, 17,      0.002,      0.062
+nll profile not good, iData, kk: 426, 2,      0.018,      0.020
+nll profile not good, iData, kk: 429, 5,      0.040,      0.020
+nll profile not good, iData, kk: 429, 7,      0.038,      0.024
+nll profile not good, iData, kk: 434, 17,      0.436,      0.122
+nll profile not good, iData, kk: 438, 11,      0.082,      0.084
+440
+nll profile not good, iData, kk: 444, 7,      0.012,      0.024
+nll profile not good, iData, kk: 452, 9,      0.126,      0.228
+nll profile not good, iData, kk: 454, 10,      0.030,      0.334
+nll profile not good, iData, kk: 458, 6,      0.020,      0.026
+460
+nll profile not good, iData, kk: 461, 3,      0.076,      0.016
+nll profile not good, iData, kk: 461, 12,      0.024,      0.020
+nll profile not good, iData, kk: 463, 13,      0.014,      0.112
+nll profile not good, iData, kk: 466, 2,      0.018,      0.024
+nll profile not good, iData, kk: 467, 18,      0.048,      0.302
+nll profile not good, iData, kk: 468, 6,      0.026,      0.012
+nll profile not good, iData, kk: 476, 3,      0.034,      0.014
+nll profile not good, iData, kk: 478, 5,      0.020,      0.028
+480
+nll profile not good, iData, kk: 485, 5,      0.014,      0.088
+nll profile not good, iData, kk: 486, 4,      0.034,      0.024
+nll profile not good, iData, kk: 490, 19,      0.530,      0.084
+nll profile not good, iData, kk: 491, 18,      0.476,      0.152
+nll profile not good, iData, kk: 493, 19,      0.018,      0.124
+-2.8195573861920127 ---mean----
+1.2348530061078615 ---median----

@@ -1,0 +1,94 @@
+#include <iostream>
+#include <vector>
+
+#include "TFile.h"
+#include "TGraph.h"
+#include "TString.h"
+#include "TF1.h"
+#include "TVectorD.h"
+#include "Math/WrappedTF1.h"
+#include "Math/GSLIntegrator.h"
+
+#include "SNGarchingIntegFcn.hh"
+
+int main(int argc, char* argv[]){
+
+    //Garching models
+    const Int_t nmod = 32;
+    Int_t modeName[nmod] = {
+        8110,8111,8112,8113,
+        8250,8251,8252,8253,
+        8270,8271,8272,8273,
+        8400,8401,8402,8403,
+
+        9110,9111,9112,9113,
+        9250,9251,9252,9253,
+        9270,9271,9272,9273,
+        9400,9401,9402,9403
+    };
+
+    //neutrino types
+    const Int_t ntype = 3;
+    TString typeName[ntype] = {"#nu_{e}","#bar{#nu}_{e}","#nu_{x}"};
+
+    //prepare TGraphs
+    Double_t Evmin = 0.;
+    Double_t Evmax = 80;
+    const Int_t nbin_Ev = 200;
+    Double_t step_Ev = (Evmax-Evmin)/nbin_Ev;
+
+    Double_t vecEv[nbin_Ev];
+    Double_t spectrum_nue[nmod][nbin_Ev];
+    Double_t spectrum_antinue[nmod][nbin_Ev];
+    Double_t spectrum_nux[nmod][nbin_Ev];
+
+    for(Int_t ib=0; ib<nbin_Ev; ib++){
+        vecEv[ib] = Evmin+step_Ev*(ib+0.5);
+        printf("Nbin_Ev %d ==> %d bin\n", nbin_Ev, ib);
+        for(Int_t im=0; im<nmod; im++){
+            printf("Start processing Garching model %d", modeName[im]);
+            SNGarchingIntegFcn sninteg(modeName[im]);
+            TF1 fcn("fcn",&sninteg, &SNGarchingIntegFcn::fcnfluxtime, -1,12,2,"SNGarchingIntegFcn","fcnfluxtime");
+            for(Int_t it=0; it<ntype; it++){
+                Double_t tmin, tmax;
+                sninteg.getTimeLimits(tmin, tmax, it);
+                fcn.SetParameter(0, vecEv[ib]);
+                fcn.SetParameter(1, it);
+                
+                ROOT::Math::WrappedTF1 wf1(fcn);
+                ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+                ig.SetFunction(wf1);
+                ig.SetRelTolerance(1e-2);
+                if(it == 0) spectrum_nue[im][ib]     = ig.Integral(tmin, tmax);
+                if(it == 1) spectrum_antinue[im][ib] = ig.Integral(tmin, tmax);
+                if(it == 2) spectrum_nux[im][ib]     = ig.Integral(tmin, tmax);
+                printf(" %s,",typeName[it].Data());
+            }
+            printf("\nFinished Garching model %d\n",modeName[im]);
+        }
+    }
+    
+    TGraph* grmodelNu[nmod][ntype];
+    for(Int_t im=0; im<nmod; im++){
+        grmodelNu[im][0] = new TGraph(nbin_Ev, vecEv,spectrum_nue[im]);
+        grmodelNu[im][0]->SetName(Form("grmod%dtype0",modeName[im]));
+        grmodelNu[im][1] = new TGraph(nbin_Ev, vecEv,spectrum_antinue[im]);
+        grmodelNu[im][1]->SetName(Form("grmod%dtype1",modeName[im]));
+        grmodelNu[im][2] = new TGraph(nbin_Ev, vecEv,spectrum_nux[im]);
+        grmodelNu[im][2]->SetName(Form("grmod%dtype2",modeName[im]));
+    }
+
+    TFile* fout = new TFile("energySpecGarching.root","RECREATE");
+    fout->cd();
+    
+    for(Int_t im=0; im<nmod; im++){
+        for(Int_t it=0; it<ntype; it++){
+            grmodelNu[im][it]->Write();
+        }
+    }
+
+    fout->Close();
+
+
+
+}

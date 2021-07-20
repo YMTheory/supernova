@@ -1,0 +1,35 @@
+#ifndef _SNnumJapanSrc_hh
+#define _SNnumJapanSrc__hh
+
+
+class SNsource;
+class TGraph;
+
+class SNnumJapanSrc: public SNsource{
+    public:
+        SNnumJapanSrc();
+        SNnumJapanSrc(int imode);//currently only model in [http://asphwww.ph.noda.tus.ac.jp/snn/] time integated ones are used
+        ~SNnumJapanSrc();
+
+        virtual double oneSNFluenceDet(double E, int type);
+        virtual double totalSNFluenceDet(double E);
+
+       
+        double totNnue;
+        double totNantinue;
+        double totNnux;
+
+        //TGraph* getGraphFluxAntinue() { return grflux_antinue;}
+        //TGraph* getGraphFluxNue() { return grflux_nue;}
+        //TGraph* getGraphFluxNux() { return grflux_nux;}
+    private:
+        void readFluxGraph(int imode);
+        TGraph* grflux_antinue;
+        TGraph* grflux_nue;
+        TGraph* grflux_nux;
+
+    public:
+        ClassDef(SNnumJapanSrc, 1);
+};
+
+#endif

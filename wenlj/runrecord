@@ -1,0 +1,45 @@
+Object SNEdetect (0x4ef6d40) created as singleton...
+-0.456141;  2.38711;-0.000443795;  2.38711;-0.000443795;  2.38711;
+numerical Garching SN neutrino model 82503 is being used
+channelName:  1 nue
+nu-e channel has been created.
+neutrino type:  0 nu_e
+nuMass:  0.4  eV
+dist:  0.2  kpc
+npt0, start, end:  700 -0.05 0.3
+npt1, start, end:  60 0.3 0.6
+npt2, start, end:  20 0.6 1.0
+len(binning_time), nbin_time, last bin: 781 780 1.0
+Evismin, Evismax, nbins_Evis 0.2 10 98
+Nbin_Time=780, Nbin_Evis=98
+tBurstEnd, binBurstEnd:  0.40249999999999997 721
+Npar 6.7424e+33
+nCalc:  0
+nCalc:  10000
+nCalc:  20000
+
+Object SNEdetect (0x3678690) created as singleton...
+-0.456141;  2.38711;-0.000443795;  2.38711;-0.000443795;  2.38711;
+numerical Garching SN neutrino model 82503 is being used
+channelName:  1 nue
+nu-e channel has been created.
+neutrino type:  0 nu_e
+nuMass:  0.6  eV
+dist:  0.4  kpc
+npt0, start, end:  700 -0.05 0.3
+npt1, start, end:  60 0.3 0.6
+npt2, start, end:  20 0.6 1.0
+len(binning_time), nbin_time, last bin: 781 780 1.0
+Evismin, Evismax, nbins_Evis 0.2 10 98
+Nbin_Time=780, Nbin_Evis=98
+tBurstEnd, binBurstEnd:  0.40249999999999997 721
+Npar 6.7424e+33
+nCalc:  0
+nCalc:  10000
+nCalc:  20000
+nCalc:  30000
+nCalc:  40000
+^CTraceback (most recent call last):
+  File "generatePDFs.py", line 225, in <module>
+    fluence = modelSrc.snFluenceDetAtTime(timeTmp, nuMass, EvTmp, nuType, MH)
+KeyboardInterrupt

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+rename s 8 ./Cooling/LS220/*
+rename .2 0 ./Cooling/LS220/*
+rename .0 0 ./Cooling/LS220/*
+rename 0c 1 ./Cooling/LS220/*
+rename 0o 2 ./Cooling/LS220/*
+rename 1o 3 ./Cooling/LS220/*
+
+rename s 9 ./Cooling/Shen/*
+rename .2 0 ./Cooling/Shen/*
+rename .0 0 ./Cooling/Shen/*
+rename 0c 1 ./Cooling/Shen/*
+rename 0o 2 ./Cooling/Shen/*
+rename 1o 3 ./Cooling/Shen/*
+
+find . -name "*nu*" | xargs sed -i '/^[@#]/d'

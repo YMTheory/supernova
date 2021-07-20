@@ -1,0 +1,28 @@
+#ifndef _SNnumGarchingSrc_hh
+#define _SNnumGarchingSrc_hh
+
+
+
+class SNsource;
+class SNGarchingIntegFcn;
+class TF1;
+
+class SNnumGarchingSrc : public SNsource{
+    public:
+        SNnumGarchingSrc();
+        SNnumGarchingSrc(int imode);
+        ~SNnumGarchingSrc();
+
+        virtual double oneSNFluenceDet(double E, int type);
+        virtual double totalSNFluenceDet(double E);
+
+    private:
+        SNGarchingIntegFcn *pintegfcn;
+        TF1 *fcn;
+
+
+};
+
+
+
+#endif

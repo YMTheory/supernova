@@ -1,0 +1,261 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <array>
+
+#include "TVectorD.h"
+#include "TGraph.h"
+#include "TGraph2D.h"
+#include "TMath.h"
+#include "TSpline.h"
+#include "TF1.h"
+
+#include "SNsource.hh"
+#include "SNnumPreGuoSrc.hh"
+#include "SNpreGuoIntegFcn.hh"
+
+SNnumPreGuoSrc::SNnumPreGuoSrc() : SNsource(){
+    ppreInteg = NULL;
+    f1TE = NULL;
+}
+
+SNnumPreGuoSrc::SNnumPreGuoSrc(int imode) : SNsource(){
+    ppreInteg = new SNpreGuoIntegFcn(imode);
+    f1TE = new TF1("f1TE",ppreInteg, &SNpreGuoIntegFcn::fluxTimeE,1,40,3,"SNpreGuoIntegFcn","fluxTimeE");
+}
+
+SNnumPreGuoSrc::~SNnumPreGuoSrc(){
+    if(ppreInteg)delete ppreInteg;
+    if(f1TE)delete f1TE;
+}
+
+
+
+double SNnumPreGuoSrc::oneSNFluenceDet(double E, int type){
+    double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.086e21,2));//cm^-2
+    double flux = ppreInteg->getFluxE(E, type);
+    return flux*index;
+}
+
+double SNnumPreGuoSrc::oneSNFluenceDet(double E, int type, int MH){
+    double fluence = 0;
+    double sin2theta12 = 0.297;
+    double cos2theta12 = 1-sin2theta12;
+    if(MH==0)return oneSNFluenceDet(E, type);
+    else{
+        if(MH==1){
+            if(type==0) fluence = oneSNFluenceDet(E,2);
+            if(type==1) fluence = cos2theta12*oneSNFluenceDet(E,1)+sin2theta12*oneSNFluenceDet(E,2);
+            if(type>=2) fluence = 0.25*oneSNFluenceDet(E,0)+0.25*sin2theta12*oneSNFluenceDet(E,1)+0.25*(2+cos2theta12)*oneSNFluenceDet(E,2);
+        }
+        if(MH==2){
+            if(type==0) fluence = sin2theta12*oneSNFluenceDet(E,0)+cos2theta12*oneSNFluenceDet(E,2);
+            if(type==1) fluence = oneSNFluenceDet(E,2);
+            if(type>=2) fluence = 0.25*cos2theta12*oneSNFluenceDet(E,0)+0.25*oneSNFluenceDet(E,1)+0.25*(2+sin2theta12)*oneSNFluenceDet(E,2);
+        }
+    }
+    return fluence;
+}
+
+double SNnumPreGuoSrc::totalSNFluenceDet(double E){
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDet(E,it);
+    }
+
+    return totflu;
+}
+
+double SNnumPreGuoSrc::totalSNFluenceDet(double E, int MH){
+    int ntype = 6;
+    double tfluence=0;
+    for(int ii=0; ii<ntype; ii++){
+        tfluence += oneSNFluenceDet(E,ii, MH);
+    }
+    return tfluence;
+}
+
+
+double SNnumPreGuoSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH){
+    if(MH == 0){
+        double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.086e21,2));//cm^-2
+        double flux = ppreInteg->getNumT(time, type);
+        return index*flux;
+    }
+    if(MH==1){
+        double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+        double fluence = 0;
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            fluence = ppreInteg->getNumT(time,2);
+        }
+        if(type == 1){
+            fluence = cos2theta12*ppreInteg->getNumT(time,1)+sin2theta12*ppreInteg->getNumT(time,2);
+        }
+        if(type >= 2){
+            fluence = 0.25*(2+cos2theta12)*ppreInteg->getNumT(time,2)+0.25*ppreInteg->getNumT(time,0)+0.25*sin2theta12*ppreInteg->getNumT(time,1);
+        }
+
+        return fluence*index;
+    }
+    if(MH==2){
+        double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.086e21,2));//cm^-2
+        double fluence = 0;
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            fluence = sin2theta12*ppreInteg->getNumT(time, 0)+cos2theta12*ppreInteg->getNumT(time,2);
+        }
+        if(type == 1){
+            fluence = ppreInteg->getNumT(time,2);
+        }
+        if(type >= 2){
+            fluence = 0.25*(2+sin2theta12)*ppreInteg->getNumT(time,2)+0.25*cos2theta12*ppreInteg->getNumT(time,0)+0.25*ppreInteg->getNumT(time,1);
+        }
+        return index*fluence;
+
+    }
+    return 0;
+}
+double SNnumPreGuoSrc::totalSNFluenceDetTimeIntegE(double time, int MH){
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDetTimeIntegE(time,it, MH);
+    }
+
+    return totflu;
+}
+double SNnumPreGuoSrc::oneSNFluenceDetAtTime(double time, double E, int type, int MH){
+    if(MH==0){
+        double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.086e21,2));//cm^-2
+        double flux = ppreInteg->getEventAtTime(time, E, type);
+        return index*flux;
+    }
+    if(MH==1){
+        double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+        double fluence = 0;
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            fluence = ppreInteg->getEventAtTime(time,E,2);
+        }
+        if(type == 1){
+            fluence = cos2theta12*ppreInteg->getEventAtTime(time,E,1)+sin2theta12*ppreInteg->getEventAtTime(time,E,2);
+        }
+        if(type >= 2){
+            fluence = 0.25*(2+cos2theta12)*ppreInteg->getEventAtTime(time,E,2)+0.25*ppreInteg->getEventAtTime(time,E,0)+0.25*sin2theta12*ppreInteg->getEventAtTime(time,E,1);
+        }
+
+        return fluence*index;
+    }
+    if(MH==2){
+        double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+        double fluence = 0;
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            fluence = sin2theta12*ppreInteg->getEventAtTime(time,E, 0)+cos2theta12*ppreInteg->getEventAtTime(time,E,2);
+        }
+        if(type == 1){
+            fluence = ppreInteg->getEventAtTime(time,E,2);
+        }
+        if(type >= 2){
+            fluence = 0.25*(2+sin2theta12)*ppreInteg->getEventAtTime(time,E,2)+0.25*cos2theta12*ppreInteg->getEventAtTime(time,E,0)+0.25*ppreInteg->getEventAtTime(time,E,1);
+        }
+
+        return fluence*index;
+    }
+    return 0;
+}
+double SNnumPreGuoSrc::totalSNFluenceDetAtTime(double time, double E, int MH){
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDetAtTime(time, E, it, MH);
+    }
+    return totflu;
+
+}
+double SNnumPreGuoSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type){
+    double index = 1./(4*TMath::Pi()*TMath::Power(dist*3.086e21,2));//cm^-2
+    f1TE->SetParameters(tfirst,tlast,type);
+    double flux = f1TE->Eval(E);
+    return flux*index;
+}
+double SNnumPreGuoSrc::totalSNFluenceDetTimeInterval(double E, double tfiirst, double tlast){
+
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDetTimeInterval(E,tfiirst, tlast,it);
+    }
+
+    return totflu;
+}
+double SNnumPreGuoSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type, int MH){
+    double fluence = 0;
+    if(MH==0){
+        fluence = oneSNFluenceDetTimeInterval(E, tfirst, tlast, type);
+    }
+    if(MH==1){
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            fluence = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+        }
+        if(type == 1){
+            double flu1 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 1);
+            double flu2 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+            fluence = cos2theta12*flu1+sin2theta12*flu2;
+        }
+        if(type >= 2){
+            double flu0 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 0);
+            double flu1 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 1);
+            double flu2 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+            fluence = 0.25*(2+cos2theta12)*flu2+0.25*flu0+0.25*sin2theta12*flu1;
+        }
+    }
+    if(MH==2){
+        double sin2theta12 = 0.297;
+        double cos2theta12 = 1-sin2theta12;
+        if(type == 0){
+            double flu2 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+            double flu0 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 0);
+            fluence = sin2theta12*flu0+cos2theta12*flu2;
+        }
+        if(type == 1){
+            fluence = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+        }
+        if(type >= 2){
+            double flu2 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 2);
+            double flu1 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 1);
+            double flu0 = oneSNFluenceDetTimeInterval(E, tfirst, tlast, 0);
+            fluence = 0.25*(2+sin2theta12)*flu2+0.25*cos2theta12*flu0+0.25*flu1;
+        }
+    }
+    return fluence;
+}
+double SNnumPreGuoSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int MH){
+
+    int ntype = 6;
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDetTimeInterval(E, tfirst, tlast, it, MH);
+    }
+}
+double SNnumPreGuoSrc::oneSNLuminosityTime(double time, int type){
+    double lumi = ppreInteg->getLumT(time, type);
+    return lumi;
+}
+
+double SNnumPreGuoSrc::oneSNAverageETime(double time, int type){
+    return ppreInteg->getAverageET(time, type);
+}
+
+
+void SNnumPreGuoSrc::getTimeRange(double& tmin, double& tmax, int type){
+    ppreInteg->getTimeLimits(tmin, tmax, type);
+}
