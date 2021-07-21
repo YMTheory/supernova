@@ -15,7 +15,8 @@ from scipy.stats import rv_continuous
 from array import array
 import sys
 import os
-libSNsimDir = os.getenv('SNCODEDIR') + '/simulation/lib/libSNsim.so'
+libSNsimDir = '/junofs/users/miaoyu/supernova/wenlj/simulation/lib/libSNsim.so'
+#libSNsimDir = os.getenv('SNCODEDIR') + '/simulation/lib/libSNsim.so'
 ROOT.gSystem.Load(libSNsimDir)
 print('Load', libSNsimDir)
 
@@ -174,6 +175,7 @@ if __name__ == "__main__":
         h2d_eNuTSpec[imh].GetZaxis().SetTitle('%s event'%chaName[chaname])
 
         print('len(evisBins)-1', len(evisBins)-1)
+        tmpSliceh2d = []
         for k in range(len(evisBins)-1):
             histname = 'hENuTSlice%d_mod%d_cha%d_mh%d'%(k, modelNum, chaname, imh)
             print(k, histname)
@@ -181,10 +183,15 @@ if __name__ == "__main__":
             histTitle += 'model%d, %s, %s, m_{#nu}%2.1f eV'%(modelNum, chaName[chaname], MHName[imh], nuMass)
             histTitle += ', E_{vis} in (%2.1f, %2.1f) MeV'%(evisBins[k], evisBins[k+1])
             histTmp = ROOT.TH2D(histname, histTitle, nbin_time, binning_time, nbins_Ev, Evmin, Evmax)
-            h2d_eNuTSpecSlice.append( histTmp )
-            h2d_eNuTSpecSlice[k].GetXaxis().SetTitle("time [s]")
-            h2d_eNuTSpecSlice[k].GetYaxis().SetTitle("E_{v} [MeV]")
-            h2d_eNuTSpecSlice[k].GetZaxis().SetTitle('%s event'%chaName[chaname])
+            #h2d_eNuTSpecSlice.append( histTmp )
+            #h2d_eNuTSpecSlice[k].GetXaxis().SetTitle("time [s]")
+            #h2d_eNuTSpecSlice[k].GetYaxis().SetTitle("E_{v} [MeV]")
+            #h2d_eNuTSpecSlice[k].GetZaxis().SetTitle('%s event'%chaName[chaname])
+            tmpSliceh2d.append(histTmp)
+            tmpSliceh2d[k].GetXaxis().SetTitle("time [s]")
+            tmpSliceh2d[k].GetYaxis().SetTitle("E_{v} [MeV]")
+            tmpSliceh2d[k].GetZaxis().SetTitle('%s event'%chaName[chaname])
+        h2d_eNuTSpecSlice.append(tmpSliceh2d)    
 
         # histname = 'hENuTCount_mod%d_cha%d_mh%d'%(modelNum, chaname, imh)
         # h2d_eNuTCount.append( ROOT.TH2D(histname, '', nbin_time, binning_time, nbins_Ev, Evmin, Evmax) )
@@ -192,7 +199,7 @@ if __name__ == "__main__":
         # h2d_etCount.append( ROOT.TH2D(histname, '', nbin_time, binning_time, nbins_Evis, Evismin, Evismax) )
 
     print('Nbin_Time=%d, Nbin_Evis=%d'%(nbin_time, nbins_Evis))
-    
+
     # val = snDet.getEvisSpectrumAtTime(0.3, 0.3, nuType, MH)
     # print(val)
 
@@ -278,7 +285,7 @@ if __name__ == "__main__":
 
                         if EvisTmp<evisBins[len(evisBins)-1] and EvisTmp>evisBins[0]:
                             eBin = dummyEvis.FindBin(EvisTmp)
-                            h2d_eNuTSpecSlice[eBin-1].Fill(timeTmp[0], EvTmp, Npar*fluence*dxs*evisFactor*tFactor)
+                            h2d_eNuTSpecSlice[MH][eBin-1].Fill(timeTmp[0], EvTmp, Npar*fluence*dxs*evisFactor*tFactor)
 
                             # if h2d_eNuTSpecSlice[len(evisBins)-2].GetEntries()>Nabnormal:
                             #     print('test1: ', eBin, h2d_eNuTSpecSlice[10].GetEntries(), timeTmp[0], EvisTmp, EvTmp)
@@ -318,7 +325,7 @@ if __name__ == "__main__":
         h2d_etSpec[imh].Write()
 
         for k in range(len(evisBins)-1):
-            h2d_eNuTSpecSlice[k].Write()
+            h2d_eNuTSpecSlice[MH][k].Write()
 
         # Set background from reactors and others
         Xbins = h2d_etSpecBKG[imh].GetNbinsX()
