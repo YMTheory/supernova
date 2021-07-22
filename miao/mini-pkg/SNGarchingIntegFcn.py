@@ -53,9 +53,11 @@ def readFluxGraph(imode):
         grAverageE[1].SetPoint(i, t_antinue[i], averagE_antinue[i])
 
     for i in range(len(t_nux)):
-        grLuminosity[0].SetPoint(i, t_nux[i], lumin_nux[i])
-        grAlpha[0].SetPoint(i, t_nux[i], 1./(averagE2_nux[i]/averagE_nux[i]**2-1)-1)
-        grAverageE[0].SetPoint(i, t_nux[i], averagE_nux[i])
+        grLuminosity[2].SetPoint(i, t_nux[i], lumin_nux[i])
+        grAlpha[2].SetPoint(i, t_nux[i], 1./(averagE2_nux[i]/averagE_nux[i]**2-1)-1)
+        grAverageE[2].SetPoint(i, t_nux[i], averagE_nux[i])
+
+    print("Load Garching flux mode %d successfully !!!"%imode)
 
 
 from scipy.special import gamma
@@ -87,9 +89,9 @@ def getEventAtTime(time, Ev, tp):
         A = grAverageE[tp].Eval(time)
         alpha = grAlpha[tp].Eval(time)
     if tp >= 2:
-        if time < timeMin[tp]:
+        if time < timeMin[2]:
             return 0
-        if time > timeMax[tp]:
+        if time > timeMax[2]:
             return 0
         luminosity = grLuminosity[2].Eval(time)
         A = grAverageE[2].Eval(time)
@@ -117,40 +119,73 @@ def getAverageET(time, tp):
     return aveE
 
 
+def getNumT(time, tp):
+    num = 0
+    if tp<2:
+        if time < timeMin[tp]:
+            return 0
+        if time < timeMax[tp]:
+            return 0
+        num = grLuminosity[tp].Eval(time)/(grAverageE[tp].Eval(time))
+    if tp >=2:
+        if time < timeMin[2]:
+            return 0
+        if time < timeMax[2]:
+            return 0
+        num = grLuminosity[2].Eval(time)/(grAverageE[2].Eval(time))
+
+    index = 6.24151e56
+    return index * num
+
+
+
+###################################################
+
 def fluxPlotOneType(E, tp, imode):
-    tt = np.arange(timeMin[tp], timeMax[tp], 0.0001)
-    flux = []
-    for i in tt:
+
+    tt, flux = [], []
+    for i in np.arange(timeMin[tp], timeMax[tp], 0.0001):
+        try:
+            getEventAtTime(i, E, tp)
+        except ZeroDivisionError:
+            continue
+        tt.append(i)
         flux.append( getEventAtTime(i, E, tp) )
+
     plt.plot(tt, flux, "-")
     plt.xlabel("time/s")
     plt.ylabel("#Event")
-    plt.savefig("NuType%d_Model%d_flux.pdf" %(tp, imode))
+    plt.savefig("./outputs/NuType%d_Model%d_flux.pdf" %(tp, imode))
     print("Flux plot has been created with nuType %d and energy %.2f" %(tp, E) )
 
 def fluxPlotAllType(E, imode):
     alltype = 3
     ty = [0, 1, 2]
     tyname = [r"$\nu_e$", r"$\nu_{\bar{e}}$", r"$\nu_x / \nu_{\bar{x}}$"]
-    tt = []
+    tt   = [[] for i in range(alltype)]
     flux = [[] for i in range(alltype)]
-    for  i in range(alltype):
-        tt.append( np.arange(timeMin[i], timeMax[i], 0.0001) )
     for i in ty:
-        for t in tt[i]:
+        for t in np.arange(timeMin[i], timeMax[i], 0.0001):
+            try:
+                getEventAtTime(t, E, i)
+            except ZeroDivisionError:
+                continue
+            tt[i].append(t)
             flux[i].append(getEventAtTime(t, E, i))
+        plt.plot(tt[i], flux[i], label=tyname[i])
 
-    plt.plot(tt[0], flux[0], label=tyname[0])
     plt.xlabel("time/s")
     plt.ylabel("#Event")
     plt.legend()
-    plt.savefig("AllNuType_Model%d_flux.pdf" %(imode))
+    #plt.semilogy()
+    plt.savefig("./outputs/AllNuType_Model%d_flux.pdf" %(imode))
     print("Flux plot has been created with all nuType  and energy %.2f" %(E) )
 
+###################################################
 
 if __name__ == "__main__":
     readFluxGraph(82500)
     #print(getAverageET(1, 1))
-    #fluxPlotAllType(15, 82500)
-    fluxPlotOneType(15, 2, 82500)
+    fluxPlotAllType(15, 82500)
+    #fluxPlotOneType(15, 2, 82500)
     
