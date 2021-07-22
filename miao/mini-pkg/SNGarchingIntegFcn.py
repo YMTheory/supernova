@@ -183,9 +183,3 @@ def fluxPlotAllType(E, imode):
 
 ###################################################
 
-if __name__ == "__main__":
-    readFluxGraph(82500)
-    #print(getAverageET(1, 1))
-    fluxPlotAllType(15, 82500)
-    #fluxPlotOneType(15, 2, 82500)
-    
