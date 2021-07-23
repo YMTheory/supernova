@@ -290,3 +290,77 @@ def diffXS():
     plt.legend()
     plt.savefig("./outputs/nue15MeV_diffxs.pdf")
 
+
+
+def NEv_spectra_allType():
+    SNGar = SNnumGarchingSrc(imode, 10)
+    SNGar.readSpectrum()
+    T_nue, nEv_nue, nEv_nue_NO, nEv_nue_IO              = [], [], [], []
+    T_nuebar, nEv_nuebar, nEv_nuebar_NO, nEv_nuebar_IO  = [], [], [], []
+    T_nux, nEv_nux, nEv_nux_NO, nEv_nux_IO              = [], [], [], []
+
+    T_nue = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue:
+        nEv_nue.append(SNGar.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+    T_nuebar = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nuebar:
+        nEv_nuebar.append(SNGar.oneSNFluenceDetTimeIntegE(i, 1, 0))
+        nEv_nuebar_NO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 1, 1))
+        nEv_nuebar_IO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 1, 2))
+
+
+    T_nux = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nux:
+        nEv_nux.append(SNGar.oneSNFluenceDetTimeIntegE(i, 2, 0))
+        nEv_nux_NO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 2, 1))
+        nEv_nux_IO.append(SNGar.oneSNFluenceDetTimeIntegE(i, 2, 2))
+
+
+    plt.plot(T_nue, nEv_nue,    "-" , color="blue" , label=nuTypeName[0]+", w/o osc")
+    plt.plot(T_nue, nEv_nue_NO, "--", color="blue" , label=nuTypeName[0]+", w/ NO")
+    plt.plot(T_nue, nEv_nue_IO, "-.", color="blue" , label=nuTypeName[0]+", w/ IO")
+    #plt.plot(T_nuebar, nEv_nuebar,    "-" , color="seagreen", label=nuTypeName[1])
+    #plt.plot(T_nuebar, nEv_nuebar_NO, "--", color="seagreen")
+    #plt.plot(T_nuebar, nEv_nuebar_IO, "-.", color="seagreen")
+    #plt.plot(T_nux, nEv_nux,    "-" ,color="orange", label=nuTypeName[2])
+    #plt.plot(T_nux, nEv_nux_NO, "--",color="orange")
+    #plt.plot(T_nux, nEv_nux_IO, "-.",color="orange")
+
+    plt.xlabel("time/s")
+    plt.ylabel("nEv")
+    plt.legend()
+    plt.savefig("./outputs/NEv_spectra_nue_Garching%d.pdf"%imode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,8 +6,8 @@ if __name__ == "__main__":
     #pp.AveE_vs_time_allType()
     #pp.Energy_spectra_allType()
     #pp.Energy_time_2D_OneType(0)
-    pp.diffXS()
-
+    #pp.diffXS()
+    pp.NEv_spectra_allType()
 
 
 
