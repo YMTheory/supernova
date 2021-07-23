@@ -8,10 +8,11 @@ supernova study in JUNO
     -simulation: packages developed by Huiling Li;
         - data: all numerical models collected from different groups: SN, preSN, long cooling...
         - src: source codes for SN detection simulation;   
-            - SNnumGarchingSrc(imodel)
-            - SNGarchingIntegFcn(imodel)
             - SNsource: distance
-            - SNeffectLS: energy_threshold, 
+                - SNnumGarchingSrc(imodel) source派生类
+                - SNGarchingIntegFcn(imodel)
+            - SNeffectLS: energy_threshold
+                - SNnueLS: 从SNeffectLS派生，描述探测器响应->微分截面和总截面。
 
     - generatePDF.py: 产生SNmode的时间谱和能谱 "etSpec/fineSpec"
         - configurations: 需要配置给脚本的inputs
@@ -45,6 +46,7 @@ supernova study in JUNO
                     deltaT = 5.14e-3 * (nuMass*nuMass) * (100.0/E/E) * (dist/10)
                     time += time + DeltaT
                     
+            - Detector response: 探测器响应的描述，以NuE弹性散射道为例
 
 
 
