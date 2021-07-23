@@ -123,13 +123,13 @@ def getNumT(time, tp):
     if tp<2:
         if time < timeMin[tp]:
             return 0
-        if time < timeMax[tp]:
+        if time > timeMax[tp]:
             return 0
         num = grLuminosity[tp].Eval(time)/(grAverageE[tp].Eval(time))
     if tp >=2:
         if time < timeMin[2]:
             return 0
-        if time < timeMax[2]:
+        if time > timeMax[2]:
             return 0
         num = grLuminosity[2].Eval(time)/(grAverageE[2].Eval(time))
 

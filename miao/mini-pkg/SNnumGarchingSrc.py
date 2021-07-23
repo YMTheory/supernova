@@ -84,7 +84,7 @@ class SNnumGarchingSrc(object):
         index = 1/(4*np.pi)/3.086e21**2/self.dist/self.dist
         fluence = 0
         if MH == 0:
-            return gar.getNumT(time, tp)
+            return index*gar.getNumT(time, tp)
         p, pbar = 0, 0
         if MH == 1:
             p = 0.022
