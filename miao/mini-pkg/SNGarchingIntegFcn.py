@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import ROOT
 import sys
 import re
@@ -138,48 +137,4 @@ def getNumT(time, tp):
     return index * num
 
 
-
-###################################################
-
-def fluxPlotOneType(E, tp, imode):
-
-    tt, flux = [], []
-    for i in np.arange(timeMin[tp], timeMax[tp], 0.0001):
-        try:
-            getEventAtTime(i, E, tp)
-        except ZeroDivisionError:
-            continue
-        tt.append(i)
-        flux.append( getEventAtTime(i, E, tp) )
-
-    plt.plot(tt, flux, "-")
-    plt.xlabel("time/s")
-    plt.ylabel("#Event")
-    plt.savefig("./outputs/NuType%d_Model%d_flux.pdf" %(tp, imode))
-    print("Flux plot has been created with nuType %d and energy %.2f" %(tp, E) )
-
-def fluxPlotAllType(E, imode):
-    alltype = 3
-    ty = [0, 1, 2]
-    tyname = [r"$\nu_e$", r"$\nu_{\bar{e}}$", r"$\nu_x / \nu_{\bar{x}}$"]
-    tt   = [[] for i in range(alltype)]
-    flux = [[] for i in range(alltype)]
-    for i in ty:
-        for t in np.arange(timeMin[i], timeMax[i], 0.0001):
-            try:
-                getEventAtTime(t, E, i)
-            except ZeroDivisionError:
-                continue
-            tt[i].append(t)
-            flux[i].append(getEventAtTime(t, E, i))
-        plt.plot(tt[i], flux[i], label=tyname[i])
-
-    plt.xlabel("time/s")
-    plt.ylabel("#Event")
-    plt.legend()
-    #plt.semilogy()
-    plt.savefig("./outputs/AllNuType_Model%d_flux.pdf" %(imode))
-    print("Flux plot has been created with all nuType  and energy %.2f" %(E) )
-
-###################################################
 

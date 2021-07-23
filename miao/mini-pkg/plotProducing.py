@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import SNGarchingIntegFcn as gar
 from SNnumGarchingSrc import SNnumGarchingSrc
+import SNnueXS as nuexs
 
-imode = 82500
+imode = 82503
 gar.readFluxGraph(imode)
 nuTypeName = [r"$\nu_e$", r"$\nu_{\bar{e}}$", r"$\nu_x$", r"$\nu_{\bar{x}}$"]
 
@@ -141,6 +142,7 @@ def AveE_vs_time_allType():
     plt.legend()
     plt.xlabel("time/s")
     plt.ylabel("AverageE/MeV")
+    plt.ylim(6, 18)
     plt.savefig("./outputs/AveE_vs_time_allType_burst_Garching%d.pdf" %imode)
 
     plt.figure(1)
@@ -150,6 +152,7 @@ def AveE_vs_time_allType():
     plt.legend()
     plt.xlabel("time/s")
     plt.ylabel("AverageE/MeV")
+    plt.ylim(6, 18)
     plt.savefig("./outputs/AveE_vs_time_allType_accretion_Garching%d.pdf"%imode)
 
     plt.figure(2)
@@ -159,6 +162,7 @@ def AveE_vs_time_allType():
     plt.legend()
     plt.xlabel("time/s")
     plt.ylabel("AverageE/MeV")
+    plt.ylim(6, 18)
     plt.savefig("./outputs/AveE_vs_time_allType_cooling_Garching%d.pdf"%imode)
 
     print("AveE_vs_time_allType.pdf has been created !!!")
@@ -166,4 +170,123 @@ def AveE_vs_time_allType():
 
 
 
+def Energy_spectra_allType():
+    SNGar = SNnumGarchingSrc(imode, 10)
+    SNGar.readSpectrum()
+    E_nue, fluence_nue, fluence_nue_NO, fluence_nue_IO              = [], [], [], []
+    E_nuebar, fluence_nuebar, fluence_nuebar_NO, fluence_nuebar_IO  = [], [], [], []
+    E_nux, fluence_nux, fluence_nux_NO, fluence_nux_IO              = [], [], [], []
+
+    E_nue = np.arange(0.1, 40, 0.1)
+    for i in E_nue:
+        fluence_nue.append(SNGar.oneSNFluenceDet(i, 0))
+        fluence_nue_NO.append(SNGar.oneSNFluenceDetMH(i, 0, 1))
+        fluence_nue_IO.append(SNGar.oneSNFluenceDetMH(i, 0, 2))
+
+    E_nuebar = np.arange(0.1, 40, 0.1)
+    for i in E_nuebar:
+        fluence_nuebar.append(SNGar.oneSNFluenceDet(i, 1))
+        fluence_nuebar_NO.append(SNGar.oneSNFluenceDetMH(i, 1, 1))
+        fluence_nuebar_IO.append(SNGar.oneSNFluenceDetMH(i, 1, 2))
+
+
+    E_nux = np.arange(0.1, 40, 0.1)
+    for i in E_nux:
+        fluence_nux.append(SNGar.oneSNFluenceDet(i, 2))
+        fluence_nux_NO.append(SNGar.oneSNFluenceDetMH(i, 2, 1))
+        fluence_nux_IO.append(SNGar.oneSNFluenceDetMH(i, 2, 2))
+
+
+    plt.plot(E_nue, fluence_nue,    "-" , color="blue" , label=nuTypeName[0])
+    plt.plot(E_nue, fluence_nue_NO, "--", color="blue")
+    plt.plot(E_nue, fluence_nue_IO, "-.", color="blue")
+    plt.plot(E_nuebar, fluence_nuebar,    "-" , color="seagreen", label=nuTypeName[1])
+    plt.plot(E_nuebar, fluence_nuebar_NO, "--", color="seagreen")
+    plt.plot(E_nuebar, fluence_nuebar_IO, "-.", color="seagreen")
+    plt.plot(E_nux, fluence_nux,    "-" ,color="orange", label=nuTypeName[2])
+    plt.plot(E_nux, fluence_nux_NO, "--",color="orange")
+    plt.plot(E_nux, fluence_nux_IO, "-.",color="orange")
+
+    plt.hlines(1.35e10, 20, 22, linestyle="-")
+    plt.text(23, 1.35e10, "w/o osc")
+    plt.hlines(1.25e10, 20, 22, linestyle="--")
+    plt.text(23, 1.25e10, "w/ osc, NO")
+    plt.hlines(1.15e10, 20, 22, linestyle="-.")
+    plt.text(23, 1.15e10, "w/ osc, IO")
+
+    plt.xlabel(r"$E_\nu$/MeV")
+    plt.ylabel("fluence")
+    plt.legend()
+    plt.savefig("./outputs/Energy_spectra_allType_Garching%d.pdf"%imode)
+
+
+
+
+import ROOT
+from array import array
+def Energy_time_2D_OneType(tp):
+    # time binning
+    tmin, tmax = -0.1, 0.1
+    #t1_thr, t2_thr = -0.025, 0.05
+    t1_thr, t2_thr = -0.025, 0.1
+    step_t0, step_t1, step_t2 = 0.00005, 0.00005, 0.0005
+    npt0 = round( (t1_thr-tmin)/step_t0 )
+    npt1 = round( (t2_thr-t1_thr)/step_t1 )
+    npt2 = round( (tmax-t2_thr)/step_t2 )
+    nbin_time = npt0 + npt1 + npt2
+    
+    # time binning
+    binning_time = array('d', [])
+    for ip in range(npt0):
+        binning_time.append( tmin+step_t0*ip )
+    
+    for ip in range(npt0, npt0 + npt1):
+        binning_time.append( t1_thr+step_t1*(ip-npt0) )
+
+    for ip in range(npt0 + npt1, npt0 + npt1 + npt2):
+        binning_time.append( t2_thr+step_t2*(ip-npt0-npt1) )
+    
+    binning_time.append(tmax)
+
+    # Enu binning
+    Evmin,   Evmax,   step_Ev   = 0.0, 60.0, 0.2
+    nbins_Ev   = round( (Evmax-Evmin)/step_Ev )
+
+
+    hist = ROOT.TH2D("hET_source", "", nbin_time, binning_time, nbins_Ev, Evmin, Evmax)
+    for i in range(hist.GetNbinsX()):
+        for j in range(hist.GetNbinsY()):
+            t = hist.GetXaxis().GetBinCenter(i+1)
+            E = hist.GetYaxis().GetBinCenter(j+1)
+            cont = gar.getEventAtTime(t, E, tp)
+            hist.Fill(t, E, cont)
+
+    fout = ROOT.TFile("TEv_source_Garching%d.root"%imode, "recreate")
+    hist.Write()
+    fout.Close()
+    print("TEv_source_Garching rootfile has been created !!!")
+
+
+
+
+def diffXS():
+    diffxs0, diffxs1, diffxs2, diffxs3 = [], [], [], []
+    Enu = 15  # MeV
+    Evis = np.arange(0.1, Enu-0.1, 0.1)
+    for i in Evis:
+        diffxs0.append( nuexs.differentialXS(Enu, i, 0) )
+        diffxs1.append( nuexs.differentialXS(Enu, i, 1) )
+        diffxs2.append( nuexs.differentialXS(Enu, i, 2) )
+        diffxs3.append( nuexs.differentialXS(Enu, i, 3) )
+
+    plt.plot(Evis, diffxs0, label=nuTypeName[0])
+    plt.plot(Evis, diffxs1, label=nuTypeName[1])
+    plt.plot(Evis, diffxs2, label=nuTypeName[2])
+    plt.plot(Evis, diffxs3, label=nuTypeName[3])
+
+    plt.grid(True)
+    plt.xlabel(r"$T_{e^-}$/MeV")
+    plt.ylabel("diffXS")
+    plt.legend()
+    plt.savefig("./outputs/nue15MeV_diffxs.pdf")
 
