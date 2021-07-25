@@ -267,6 +267,26 @@ def Energy_time_2D_OneType(tp):
     print("TEv_source_Garching rootfile has been created !!!")
 
 
+def totalXS():
+    totxs0, totxs1, totxs2, totxs3 = [], [], [], []
+    Ev = np.arange(0.0, 60, 0.1)
+    for i in Ev:
+        totxs0.append( nuexs.totalXS(i, 0) )
+        totxs1.append( nuexs.totalXS(i, 1) )
+        totxs2.append( nuexs.totalXS(i, 2) )
+        totxs3.append( nuexs.totalXS(i, 3) )
+
+    plt.plot(Ev, totxs0, label=nuTypeName[0])
+    plt.plot(Ev, totxs1, label=nuTypeName[1])
+    plt.plot(Ev, totxs2, label=nuTypeName[2])
+    plt.plot(Ev, totxs3, label=nuTypeName[3])
+
+    plt.grid(True)
+    plt.xlabel(r"$T_{e^-}$/MeV")
+    plt.ylabel(r"$\nu$-eES cross section[cm$^{2}$]")
+    plt.legend()
+    plt.savefig("./outputs/nue_totxs.pdf")
+
 
 
 def diffXS():
@@ -286,7 +306,7 @@ def diffXS():
 
     plt.grid(True)
     plt.xlabel(r"$T_{e^-}$/MeV")
-    plt.ylabel("diffXS")
+    plt.ylabel(r"$\nu$-eES cross section[cm$^{2}$ MeV$^{-1}$]")
     plt.legend()
     plt.savefig("./outputs/nue15MeV_diffxs.pdf")
 
@@ -336,29 +356,123 @@ def NEv_spectra_allType():
 
 
 
+from EvEneSpec import EvEneSpec
+def Energy_spectra_allType_miao():
+    spec = EvEneSpec(1, 12, 1)
+    Ev = np.arange(0.1, 60, 0.1)
+    dFdE = spec.KRJ_dFdE(Ev)
+    
+    plt.plot(Ev, dFdE, "-")
+    plt.show()
 
 
 
 
+def compare_garching_NEvT():
+    mode_arr = [71200, 73500, 81500, 82503, 92000]
+    T_nue0, nEv_nue0, nEv_nue_NO0, nEv_nue_IO0              = [], [], [], []
+    T_nue1, nEv_nue1, nEv_nue_NO1, nEv_nue_IO1              = [], [], [], []
+    T_nue2, nEv_nue2, nEv_nue_NO2, nEv_nue_IO2              = [], [], [], []
+    T_nue3, nEv_nue3, nEv_nue_NO3, nEv_nue_IO3              = [], [], [], []
+    T_nue4, nEv_nue4, nEv_nue_NO4, nEv_nue_IO4              = [], [], [], []
+
+    SNGar0 = SNnumGarchingSrc(mode_arr[0], 10)
+    SNGar0.readSpectrum()
+    T_nue0 = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue0:
+        nEv_nue0.append(SNGar0.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO0.append(SNGar0.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO0.append(SNGar0.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+    SNGar1 = SNnumGarchingSrc(mode_arr[1], 10)
+    SNGar1.readSpectrum()
+    T_nue1 = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue1:
+        nEv_nue1.append(SNGar1.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO1.append(SNGar1.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO1.append(SNGar1.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+
+
+    SNGar2 = SNnumGarchingSrc(mode_arr[2], 10)
+    SNGar2.readSpectrum()
+    T_nue2 = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue2:
+        nEv_nue2.append(SNGar2.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO2.append(SNGar2.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO2.append(SNGar2.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+
+    SNGar3 = SNnumGarchingSrc(mode_arr[3], 10)
+    SNGar3.readSpectrum()
+    T_nue3 = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue3:
+        nEv_nue3.append(SNGar3.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO3.append(SNGar3.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO3.append(SNGar3.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+
+    SNGar4 = SNnumGarchingSrc(mode_arr[4], 10)
+    SNGar4.readSpectrum()
+    T_nue4 = np.arange(-0.1, 0.1, 0.0001)
+    for i in T_nue4:
+        nEv_nue4.append(SNGar4.oneSNFluenceDetTimeIntegE(i, 0, 0))
+        nEv_nue_NO4.append(SNGar4.oneSNFluenceDetTimeIntegE(i, 0, 1))
+        nEv_nue_IO4.append(SNGar4.oneSNFluenceDetTimeIntegE(i, 0, 2))
+
+
+
+    plt.plot(T_nue0, nEv_nue_NO0,    "-"  , label=r"Garching%d, $\nu_e NO$"%mode_arr[0])
+    plt.plot(T_nue1, nEv_nue_NO1,    "-"  , label=r"Garching%d, $\nu_e NO$"%mode_arr[1])
+    plt.plot(T_nue2, nEv_nue_NO2,    "-"  , label=r"Garching%d, $\nu_e NO$"%mode_arr[2])
+    plt.plot(T_nue3, nEv_nue_NO3,    "-"  , label=r"Garching%d, $\nu_e NO$"%mode_arr[3])
+    plt.plot(T_nue4, nEv_nue_NO4,    "-"  , label=r"Garching%d, $\nu_e NO$"%mode_arr[4])
+
+    plt.xlabel("time/s")
+    plt.ylabel("nEv")
+    plt.legend()
+
+    plt.savefig("./outputs/compare_Garching_nEvt2T_NO.pdf")
+    plt.show()
 
 
 
 
+libSNsimDir = '/junofs/users/miaoyu/supernova/wenlj/simulation/lib/libSNsim.so'
+#libSNsimDir = os.getenv('SNCODEDIR') + '/simulation/lib/libSNsim.so'
+ROOT.gSystem.Load(libSNsimDir)
+print('Load', libSNsimDir)
+def NEvis_spectra_allType():
 
+    snDet = ROOT.SNdetect.instance()
+    modelNum = imode
+    snDet.setSrcModel(modelNum)
+    modelSrc = snDet.getPointerSrc()
 
+    # -- configurations -- #
+    snDet.initChannel(1)
+    modelSrc.setSNDistance(10)
+    Ethr = 0.2
+    snDet.getPointerEffectLS().setThresholdE(Ethr)
+    snDet.initFCN()
 
-
-
-
-
-
-
-
-
-
-
-
-
+    
+    NEvis, NEvis_NO, NEvis_IO = [], [], []
+    T_vis = np.arange(-0.1, 0.1, 0.001)
+    for i in T_vis:
+        NEvis.append(snDet.getEventAboveEthrVisAtTime(i, Ethr, -1, 0))
+        NEvis_NO.append(snDet.getEventAboveEthrVisAtTime(i, Ethr, -1, 1))
+        NEvis_IO.append(snDet.getEventAboveEthrVisAtTime(i, Ethr, -1, 2))
+        print(i, NEvis[-1], NEvis_NO[-1], NEvis_IO[-1])
+    
+    plt.plot(T_vis, NEvis, "-", label="w/ osc")
+    plt.plot(T_vis, NEvis_NO, "--", label="NO")
+    plt.plot(T_vis, NEvis_IO, "-.", label="IO")
+    plt.legend()
+    plt.xlabel(r"$E_{dep}$/MeV")
+    plt.ylabel("Event Rate")
+    plt.savefig("./outputs/NEvis_spectra_allType.pdf")
+    plt.show()
 
 
 
