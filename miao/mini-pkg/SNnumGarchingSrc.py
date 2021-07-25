@@ -34,6 +34,9 @@ class SNnumGarchingSrc(object):
     def setDistance(self, d):
         self.dist = d
 
+    def setModeNum(self, imode):
+        self.mode = imode
+
 
     def oneSNFluenceDet(self, E, tp):
         if self.loadFlag == False:

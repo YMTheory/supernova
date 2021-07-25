@@ -3,13 +3,13 @@ import numpy as np
 
 
 def differentialXS(E, T, tp):
-    me = 0.511
+    me = 0.511e-3   # GeV
     if E<(T/2+np.sqrt(T*(T+me))/2.):
         return 0
     diffxs = 0
     sin2_thetaW = 0.23
     epsi_p, epsi_m = 0, 0
-    indexG = 1.732e-44
+    indexG = 1.732e-44    # my own calc value = 1.716e-44
     if tp == 2 or tp==4:
         epsi_p = -1*sin2_thetaW
         epsi_m = 0.5 - sin2_thetaW
