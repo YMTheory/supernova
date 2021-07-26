@@ -46,11 +46,12 @@ def printHist(inputHist):
 if __name__ == "__main__":
 
     if len(sys.argv) < 8:
-        print("Usage: %s [modelNum] [channel] [nuType] [nuMass] [dist] [Ethr] [group]"  % (sys.argv[0]))
+        print("Usage: %s [modelNum] [channel] [nuType] [nuMass] [MH] [dist] [Ethr] [group]"  % (sys.argv[0]))
         print("modelNum: check the SNsim/simulation/data directory")
         print("channel : enum {NuP, NuE, IBD, NCC, BCC, CNC}")
         print("nuType  : -1 for all types; 0 nu_e; 1 anti_nue; 2 nu_x")
         print("nuMass  : neutrino mass that used to generate dataset, in eV unit")
+        print("MH      : mass hierarchy, 0 for no osc, 1 for NO, 2 for IO")
         print("dist    : SN distance in kpc unit")
         print("Ethr    : fit Energy threshold")
         print("group    : index of the groups")
@@ -77,16 +78,18 @@ if __name__ == "__main__":
     nuMass = float( sys.argv[4] )# unit: eV
     print('nuMass for producing dataset : ', nuMass, ' eV')
 
-    dist = float( sys.argv[5] )# unit: kpc
+    MH = int( sys.argv[5] )    
+    print("MO :", MH)
+
+    dist = float( sys.argv[6] )# unit: kpc
     print('dist: ', dist, ' kpc')
 
-    Ethr = float( sys.argv[6] )# unit: kpc
+    Ethr = float( sys.argv[7] )# unit: kpc
     print('fit Ethr: ', Ethr, ' MeV')
     
-    group = int( sys.argv[7] )# group number
+    group = int( sys.argv[8] )# group number
     print('group number: ', group)
 
-    MH = 2
     ##################################
     # Obtain histograms from the root files
     prefix = "./etSpec/fineSpec/TEvisPDF_"
