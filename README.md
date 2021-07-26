@@ -46,8 +46,17 @@ supernova study in JUNO
                     deltaT = 5.14e-3 * (nuMass*nuMass) * (100.0/E/E) * (dist/10)
                     time += time + DeltaT
                     
-            - Detector response: 探测器响应的描述，以NuE弹性散射道为例
+        - Detector response: 探测器响应的描述，以NuE弹性散射道为例
 
+        - SNDetect.cc" consider cross section, Ev->Evis...  (quenching, resolution)
+
+    - generateDataSets.py: 产生toyMC datasets 
+        - Read PDF files from etSpec/fineSpec
+        - Get total entries in current PDF: -> Poisson sampling, 500 times subsampling;
+        - Load 2D and 1D projection (on time) histograms -> RooDataHist, then generate histPdf -> RootHistPdf
+        - randomly sampling :
+            - fixed stat. -> fixed nu event number
+            - rndm  stat. -> poisson random sampling event number
 
 
     - nllFit.py: configurations in cmd.py -> python cmd.py to see details; 
