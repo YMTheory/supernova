@@ -50,6 +50,9 @@ supernova study in JUNO
 
         - SNDetect.cc" consider cross section, Ev->Evis...  (quenching, resolution)
 
+
+
+
     - generateDataSets.py: 产生toyMC datasets 
         - Read PDF files from etSpec/fineSpec
         - Get total entries in current PDF: -> Poisson sampling, 500 times subsampling;
@@ -59,11 +62,37 @@ supernova study in JUNO
             - rndm  stat. -> poisson random sampling event number
 
 
+
+    *问题：目前的拟合似乎是基于沉积能量Edep所填直方图进行的，而并没有加上quenching和resolution等一系列探测器响应。*
+
+
     - nllFit.py: configurations in cmd.py -> python cmd.py to see details; 
         - A likelihood fit;
-        - Read fitting pdf from etSpec root histogram (Th2D->ProjectX);
-        - Read toy data from datasets;
-        - loop 100 events
+        - Structure:
+            1. load inputHist from etSpec/fineSpec rootFile; inputHist1D: as inputHist projectionX with Ethr and Evismax limits e.g. [0.1MeV, 10.0MeV]   (用于构建pdf)
+            2. convert inputHist -> RooDataHist -> RooHistPdf
+               inputHist1D -> RooDataHist -> RooHistPdf
+               ExtendedPdf  ->  fitPdf1D
+            3. load MC datasets from dataset/fineSpec root file -> only get nuTime1D and evt1D here
+            4. loop in datasets:
+                a. RooDataSet (nuTime1D with current evtID)
+                b. fitdata construction: add(timeTmp, weight, weightError) -> 1D fitting
+                c. fitTo dataset -> 5 times trys -> sort the minimum minNll as the final results
+                d. fitting parameters: nsig, offset ( 2 physical parameters )
+
+            - global time offset requires fine tuning ...
+
+        - Outputs: 
+            1. A summary results for "iSub, offset, nll, nsig, nEvtTrue, status"
+            2. pdf for fitting plots
+
+
+    - nllProfile.py
+
+    - nllProfileMH.py
+
+
+
     - datasets: 
         - tFixedStat: nuTime1D->toy dataset of nu time profiles 
     - etSpec:
