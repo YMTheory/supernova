@@ -1,10 +1,10 @@
 #!/bin/bash
-export SNSIMDIR=/junofs/users/wenlj/juno/supernova/workStation/SNsim
+export SNSIMDIR=/junofs/users/miaoyu/supernova/wenlj
 export OutPath=${SNSIMDIR}/dataset
 export SubPath=${SNSIMDIR}/job
 export LogPath=${SNSIMDIR}/log
 
-dist=5
+dist=10
 
 function create_job()
 {
