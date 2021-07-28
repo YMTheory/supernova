@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sys, os
 import math
 import numpy.ma as ma
+import namespace as ns
 
 
 def getValue(strline):
@@ -118,9 +119,9 @@ if __name__ == "__main__":
         for imh in range(1, 3, 1):
 
             nuMass2 = iPDF * 0.1
-            resFilename = prefix + '_mh%d_pdf%2.1feV'%(imh, nuMass2) + postfix
 
-            t1, t2, t3, t4, t5, t6 = getNLL(resFilename, num_datasets)
+            filename = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, imh, nuMass2, dist, Ethr, group)[1]
+            t1, t2, t3, t4, t5, t6 = getNLL(filename, num_datasets)
 
             if imh == 1:   #NO
                 groupNum_NO = groupNum_NO + t1
@@ -475,14 +476,17 @@ if __name__ == "__main__":
     plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
     plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
 
-    #fig4, ax4 = plt.subplots(1,1)
-    #nCounts, bins, patches = plt.hist(DeltaChisq,bins=np.linspace(0,chi2Max,100))
-    #nCounts = np.array(nCounts)
-    #ax4.set_ylabel('Counts ({} trials total)'.format(num_datasets))
-    #ax4.set_xlabel(r'$\chi^2(NO) - \chi^2(IO)$')
-    #picName = './spectra/fineSpec/NMOSens_data%2.1f_mh%d_%2.1fkpc_group%d'\
-    #          %(nuMass1, dataMH, dist, group)
-    #plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
+    fig4, ax4 = plt.subplots(1,1)
+    print("========>")
+    print(chi2Max)
+    print(DeltaChisq)
+    nCounts, bins, patches = plt.hist(DeltaChisq,bins=np.linspace(0, DeltaChisq.max()+10,100))
+    nCounts = np.array(nCounts)
+    ax4.set_ylabel('Counts ({} trials total)'.format(num_datasets))
+    ax4.set_xlabel(r'$\chi^2(NO) - \chi^2(IO)$')
+    picName = './spectra/fineSpec/NMOSens_data%2.1f_mh%d_%2.1fkpc_group%d'\
+              %(nuMass1, dataMH, dist, group)
+    plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
     #plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
 
     #fig3, ax3 = plt.subplots(1,1)

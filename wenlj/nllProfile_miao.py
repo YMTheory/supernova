@@ -2,6 +2,7 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import namespace as ns
 
 def getValue(strline):
     values = strline.split()
@@ -18,6 +19,7 @@ def getNLL(filename, num_datasets):
     groupNum, deltaT, nllVal, nsig = [], [], [], []
     
     if os.path.exists(filename) == False:
+        print("%s does not exist !" %filename)
         return groupNum, deltaT, nllVal, nsig
 
     file = open(filename, 'r')
@@ -78,10 +80,10 @@ if __name__ == "__main__":
 
 
     ## -----> Load Fit Summary Results <----- ##
-    prefix  = "./dataset/fineSpec/%2.1fkpc/TEvisDATA_" %(dist)
-    prefix += "mod%d_cha%d%s_mh%d" %(modelNum, chaname, chaName[chaname], dataMH) 
-    resFilename = prefix + "_data%2.1feV_mh%d_pdf" %(nuMass1, fitMH)
-    suffix = "eV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFitSummary_Tmax0.02.txt" %(dist, Ethr, group)
+    #prefix  = "./dataset/%2.1fkpc/TEvisDATA_" %(dist)
+    #prefix += "mod%d_cha%d%s_mh%d" %(modelNum, chaname, chaName[chaname], dataMH) 
+    #resFilename = prefix + "_data%2.1feV_mh%d_pdf" %(nuMass1, fitMH)
+    #suffix = "eV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFitSummary_Tmax0.02.txt" %(dist, Ethr, group)
     #print(resFilename+suffix)
 
     num_datasets = 100
@@ -97,8 +99,8 @@ if __name__ == "__main__":
     for iPDF in range(numass_hypotheses):
         
         groupNum, deltaT, nllVal, nsig = [], [], [], []
-        nuMass2 = "%2.1f" %(iPDF * 0.1) #eV
-        filename = resFilename + nuMass2 + suffix 
+        nuMass2 = iPDF * 0.1 #eV
+        filename = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)[1]
         t1, t2, t3, t4 = getNLL(filename, nStatsPerGroup)
         groupNum = groupNum + t1
         deltaT = deltaT + t2
@@ -108,41 +110,41 @@ if __name__ == "__main__":
         for iData in range(num_datasets):
             lambdas[iData, iPDF] = nllVal[iData] * 2
 
-        #maxT = np.max(deltaT)
-        #minT = np.min(deltaT)
-        #tBins = int( (maxT - minT)/0.0001)
-        #print('iPDF, tBins, minT, maxT', iPDF, tBins, minT, maxT)
-        #if tBins == 0:
-        #    continue
-
-        #ix = int(iPDF/7)
-        #iy = iPDF - 7*ix
-        #axs[ix, iy] = plt.subplot(3, 7, 1+iPDF)
-        #axs[ix, iy].hist(deltaT, bins=tBins, range=(minT, maxT))
-        #axs[ix, iy].set_ylabel('at' +nuMass2+ 'eV')
-
-
-    #picName = './spectra/fineSpec/dT_data%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_dataMH%d_fitMH%d_Tmax0.02'%(nuMass1, dist, Ethr, group, dataMH, fitMH)
-    #plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
-
-
-
-        maxNll = np.max(nllVal)
-        minNll = np.min(nllVal)
-        nllBins = int( (maxNll - minNll)/1.0)
-        print('iPDF, nllBins, minNll, maxNll', iPDF, nllBins, minNll, maxNll)
-        if nllBins == 0:
+        maxT = np.max(deltaT)
+        minT = np.min(deltaT)
+        tBins = int( (maxT - minT)/0.0001)
+        print('iPDF, tBins, minT, maxT', iPDF, tBins, minT, maxT)
+        if tBins == 0:
             continue
+
         ix = int(iPDF/7)
         iy = iPDF - 7*ix
         axs[ix, iy] = plt.subplot(3, 7, 1+iPDF)
-        axs[ix, iy].hist(nllVal, bins=nllBins, range=(minNll, maxNll))
-        axs[ix, iy].set_ylabel('at' +nuMass2+ 'eV')
+        axs[ix, iy].hist(deltaT, bins=tBins, range=(minT, maxT))
+        axs[ix, iy].set_ylabel('at %2.1f eV'%nuMass2)
+
+
+    picName = './spectra/fineSpec/dT_data%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_dataMH%d_fitMH%d_Tmax0.02'%(nuMass1, dist, Ethr, group, dataMH, fitMH)
+    plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
 
 
 
-    picName = './spectra/fineSpec/nll_data%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_dataMH%d_fitMH%d_Tmax0.02'%(nuMass1, dist, Ethr, group, dataMH, fitMH)
-    plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
+    #    maxNll = np.max(nllVal)
+    #    minNll = np.min(nllVal)
+    #    nllBins = int( (maxNll - minNll)/1.0)
+    #    print('iPDF, nllBins, minNll, maxNll', iPDF, nllBins, minNll, maxNll)
+    #    if nllBins == 0:
+    #        continue
+    #    ix = int(iPDF/7)
+    #    iy = iPDF - 7*ix
+    #    axs[ix, iy] = plt.subplot(3, 7, 1+iPDF)
+    #    axs[ix, iy].hist(nllVal, bins=nllBins, range=(minNll, maxNll))
+    #    axs[ix, iy].set_ylabel('at' +nuMass2+ 'eV')
+
+
+
+    #picName = './spectra/fineSpec/nll_data%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_dataMH%d_fitMH%d_Tmax0.02'%(nuMass1, dist, Ethr, group, dataMH, fitMH)
+    #plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
 
 
 
@@ -160,13 +162,13 @@ if __name__ == "__main__":
         mask = (nllShifted>=0.)&(nllShifted<7.)
         #print(mask)
 
-        if len(xvals[mask]) > 0:
-            p = np.polyfit(xvals[mask],nllShifted[mask],2.)
-            crossings[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
-            if math.isnan(crossings[iData])==True:
-                crossings_mask[iData] = False
-            elif crossings[iData]>1.5:
-                crossings_mask[iData] = False
+        #if len(xvals[mask]) > 0:
+        #    p = np.polyfit(xvals[mask],nllShifted[mask],2.)
+        #    crossings[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
+        #    if math.isnan(crossings[iData])==True:
+        #        crossings_mask[iData] = False
+        #    elif crossings[iData]>1.5:
+        #        crossings_mask[iData] = False
 
     plt.plot(xvals,np.ones(len(xvals))*2.706,'--k')
     plt.text(0.5,2.9,'90% confidence threshold (Wilks\')',fontsize=14)
