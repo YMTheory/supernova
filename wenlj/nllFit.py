@@ -9,6 +9,7 @@ import numpy as np
 import gc
 import time
 from array import array
+import namespace as ns
 
 def setGraphStyle(gr, markerStyle, lineStyle):
     gr.SetMarkerStyle(markerStyle[0])
@@ -24,35 +25,8 @@ def getIntegral(hist2d, x1, x2, y1, y2, opt):
     biny1 = hist2d.GetYaxis().FindBin(y1)
     biny2 = hist2d.GetYaxis().FindBin(y2)
 
-    # print('LowEdge(binx1)',  hist2d.GetXaxis().GetBinLowEdge(binx1))
-    # print('LowEdge(binx2+1)',  hist2d.GetXaxis().GetBinLowEdge(binx2+1))
-    # print('LowEdge(biny1)',  hist2d.GetYaxis().GetBinLowEdge(biny1))
-    # print('LowEdge(biny2+1)',  hist2d.GetYaxis().GetBinLowEdge(biny2+1))
-
     return hist2d.Integral(binx1, binx2, biny1, biny2, opt)
 
-# def plotDataSet(xList, yList):
-#     plotx = np.arange(-0.2, 0.2)
-#     plt.plot(xList, yList,  "o", ms=5, label="Sinnock 1969")
-#     plt.xlabel('$\delta_{T}$ (s)')
-#     plt.ylabel('NLL')
-#     titlename = 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],MH)
-#     titlename += '_data%2.1feV_pdf%2.1feV'%(nuMass1, nuMass2)
-#     plt.title(titlename)
-#     pdf.savefig()
-
-# def printHist(inputHist):
-#     Tmin, Tmax, Emin, Emax = -0.05, 0.3, 0.2, 5.0
-#     print('Integral (%4.2f, %4.2f), (%4.2f, %4.2f): %10.3f'
-#         %(Tmin, Tmax, Emin, Emax, getIntegral(inputHist, Tmin, Tmax, Emin, Emax ,"width")*NEVENTS))
-
-#     Tmin, Tmax, Emin, Emax = -0.05, 0.2, 0.2, 3.0
-#     print('Integral (%4.2f, %4.2f), (%4.2f, %4.2f): %10.3f'
-#         %(Tmin, Tmax, Emin, Emax, getIntegral(inputHist, Tmin, Tmax, Emin, Emax ,"width")*NEVENTS))
-    
-#     Tmin, Tmax, Emin, Emax = -0.05, 0.3, 0.2, 3.0
-#     print('Integral (%4.2f, %4.2f), (%4.2f, %4.2f): %10.3f'
-#         %(Tmin, Tmax, Emin, Emax, getIntegral(inputHist, Tmin, Tmax, Emin, Emax ,"width")*NEVENTS))
 
 def getValue(strline):
     values = strline.split()
@@ -88,7 +62,7 @@ if __name__ == "__main__":
         print("channel : enum {NuP, NuE, IBD, NCC, BCC, CNC}")
         print("nuType  : -1 for all types; 0 nu_e; 1 anti_nue; 2 nu_x")
         print("nuMass1 : neutrino mass that used to generate dataset, in eV unit")
-        print("dataMH  : NMO that used to generate dataset")
+        print("dataMH  : NMO that used to generate dataset, 0 for NoOsc, 1 for NH, 2 for IH")
         print("nuMass2 : neutrino mass that used in PDF to fit the dataset, in eV unit")
         print("pdfMH   : NMO that used to generate PDF")
         print("dist    : SN distance in kpc unit")
@@ -139,15 +113,16 @@ if __name__ == "__main__":
     group = int( sys.argv[10] )# group number
     print('group number: ', group)
 
-    # ###################################
+
+
+
+    ################################################################################33
     # # Obtain the fitting PDF
-    prefix = "./etSpec/fineSpec/TEvisPDF_"
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],fitMH)
-    filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25.root'%(nuMass2, dist)
+    filename = ns.pdfFileName(modelNum, dist, chaname, nuMass2, fitMH)
     print(filename)
     pdfFile  = ROOT.TFile(filename, 'read')
-    inputHist = pdfFile.Get("hET_mod%d_cha%d_mh%d"%(modelNum, chaname, fitMH))
-    inputBKG  = pdfFile.Get("hETBKG_mod%d_cha%d_mh%d"%(modelNum, chaname, fitMH))
+    inputHist = pdfFile.Get(ns.pdfSigHist2DName(modelNum, chaname, fitMH))
+    inputBKG  = pdfFile.Get(ns.pdfBkgHist2DName(modelNum, chaname, fitMH))
 
     Tmin = inputHist.GetXaxis().GetXmin()
     Tmax = inputHist.GetXaxis().GetXmax()
@@ -160,8 +135,6 @@ if __name__ == "__main__":
     nuTime.setRange('fullRange', Tmin, Tmax)
 
     offset = ROOT.RooRealVar("offset", "offset", -0.01, 0.023)
-    #offset.setRange('nllRange', -0.01, 0.02)
-    #offset = ROOT.RooRealVar("offset", "offset", 0.0)
     shiftNuT = ROOT.RooFormulaVar("shiftNuT", "shiftNuT", "@0 + @1",\
                             ROOT.RooArgList(nuTime, offset))
 
@@ -187,13 +160,13 @@ if __name__ == "__main__":
     if chaname == 1:  # snDet.NuE
         Tmin, Tmax, Emin, Emax = -0.02, 0.025, 0.1, 10.0
 
-    if fitMH==0:
-        Tmin, Tmax = -0.015, 0.02
-    if fitMH==1:
-        Tmin, Tmax = -0.03, 0.02
-        #Tmin, Tmax = -0.04, 0.08
-    if fitMH==2:
-        Tmin, Tmax = -0.03, 0.02
+    #if fitMH==0:
+    #    Tmin, Tmax = -0.015, 0.02
+    #if fitMH==1:
+    #    Tmin, Tmax = -0.03, 0.02
+    #    #Tmin, Tmax = -0.04, 0.08
+    #if fitMH==2:
+    #    Tmin, Tmax = -0.03, 0.02
         #Tmin, Tmax = -0.04, 0.08
 
     nuTime.setRange('nllRange', Tmin, Tmax)
@@ -221,17 +194,6 @@ if __name__ == "__main__":
     sigPdf = ROOT.RooHistPdf('sigPdf', 'sigPdf', 
           ROOT.RooArgList(nuTime, nuEnergy), sigHist, 2)
 
-    #bkgPdf = ROOT.RooHistPdf('bkgPdf', 'bkgPdf', 
-    #      ROOT.RooArgList(nuTime, nuEnergy), bkgHist, 2)
-
-    #bkgHist1D = ROOT.RooDataHist('bkgHist1D', 'bkgHist1D', 
-    #      ROOT.RooArgList(nuTime), 
-    #      ROOT.RooFit.Import(inputBKG1D, True) )
-
-    #bkgPdf1D = ROOT.RooHistPdf('bkgPdf1D', 'bkgPdf1D', 
-    #       ROOT.RooArgList(shiftNuT), ROOT.RooArgList(nuTime), bkgHist1D, 1)
-
-    #scaleFac = ROOT.RooRealVar('scaleFac', 'scaleFac', )
     # 1D PDF in time domain
     sigHist1D = ROOT.RooDataHist('sigHist1D', 'sigHist1D', 
           ROOT.RooArgList(nuTime), 
@@ -243,16 +205,6 @@ if __name__ == "__main__":
     nsig = ROOT.RooRealVar("nsig","#signal events", NEVENTS, 0., NEVENTS*10.0)
     fitPdf1D = ROOT.RooExtendPdf('fitPdf1D', 'fitPdf1D', sigPdf1D, nsig)
 
-    #nbkg = ROOT.RooRealVar("nbkg","#background events", 0.0)
-
-    #fitPdf = ROOT.RooAddPdf('fitPdf', 'fitPdf', 
-    #      ROOT.RooArgList(sigPdf, bkgPdf), 
-    #      ROOT.RooArgList(nsig, nbkg) )
-
-    #fitPdf1D = ROOT.RooAddPdf('fitPdf1D', 'fitPdf1D', 
-    #      ROOT.RooArgList(sigPdf1D, bkgPdf1D), 
-    #      ROOT.RooArgList(nsig, nbkg) )
-
     print('pdf integral: ', \
          fitPdf1D.analyticalIntegralWN(0, ROOT.RooArgSet(nuTime), 'nllRange'))
     print('full integral: ', \
@@ -260,37 +212,32 @@ if __name__ == "__main__":
 
     ##################################
     # Obtain data sets from the root files
-    prefix = './dataset/fineSpec/%2.1fkpc/TEvisDATA_'%(dist)
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],dataMH)
-    filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25_Ethr%2.1fMeV_group%d.root'%(nuMass1, dist, Ethr, group)
+    filename = ns.dataFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
     print(filename)
     dataFile  = ROOT.TFile(filename, 'read')
     inputTree = dataFile.Get('tFixedStat')
 
     nuTime1D = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
-    #nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
-    #nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
     evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 1000)
 
-    prefix = './dataset/fineSpec/%2.1fkpc/TEvisDATA_'%(dist)
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],dataMH)
-    resFilename = prefix+'_data%2.1feV_mh%d_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d'\
-                  %(nuMass1, fitMH, nuMass2, dist, Ethr, group)
-    resfileSummary = open(resFilename + '_1DFitSummary_Tmax%3.2f.txt'%Tmax, 'w')
+    resFiles = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
+    #resfileRaw = open(resFiles[0], "w")
+    resfileSummary = open(resFiles[1], 'w')
 
     can = ROOT.TCanvas("can", "can", 1200, 800)
     can.SetTopMargin(0.1)
     can.SetLeftMargin(0.1)
-    pdffilename = prefix+'_data%2.1feV_mh%d_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit_Tmax%3.2f.pdf'%(nuMass1, fitMH, nuMass2, dist, Ethr, group, Tmax)
+    ##pdffilename = prefix+'_data%2.1feV_mh%d_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit_Tmax%3.2f.pdf'%(nuMass1, fitMH, nuMass2, dist, Ethr, group, Tmax)
+    pdffilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
     can.Print(pdffilename + '[')
 
     can2 = ROOT.TCanvas("can2", "can2", 1200, 1000)
-    can2.Divide(1,2)
+    can2.Divide(2,2)
     can2.cd(1).SetLeftMargin(0.15)
     can2.cd(1).SetRightMargin(0.05)
     can2.cd(2).SetRightMargin(0.05)
 
-    nStat = 100
+    nStat = 500
     for iSub in range(1,nStat+1):
 
         print('Process toy dataset %d'%iSub)
@@ -376,9 +323,11 @@ if __name__ == "__main__":
                     offsetDist = offsetDist - 0.005
 
         bestFit = []
-        nTry = 5
+        tScan = []
+        nTry = 10
         for iFit in range(nTry):
-            dTexp = (2*iFit+1-nTry)*0.001/2 + offsetDist
+            dTexp = (2*iFit+1-nTry)*0.001/4 + offsetDist
+            tScan.append(dTexp)
 
             offset.setVal(dTexp)
 
@@ -395,8 +344,11 @@ if __name__ == "__main__":
             bestFit.append( [res.minNll(), nsig.getVal(), \
                              offset.getVal(), res.status()] )
 
+            nllList.append(res.minNll())
+            offsetList.append(offset.getVal())
+            nsigList.append(nsig.getVal())
         print('Good fit num: ', len(bestFit))
-        print(bestFit, sep=', ', end='\n')
+        #print(bestFit, sep=', ', end='\n')
         resArr = sorted(bestFit, key=lambda x:x[0], reverse=False)
         print(resArr, sep=', ', end='\n')
         fitRes = resArr[0]
@@ -408,26 +360,55 @@ if __name__ == "__main__":
         #print('nsig, offset: %10.3f, %10.6f'%\
         #      (nsig.getVal(), offset.getVal()))
 
-        xframe = nuTime.frame(ROOT.RooFit.Title("dataGroup%d"%iSub), 
-                        ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
-        xframe.GetYaxis().SetTitleOffset(0.8)
-        xframe.GetXaxis().SetTitle('nuTime (s) at dataset %d'%iSub)
-        can.cd()
-        dataPlot = fitdata.plotOn(xframe)
-        # fitPdf.plotOn(xframe, ROOT.RooFit.ProjectionRange('nllRange'),
-        #                 ROOT.RooFit.LineColor(2) )
-                            #ROOT.RooFit.DrawOption("E"),
-                            #ROOT.RooFit.FillColor(ROOT.kOrange),
-                            #ROOT.RooFit.MoveToBack() )
-        pdfPlot = fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
-                ROOT.RooFit.Normalization(nsig.getVal(), ROOT.RooAbsReal.NumEvent),
-                ROOT.RooFit.LineColor(2))
-        xframe.Draw()
-        can.Print(pdffilename)
+        if iSub % 10 == 0:
+
+            xframe = nuTime.frame(ROOT.RooFit.Title("dataGroup%d"%iSub), 
+                            ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
+            xframe.GetYaxis().SetTitleOffset(0.8)
+            xframe.GetXaxis().SetTitle('nuTime (s) at dataset %d'%iSub)
+            can.cd()
+            dataPlot = fitdata.plotOn(xframe)
+            # fitPdf.plotOn(xframe, ROOT.RooFit.ProjectionRange('nllRange'),
+            #                 ROOT.RooFit.LineColor(2) )
+                                #ROOT.RooFit.DrawOption("E"),
+                                #ROOT.RooFit.FillColor(ROOT.kOrange),
+                                #ROOT.RooFit.MoveToBack() )
+            pdfPlot = fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
+                    ROOT.RooFit.Normalization(nsig.getVal(), ROOT.RooAbsReal.NumEvent),
+                    ROOT.RooFit.LineColor(2))
+            xframe.Draw()
+            can.Print(pdffilename)
+
+            ###### Draw the nll profile of iSub toy dataset -> 
+            tScanX    = array('d', tScan)
+            nllListY  = array('d', nllList)
+            nsigListY = array('d', nsigList) 
+            offsetListX = array('d', offsetList)
+            gr1 = ROOT.TGraph(len(nllList), tScanX, nllListY)
+            gr2 = ROOT.TGraph(len(nllList), tScanX, nsigListY)
+            gr3 = ROOT.TGraph(len(nllList), offsetListX, nsigListY)
+            setGraphStyle(gr1, [20, 1.2, 1], [2, 1, 4])
+            setGraphStyle(gr2, [20, 1.2, 1], [2, 1, 4])
+            setGraphStyle(gr3, [20, 1.2, 1], [2, 1, 4])
+            can2.cd(1)
+            gr1.Draw('APC')
+            gr1.GetXaxis().SetTitle('#delta_{T} (s)')
+            gr1.GetYaxis().SetTitle('nll')
+            can2.cd(2)
+            gr2.Draw('APC')
+            gr2.GetXaxis().SetTitle('#delta_{T} (s)')
+            gr2.GetYaxis().SetTitle('number of events')
+            can2.cd(3)
+            gr3.Draw('APC')
+            gr3.GetXaxis().SetTitle('#offset (s)')
+            gr3.GetYaxis().SetTitle('nll')
+            can2.Print(pdffilename)
 
         fitdata.Clear()
 
         # iSub, offset, nll, nsig, nEvtTrue, status
+        #for k in range(len(nllList)):
+        #    resfileRaw.write('%d  %9.6f  %12.3f  %12.3f\n'%(iSub,offsetList[k], nllList[k], nsigList[k]))
         resfileSummary.write('%d  %9.6f  %12.3f  %12.3f  %d  %d\n'%(iSub, fitRes[2], fitRes[0], fitRes[1], nFitEvts1D, fitRes[3]))
 
     resfileSummary.close()
