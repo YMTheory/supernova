@@ -1,12 +1,13 @@
 import ROOT
 import math
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_pdf import PdfPages
 import sys
 import json
 import scipy
 import numpy as np
 from array import array
+import namespace as ns
 
 def setGraphStyle(gr, markerStyle, lineStyle):
     gr.SetMarkerStyle(markerStyle[0])
@@ -80,17 +81,19 @@ def getNLL(filename):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 9:
-        print("Usage: %s [modelNum] [channel] [nuType] [nuMass1] [nuMass2] [dist] [Ethr] [group]"%(sys.argv[0]))
+    if len(sys.argv) < 11:
+        print("Usage: %s [modelNum] [channel] [nuType] [nuMass1] [dataMH] [nuMass2] [pdfMH] [dist] [Ethr] [group]"%(sys.argv[0]))
         print("modelNum: check the SNsim/simulation/data directory")
         print("channel : enum {NuP, NuE, IBD, NCC, BCC, CNC}")
         print("nuType  : -1 for all types; 0 nu_e; 1 anti_nue; 2 nu_x")
         print("nuMass1 : neutrino mass that used to generate dataset, in eV unit")
+        print("dataMH  : NMO that used to generate dataset, 0 for NoOsc, 1 for NH, 2 for IH")
         print("nuMass2 : neutrino mass that used in PDF to fit the dataset, in eV unit")
+        print("pdfMH   : NMO that used to generate PDF")
         print("dist    : SN distance in kpc unit")
         print("Ethr    : fit Energy threshold")
         print("group   : index of the groups")
-        print("example : python nllFit.py 82503 1 0 0.0 0.2 10.0 0.1 1")
+        print("example : python nllFit.py 82503 1 0 0.0 2 0.2 1 10.0 0.1 1")
         sys.exit(1)
 
     ##################################
@@ -116,29 +119,36 @@ if __name__ == "__main__":
     nuMass1 = float( sys.argv[4] )# unit: eV
     print('nuMass for producing dataset : ', nuMass1, ' eV')
 
-    nuMass2 = float( sys.argv[5] )# unit: eV
+    MHName = ['NoOsc', 'NH', 'IH']
+    dataMH = int( sys.argv[5] )
+    print('NMO for producing dataset : ', dataMH, MHName[dataMH])
+
+    nuMass2 = float( sys.argv[6] )# unit: eV
     print('nuMass for producing PDF: ', nuMass2, ' eV')
 
-    dist = float( sys.argv[6] )# unit: kpc
+    fitMH = int( sys.argv[7] )
+    print('NMO for producing PDF: ', fitMH, MHName[fitMH])
+
+    dist = float( sys.argv[8] )# unit: kpc
     print('dist: ', dist, ' kpc')
 
-    Ethr = float( sys.argv[7] )# unit: kpc
+    Ethr = float( sys.argv[9] )# unit: kpc
     print('fit Ethr: ', Ethr, ' MeV')
 
-    group = int( sys.argv[8] )# group number
+    group = int( sys.argv[10] )# group number
     print('group number: ', group)
 
-    MH = 0
 
     # ###################################
     # # Obtain the fitting PDF
-    prefix = "./etSpec/TEvisPDF_"
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],MH)
-    filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_v4.root'%(nuMass2, dist)
+    #prefix = "./etSpec/fineSpec/TEvisPDF_"
+    #prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],fitMH)
+    #filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25.root'%(nuMass2, dist)
+    filename = ns.pdfFileName(modelNum, dist, chaname, nuMass2, fitMH)
     print(filename)
     pdfFile  = ROOT.TFile(filename, 'read')
-    inputHist = pdfFile.Get("hET_mod%d_cha%d_mh0"%(modelNum, chaname))
-    inputBKG  = pdfFile.Get("hETBKG_mod%d_cha%d_mh0"%(modelNum, chaname))
+    inputHist = pdfFile.Get(ns.pdfSigHist2DName(modelNum, chaname, fitMH))
+    inputBKG  = pdfFile.Get(ns.pdfBkgHist2DName(modelNum, chaname, fitMH))
 
     Tmin = inputHist.GetXaxis().GetXmin()
     Tmax = inputHist.GetXaxis().GetXmax()
@@ -214,9 +224,10 @@ if __name__ == "__main__":
 
     ##################################
     # Obtain data sets from the root files
-    prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],MH)
-    filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Ethr%2.1fMeV_group%d.root'%(nuMass1, dist, Ethr, group)
+    #prefix = './dataset/fineSpec/%2.1fkpc/TEvisDATA_'%(dist)
+    #prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],dataMH)
+    #filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25_Ethr%2.1fMeV_group%d.root'%(nuMass1, dist, Ethr, group)
+    filename = ns.dataFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
     print(filename)
     dataFile  = ROOT.TFile(filename, 'read')
     inputTree = dataFile.Get('tFixedStat')
@@ -230,16 +241,23 @@ if __name__ == "__main__":
     nuTime1D = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
     #nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
     #nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
-    evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 500)
+    evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 5000)
 
-    prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
-    prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],MH)
-    resFilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d'%(nuMass1, nuMass2, dist, Ethr, group)
-    resfileRaw = open(resFilename + '_1DFitRaw.txt', 'w')
-    resfileSummary = open(resFilename + '_1DFitSummary.txt', 'w')
-
+    #prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
+    #prefix += 'mod%d_cha%d%s_dataMH%d_fitMH%d'%(modelNum, chaname, chaName[chaname], dataMH, fitMH)
+    #resFilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d'%(nuMass1, nuMass2, dist, Ethr, group)
+    #resfileRaw = open(resFilename + '_1DFitRaw.txt', 'w')
+    #resfileSummary = open(resFilename + '_1DFitSummary.txt', 'w')
+    resFiles = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
+    resfileRaw = open(resFiles[0], "w")
+    resfileSummary = open(resFiles[1], 'w')
+    print(resFiles[0])
+    print(resFiles[1])
+    #resfileRaw = open(resFiles[0], 'w')
+    
     can = ROOT.TCanvas("can", "can", 1200, 800)
-    pdfilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit.pdf'%(nuMass1, nuMass2, dist, Ethr, group)
+    #pdfilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit.pdf'%(nuMass1, nuMass2, dist, Ethr, group)
+    pdfilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
     can.Print(pdfilename + '[')
 
     can2 = ROOT.TCanvas("can2", "can2", 1200, 800)
@@ -251,7 +269,7 @@ if __name__ == "__main__":
     newArgSet = ROOT.RooArgSet(nuTime)
     #newArgSet = ROOT.RooArgSet(nuTime, nuEnergy)
 
-    nStat = 100
+    nStat = 5000
     for iSub in range(1,nStat+1):
         print('Process toy dataset %d'%iSub)
         # Get RooDataSet from the tree
@@ -332,6 +350,7 @@ if __name__ == "__main__":
         dTstep = 0.0001
         NScans = 25
         locMinNLL, bestfitDT, bestfitNSIG = 100.0, 1.0, 0.
+        bestStatus = 0
 
         for iScan in range(NScans):   
             dT = dTexp + (2*iScan-NScans)*dTstep/2
@@ -363,26 +382,28 @@ if __name__ == "__main__":
                             ROOT.RooFit.PrintLevel(-1))
             nllVal = res.minNll()
 
-            xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
-                            ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
-            xframe.GetYaxis().SetTitleOffset(1.4)
-            can.cd()
-            fitdata.plotOn(xframe)
-            # fitPdf.plotOn(xframe, ROOT.RooFit.ProjectionRange('nllRange'),
-            #                 ROOT.RooFit.LineColor(2) )
-                                #ROOT.RooFit.DrawOption("E"),
-                                #ROOT.RooFit.FillColor(ROOT.kOrange),
-                                #ROOT.RooFit.MoveToBack() )
-            fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
-                    ROOT.RooFit.Normalization(nFitEvts1D, ROOT.RooAbsReal.NumEvent),
-                    ROOT.RooFit.LineColor(2))
-            xframe.Draw()
-            can.Print(pdfilename)
 
-    #     # fitdata.plotOn(yframe)
-    #     # fitPdf3.plotOn(xframe, ROOT.RooFit.ProjectionRange('fitRange'), 
-    #     #         ROOT.RooFit.Normalization(fitNevts, ROOT.RooAbsReal.NumEvent),
-    #     #         ROOT.RooFit.LineColor(2))
+            if iSub % 50 == 0:
+                xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
+                                ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
+                xframe.GetYaxis().SetTitleOffset(1.4)
+                can.cd()
+                fitdata.plotOn(xframe)
+                ## fitPdf.plotOn(xframe, ROOT.RooFit.ProjectionRange('nllRange'),
+                ##                 ROOT.RooFit.LineColor(2) )
+                #                    #ROOT.RooFit.DrawOption("E"),
+                #                    #ROOT.RooFit.FillColor(ROOT.kOrange),
+                #                    #ROOT.RooFit.MoveToBack() )
+                fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
+                        ROOT.RooFit.Normalization(nFitEvts1D, ROOT.RooAbsReal.NumEvent),
+                        ROOT.RooFit.LineColor(2))
+                xframe.Draw()
+                can.Print(pdfilename)
+
+         # fitdata.plotOn(yframe)
+         # fitPdf3.plotOn(xframe, ROOT.RooFit.ProjectionRange('fitRange'), 
+         #         ROOT.RooFit.Normalization(fitNevts, ROOT.RooAbsReal.NumEvent),
+         #         ROOT.RooFit.LineColor(2))
             del fitdata
 
             if math.isnan(nllVal) != True:
@@ -393,6 +414,7 @@ if __name__ == "__main__":
                     locMinNLL = nllVal
                     bestfitDT = dT
                     bestfitNSIG = nsig.getVal()
+                    bestStatus = res.status()
 
         print('nll: ', nllList)
         #print(preSelData1D)
@@ -421,7 +443,8 @@ if __name__ == "__main__":
         for k in range(len(nllList)):
             resfileRaw.write('%d  %8.5f  %12.3f  %12.3f\n'%(iSub, tScan[k], nllList[k], nsigList[k]))
 
-        resfileSummary.write('%d  %8.5f  %12.3f  %12.3f\n'%(iSub, bestfitDT, locMinNLL, bestfitNSIG))
+        #resfileSummary.write('%d  %8.5f  %12.3f  %12.3f\n'%(iSub, bestfitDT, locMinNLL, bestfitNSIG))
+        resfileSummary.write('%d  %9.6f  %12.3f  %12.3f  %d  %d\n'%(iSub, bestfitDT, locMinNLL, bestfitNSIG, nFitEvts1D, bestStatus))
 
     resfileRaw.close()
     resfileSummary.close()
