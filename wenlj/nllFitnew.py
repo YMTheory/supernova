@@ -178,6 +178,8 @@ if __name__ == "__main__":
     print('Ethr, binEthr, lower bin edge of binEthr: ', 
           Ethr, ',', binEthr, ', ', inputHist.GetYaxis().GetBinLowEdge(binEthr)) 
 
+    ################# Input 1D Signal/Background 1D Histograms
+
     inputHist1D = inputHist.ProjectionX('_pdfsigpx', binEthr, -1, '')
     inputBKG1D  =  inputBKG.ProjectionX('_pdfbkgpx', binEthr, -1, '')
 
@@ -218,9 +220,13 @@ if __name__ == "__main__":
           ROOT.RooArgList(sigPdf, bkgPdf), 
           ROOT.RooArgList(nsig, nbkg) )
 
-    fitPdf1D = ROOT.RooAddPdf('fitPdf1D', 'fitPdf1D', 
-          ROOT.RooArgList(sigPdf1D, bkgPdf1D), 
-          ROOT.RooArgList(nsig, nbkg) )
+    # fitPdf1D from nllFit.py
+    fitPdf1D = ROOT.RooExtendPdf("fitPdf1D", "fitPdf1D", sigPdf1D, nsig)
+
+    # old fitPdf1D in this script:
+    #fitPdf1D = ROOT.RooAddPdf('fitPdf1D', 'fitPdf1D', 
+    #      ROOT.RooArgList(sigPdf1D, bkgPdf1D), 
+    #      ROOT.RooArgList(nsig, nbkg) )
 
     ##################################
     # Obtain data sets from the root files
@@ -241,22 +247,23 @@ if __name__ == "__main__":
     nuTime1D = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
     #nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
     #nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
-    evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 5000)
+    evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 500)
 
-    #prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
-    #prefix += 'mod%d_cha%d%s_dataMH%d_fitMH%d'%(modelNum, chaname, chaName[chaname], dataMH, fitMH)
-    #resFilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d'%(nuMass1, nuMass2, dist, Ethr, group)
-    #resfileRaw = open(resFilename + '_1DFitRaw.txt', 'w')
-    #resfileSummary = open(resFilename + '_1DFitSummary.txt', 'w')
-    resFiles = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
-    resfileRaw = open(resFiles[0], "w")
-    resfileSummary = open(resFiles[1], 'w')
-    print(resFiles[0])
-    print(resFiles[1])
+    prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
+    prefix += 'mod%d_cha%d%s_dataMH%d_fitMH%d'%(modelNum, chaname, chaName[chaname], dataMH, fitMH)
+    resFilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_num2'%(nuMass1, nuMass2, dist, Ethr, group)
+    resfileRaw = open(resFilename + '_1DFitRaw.txt', 'w')
+    resfileSummary = open(resFilename + '_1DFitSummary.txt', 'w')
+
+    #resFiles = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
+    #resfileRaw = open(resFiles[0], "w")
+    #resfileSummary = open(resFiles[1], 'w')
+    #print(resFiles[0])
+    #print(resFiles[1])
     #resfileRaw = open(resFiles[0], 'w')
     
     can = ROOT.TCanvas("can", "can", 1200, 800)
-    #pdfilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit.pdf'%(nuMass1, nuMass2, dist, Ethr, group)
+    pdfilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit.pdf'%(nuMass1, nuMass2, dist, Ethr, group)
     pdfilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
     can.Print(pdfilename + '[')
 
@@ -269,8 +276,8 @@ if __name__ == "__main__":
     newArgSet = ROOT.RooArgSet(nuTime)
     #newArgSet = ROOT.RooArgSet(nuTime, nuEnergy)
 
-    nStat = 5000
-    for iSub in range(1,nStat+1):
+    nStat = 500
+    for iSub in range(1, nStat+1):
         print('Process toy dataset %d'%iSub)
         # Get RooDataSet from the tree
         preSelData1D = ROOT.RooDataSet("dataGroup%d"%(iSub), "dataset with (e,t)", 
@@ -422,22 +429,23 @@ if __name__ == "__main__":
         del preSelData1D    
 
         # Draw the nll profile of iSub toy dataset
-        tScanX = array('d', tScan)
-        nllListY = array('d', nllList)
-        nsigListY = array('d', nsigList)
-        gr1 = ROOT.TGraph(len(nllList), tScanX, nllListY)
-        gr2 = ROOT.TGraph(len(nllList), tScanX, nsigListY)
-        setGraphStyle(gr1, [20, 1.2, 1], [2, 1, 4])
-        setGraphStyle(gr2, [20, 1.2, 1], [2, 1, 4])
-        can2.cd(1)
-        gr1.Draw('APC')
-        gr1.GetXaxis().SetTitle('#delta_{T} (s)')
-        gr1.GetYaxis().SetTitle('nll')
-        can2.cd(2)
-        gr2.Draw('APC')
-        gr2.GetXaxis().SetTitle('#delta_{T} (s)')
-        gr2.GetYaxis().SetTitle('number of events')
-        can2.Print(pdfilename)
+        if iSub % 50 == 0:
+            tScanX = array('d', tScan)
+            nllListY = array('d', nllList)
+            nsigListY = array('d', nsigList)
+            gr1 = ROOT.TGraph(len(nllList), tScanX, nllListY)
+            gr2 = ROOT.TGraph(len(nllList), tScanX, nsigListY)
+            setGraphStyle(gr1, [20, 1.2, 1], [2, 1, 4])
+            setGraphStyle(gr2, [20, 1.2, 1], [2, 1, 4])
+            can2.cd(1)
+            gr1.Draw('APC')
+            gr1.GetXaxis().SetTitle('#delta_{T} (s)')
+            gr1.GetYaxis().SetTitle('nll')
+            can2.cd(2)
+            gr2.Draw('APC')
+            gr2.GetXaxis().SetTitle('#delta_{T} (s)')
+            gr2.GetYaxis().SetTitle('number of events')
+            can2.Print(pdfilename)
 
         # save the results
         for k in range(len(nllList)):
