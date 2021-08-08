@@ -50,6 +50,9 @@ supernova study in JUNO
 
         - SNDetect.cc" consider cross section, Ev->Evis...  (quenching, resolution)
 
+        - 对于histogram积分的一些理解：
+            - Integral for TH1: sum of BinContent*BinWidth
+            - Fill(x, y, pdf-value)
 
 
 
@@ -64,6 +67,8 @@ supernova study in JUNO
 
 
     *问题：目前的拟合似乎是基于沉积能量Edep所填直方图进行的，而并没有加上quenching和resolution等一系列探测器响应。*
+    *问题：目前生成的pdf和data似乎只有一种味道的nue转换后的结果？？*
+    *问题：产生toy data时候time/energy cuts分别是怎么确定的？*
 
 
     - nllFit.py: configurations in cmd.py -> python cmd.py to see details; 
@@ -88,6 +93,7 @@ supernova study in JUNO
 
 
     - nllProfile.py
+        - read fitting results from dataset/fineSpec summary txt
 
     - nllProfileMH.py
 
