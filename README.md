@@ -67,9 +67,11 @@ supernova study in JUNO
 
 
     *问题：目前的拟合似乎是基于沉积能量Edep所填直方图进行的，而并没有加上quenching和resolution等一系列探测器响应。*
+        没有做能谱拟合-> 慢，探测器响应只会在Ethr附近起到一点效果；
     *问题：目前生成的pdf和data似乎只有一种味道的nue转换后的结果？？*
+        似乎是个bug，需要修正。
     *问题：产生toy data时候time/energy cuts分别是怎么确定的？*
-
+        调-> 能量cut一方面是效率，主要是因为高能中微子对质量不灵敏，但质量顺序可能不错。
 
     - nllFit.py: configurations in cmd.py -> python cmd.py to see details; 
         - A likelihood fit;
@@ -103,3 +105,8 @@ supernova study in JUNO
         - tFixedStat: nuTime1D->toy dataset of nu time profiles 
     - etSpec:
         - fitting Pdf: hET_xxx, hETBKG_xxx...
+
+
+
+
+    - Tips here: generatePDFs对于eES需要卷积运行特别慢，可以考虑将一个直方图分成几个区域同时generate，否则一个直方图可能需要几十个小时生成。
