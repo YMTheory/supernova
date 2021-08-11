@@ -2,20 +2,45 @@ pdfPathPrefix = "./etSpec/fineSpec/"
 toyDataPathPrefix = "./dataset/fineSpec/"
 fitResPathPrefix = "./dataset/"
 fitPlotPathPrefix = "./spectra/fineSpec/"
+LogPathPrefix = "./log/"
+ShPathPrefix = "./job/"
 
 chaName = ["nup", "nue", "IBD"]
 
-def pdfFileName(modelNum, dist, chaname, fitNuMass, fitMH):
+def pdfFileName(modelNum, dist, chaname, fitNuMass, fitMH, nuType, Evismax, no):
     ## fitting pdf filename
-    filename = pdfPathPrefix + 'TEvisPDF_mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname], fitMH)
-    filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25.root'%(fitNuMass, dist)
+    MO = ["noOsc", "NO", "IO"]
+    prefix = pdfPathPrefix + "%dkpc/" %(dist)
+    prefix += MO[int(fitMH)] + "/"
+    filename = prefix + 'TEvisPDF_mod%d_cha%d%s_nuType%d_mh%d'%(modelNum, chaname, chaName[chaname], nuType, fitMH)
+    filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evismax%.2f_No%d.root'%(fitNuMass, dist, Evismax, no)
     print("-----> PDF filename: %s" %filename)
 
     return filename
 
 
-def pdfSigHist2DName(modelNum, chaname, fitMH):
+def pdfSumFileName(modelNum, dist, chaname, fitNuMass, fitMH, nuType, Evismax):
+    ## fitting pdf filename
+    MO = ["noOsc", "NO", "IO"]
+    prefix = pdfPathPrefix + "%dkpc/" %(dist)
+    prefix += MO[int(fitMH)] + "/"
+    filename = prefix + 'TEvisPDF_mod%d_cha%d%s_nuType%d_mh%d'%(modelNum, chaname, chaName[chaname], nuType, fitMH)
+    filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evismax%.2f_Sum.root'%(fitNuMass, dist, Evismax)
+    print("-----> PDF filename: %s" %filename)
+
+    return filename
+
+
+
+
+
+def pdfEvisHist2DName(modelNum, chaname, fitMH):
     histname = "hET_mod%d_cha%d_mh%d" %(modelNum, chaname, fitMH)
+    return histname
+
+
+def pdfEvHist2DName(modelNum, chaname, fitMH):
+    histname = "hENuT_mod%d_cha%d_mh%d" %(modelNum, chaname, fitMH)
     return histname
 
 
@@ -23,6 +48,13 @@ def pdfBkgHist2DName(modelNum, chaname, fitMH):
     histname = "hETBKG_mod%d_cha%d_mh%d" %(modelNum, chaname, fitMH)
     return histname
 
+def pdfGenLogName(modelNum, chaname, nuType, nuMass, MH, dist, no):
+    logname = LogPathPrefix + "log-genPDFmiao-mod%d-cha%d-nuType%d-nuMass%2.1feV-MH%d-%2.1fdist-No%d.txt"%(modelNum, chaname, nuType, nuMass, MH, dist, no)
+    return logname
+
+def pdfGenShName(modelNum, chaname, nuType, nuMass, MH, dist, no):
+    logname = ShPathPrefix + "run-genPDFmiao-mod%d-cha%d-nuType%d-nuMass%2.1feV-MH%d-%2.1fdist-No%d.sh"%(modelNum, chaname, nuType, nuMass, MH, dist, no)
+    return logname
 
 
 def dataFileName(modelNum, dist, chaname, dataNuMass, dataMH, Ethr, group):
