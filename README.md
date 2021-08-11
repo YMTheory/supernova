@@ -110,3 +110,12 @@ supernova study in JUNO
 
 
     - Tips here: generatePDFs对于eES需要卷积运行特别慢，可以考虑将一个直方图分成几个区域同时generate，否则一个直方图可能需要几十个小时生成。
+
+    
+
+### Main Tasks :
+    主要是需要检查对于10kpc时候chi2偏离抛物线出现异常点的原因，想办法解决（重复拟合，精细调节...）。
+
+
+
+
