@@ -243,6 +243,7 @@ if __name__ == "__main__":
                             fluence = modelSrc.snFluenceDetAtTime(timeTmp, nuMass, EvTmp, i, MH)
                             dxs = peffLS.differentialXS(EvTmp, EvisTmp, i)
                             tot_fluence += fluence*Npar*dxs
+                            #print(timeTmp[0], EvTmp, EvisTmp, fluence, dxs, tot_fluence)
                             
                         if tot_fluence > 0. :
                             h2d_etSpec[0].Fill(timeTmp[0], EvisTmp, tot_fluence*step_Ev)
