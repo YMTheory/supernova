@@ -65,7 +65,7 @@ def getIntegral(hist2d, x1, x2, y1, y2, opt):
 
 import ROOT
 import namespace as ns
-def loadPdf_Dataset(pdfname, pdfHistname, dataname, evtid, deltaT, pdffilename, can):
+def loadPdf_Dataset(pdfname, pdfHistname, dataname, evtid, deltaT, pdffilename, can, cur_nll):
     
     # load PDF
     pdfFile = ROOT.TFile(pdfname, "read")
@@ -142,6 +142,9 @@ def loadPdf_Dataset(pdfname, pdfHistname, dataname, evtid, deltaT, pdffilename, 
             ROOT.RooFit.LineColor(2))
     xframe.Draw()
 
+    tinfo = ROOT.TText(0, 4, "nllVal=%.2f"%cur_nll)
+    tinfo.Draw("same")
+
     can.Print(pdffilename) 
 
 
@@ -181,6 +184,38 @@ def drawRes(can, mass, nll, deltaT, nsig, pdffilename) :
 
 
 
+
+def drawSingle(can, nll, deltaT, nsig, pdffilename):
+
+    gr0 = ROOT.TGraph()
+    gr2 = ROOT.TGraph()
+
+    for i in range(20):
+        gr0.SetPoint(i, deltaT[i], nll[i])
+        gr2.SetPoint(i, deltaT[i], nsig[i])
+
+
+    gr0.SetLineColor(9)
+    gr0.SetLineWidth(2)
+    gr0.SetMarkerColor(9)
+    gr0.SetMarkerStyle(20)
+    gr2.SetLineColor(9)
+    gr2.SetLineWidth(2)
+    gr2.SetMarkerColor(9)
+    gr2.SetMarkerStyle(20)
+
+    can.cd(1)
+    gr0.Draw("APC")
+    can.cd(2)
+    gr2.Draw("APC")
+
+    can.Print(pdffilename)
+
+
+
+
+
+
 if __name__ == "__main__" :
 
     nuMass1 = 0.0
@@ -200,6 +235,23 @@ if __name__ == "__main__" :
     deltaT_nuMass = np.zeros((500, 20))
     nsig_nuMass = np.zeros((500, 20))
     haveBadMass = np.zeros(500)
+
+    check_evtid = [258, 300, 341, 336]
+    check_nuMass = [[6, 7], [9, 10], [13, 14], [8, 9]]
+
+
+    can = ROOT.TCanvas("can", "can", 1200, 800)
+    pdffilename = "./FittingVisal_checksOnJump.pdf"
+    can.Print(pdffilename + '[')
+
+    can2 = ROOT.TCanvas("can2", "can2", 1200, 800)
+    can2.Divide(3, 1)
+    can2.cd(1).SetLeftMargin(0.15)
+    can2.cd(1).SetRightMargin(0.05)
+    can2.cd(2).SetLeftMargin(0.15)
+    can2.cd(2).SetRightMargin(0.05)
+    can2.cd(3).SetRightMargin(0.15)
+
     
     for k in range(0, 20):
         nuMass2 = k * 0.1
@@ -212,31 +264,51 @@ if __name__ == "__main__" :
         
         evtid = 0
         for tarr, narr, nllarr in zip(deltaT, nsig, nllVal):
-            locMinNll, locMaxNll = [], []
-            for y in range(1, len(nllarr)-1):
-                if nllarr[y-1] < nllarr[y] and nllarr[y+1] < nllarr[y] :
-                    locMaxNll.append(nllarr[y])
-                if nllarr[y-1] > nllarr[y] and nllarr[y+1] > nllarr[y] :
-                    locMinNll.append(nllarr[y])
-            
-            if len(locMinNll) > 1 or len(locMaxNll) > 0 :
-                #print(tarr)
-                #print(nllarr)
-                #mask.append(evtid)
-                
-                #minVal_nuMass[evtid, k] = 999
-                #deltaT_nuMass[evtid, k] = 999
-                #nsig_nuMass[evtid, k]   = 999
-                minVal_nuMass[evtid, k] = np.min(nllarr)
-                deltaT_nuMass[evtid, k] = tarr[nllarr.argmin()]
-                nsig_nuMass[evtid, k]   = narr[nllarr.argmin()]
-                haveBadMass[evtid]      = 1
+    
+            for cc in range(4):
+                if evtid == check_evtid[cc] and k in check_nuMass[cc]:
+                    print("Check Sample : %d Event with nuMass %.1f" %(evtid, k/10.))
+                    
+                    mm = k/10.
+                    pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+                    pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
+                    dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+                    print(pdfname)
+
+                    print(pdfHistname)
+
+                    for tid in range(len(tarr)):
+                        dT = tarr[tid]
+                        loadPdf_Dataset(pdfname, pdfHistname, dataname, evtid, dT, pdffilename, can, nllarr[tid])
+                    
+                    drawSingle(can2, nllarr, tarr, narr, pdffilename)
 
 
-            else :    # normal case
-                minVal_nuMass[evtid, k] = np.min(nllarr)
-                deltaT_nuMass[evtid, k] = tarr[nllarr.argmin()]
-                nsig_nuMass[evtid, k]   = narr[nllarr.argmin()]
+            #locMinNll, locMaxNll = [], []
+            #for y in range(1, len(nllarr)-1):
+            #    if nllarr[y-1] < nllarr[y] and nllarr[y+1] < nllarr[y] :
+            #        locMaxNll.append(nllarr[y])
+            #    if nllarr[y-1] > nllarr[y] and nllarr[y+1] > nllarr[y] :
+            #        locMinNll.append(nllarr[y])
+            #
+            #if len(locMinNll) > 1 or len(locMaxNll) > 0 :
+            #    #print(tarr)
+            #    #print(nllarr)
+            #    #mask.append(evtid)
+            #    
+            #    #minVal_nuMass[evtid, k] = 999
+            #    #deltaT_nuMass[evtid, k] = 999
+            #    #nsig_nuMass[evtid, k]   = 999
+            #    minVal_nuMass[evtid, k] = np.min(nllarr) * 2    # chi2
+            #    deltaT_nuMass[evtid, k] = tarr[nllarr.argmin()]
+            #    nsig_nuMass[evtid, k]   = narr[nllarr.argmin()]
+            #    haveBadMass[evtid]      = 1
+
+
+            #else :    # normal case
+            #    minVal_nuMass[evtid, k] = np.min(nllarr) * 2     # chi2
+            #    deltaT_nuMass[evtid, k] = tarr[nllarr.argmin()]
+            #    nsig_nuMass[evtid, k]   = narr[nllarr.argmin()]
 
             evtid += 1
 
@@ -250,20 +322,10 @@ if __name__ == "__main__" :
     plotNum = 0
     nuMass = np.arange(0, 2, 0.1)
 
-    #pdfilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
-    can = ROOT.TCanvas("can", "can", 1200, 800)
-    pdffilename = "./FittingVisal_nllDeltaTBad_mh2.pdf"
-    #can.Print(pdffilename + '[')
+    #fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 3))
 
-    can2 = ROOT.TCanvas("can2", "can2", 1200, 800)
-    can2.Divide(3, 1)
-    can2.cd(1).SetLeftMargin(0.15)
-    can2.cd(1).SetRightMargin(0.05)
-    can2.cd(2).SetLeftMargin(0.15)
-    can2.cd(2).SetRightMargin(0.05)
-    can2.cd(3).SetRightMargin(0.15)
 
-    fig, (ax0, ax1, ax2) = plt.subplots(1, 3, figsize=(12, 3))
+    """
 
     for i in range(500):
 
@@ -272,33 +334,44 @@ if __name__ == "__main__" :
         #    print("Sharp EventId : %d" %i)
 
         if minVal_nuMass[i, 0] - np.min(minVal_nuMass[i, :]) > 100 :
+            #print("Weird event id : %d" %i)
+            #for mm in np.arange(0, 2.0, 0.1):
+            #    pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+            #    pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
+            #    dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+
+            #    loadPdf_Dataset(pdfname, pdfHistname, dataname, i, deltaT_nuMass[i, int(mm*10)], pdffilename, can)
+
+            #drawRes(can2, nuMass, minVal_nuMass[i, :], deltaT_nuMass[i, :], nsig_nuMass[i, :], pdffilename)
             continue
+            #break
 
-        ax0.plot(nuMass, minVal_nuMass[i, :]-np.min(minVal_nuMass[i, :]), "-")
-        ax1.plot(nuMass, deltaT_nuMass[i, :], "-")
-        ax2.plot(nuMass, nsig_nuMass[i, :] - nsig_nuMass[i, 0], "-")
 
-        """
+        #ax0.plot(nuMass, minVal_nuMass[i, :]-np.min(minVal_nuMass[i, :]), "-")
+        #ax1.plot(nuMass, deltaT_nuMass[i, :], "-")
+        #ax2.plot(nuMass, nsig_nuMass[i, :] - nsig_nuMass[i, 0], "-")
+
+
 
         if haveBadMass[i] == 1:    # some nuMass fitting results in this event, nll-deltaT is not a good shape
-            if plotNum < 10:
-            #    ax0.plot(nuMass, minVal_nuMass[i, :]-np.min(minVal_nuMass[i, :]), "-")
-            #    ax1.plot(nuMass, deltaT_nuMass[i, :], "-")
-            #    ax2.plot(nuMass, nsig_nuMass[i, :] - nsig_nuMass[i, 0], "-")
+            #if plotNum < 10:
+            ##    ax0.plot(nuMass, minVal_nuMass[i, :]-np.min(minVal_nuMass[i, :]), "-")
+            ##    ax1.plot(nuMass, deltaT_nuMass[i, :], "-")
+            ##    ax2.plot(nuMass, nsig_nuMass[i, :] - nsig_nuMass[i, 0], "-")
 
     
-                # Draw Bad Fitting details :
-                for mm in np.arange(0, 2.0, 0.1):
-                    print("*************************************** plotNum %d -> nuMass %.1f **************************************" %(plotNum, mm))
-                    pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
-                    pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
-                    dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+            #    # Draw Bad Fitting details :
+            #    for mm in np.arange(0, 2.0, 0.1):
+            #        print("*************************************** plotNum %d -> nuMass %.1f **************************************" %(plotNum, mm))
+            #        pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+            #        pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
+            #        dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
 
-                    loadPdf_Dataset(pdfname, pdfHistname, dataname, i, deltaT_nuMass[i, int(mm*10)], pdffilename, can)
+            #        loadPdf_Dataset(pdfname, pdfHistname, dataname, i, deltaT_nuMass[i, int(mm*10)], pdffilename, can)
 
-                drawRes(can2, nuMass, minVal_nuMass[i, :], deltaT_nuMass[i, :], nsig_nuMass[i, :], pdffilename)
+            #    drawRes(can2, nuMass, minVal_nuMass[i, :], deltaT_nuMass[i, :], nsig_nuMass[i, :], pdffilename)
 
-                plotNum += 1
+            #    plotNum += 1
             continue
 
         else :
@@ -306,31 +379,32 @@ if __name__ == "__main__" :
             goodSelf += 1
             # One more shape checks on NLL profile :
 
-            locMinNll, locMaxNll = 0, 0
+            locMinNll, locMaxNll = [], []
             for j in range(1, 19, 1):
                 if minVal_nuMass[i, j] > minVal_nuMass[i, j-1] and minVal_nuMass[i, j] > minVal_nuMass[i, j+1]:
-                    locMaxNll += 1
+                    locMaxNll.append(minVal_nuMass[i, j])
                 if minVal_nuMass[i, j] < minVal_nuMass[i, j-1] and minVal_nuMass[i, j] < minVal_nuMass[i, j+1]:
-                    locMinNll += 1
+                    locMinNll.append(minVal_nuMass[i, j])
 
-            if locMinNll > 1 or locMaxNll > 0 :
+            if len(locMinNll) > 1 or len(locMaxNll) > 0 :
                 # Draw bad fitting cases
                 #if plotNum < 10:
+                if len(locMinNll) > 1 and locMinNll[0] > locMinNll[1]:
                 ##    ax0.plot(nuMass, minVal_nuMass[i, :]-np.min(minVal_nuMass[i, :]), "-")
                 ##    ax1.plot(nuMass, deltaT_nuMass[i, :], "-")
                 ##    ax2.plot(nuMass, nsig_nuMass[i, :] - nsig_nuMass[i, 0], "-")
 
     
-                #    # Draw Bad Fitting details :
-                #    for mm in np.arange(0, 2.0, 0.1):
-                #        print("*************************************** plotNum %d -> nuMass %.1f **************************************" %(plotNum, mm))
-                #        pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
-                #        pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
-                #        dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+                    # Draw Bad Fitting details :
+                    for mm in np.arange(0, 2.0, 0.1):
+                        print("*************************************** plotNum %d -> nuMass %.1f **************************************" %(plotNum, mm))
+                        pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+                        pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
+                        dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
 
-                #        loadPdf_Dataset(pdfname, pdfHistname, dataname, i, deltaT_nuMass[i, int(mm*10)], pdffilename, can)
+                        loadPdf_Dataset(pdfname, pdfHistname, dataname, i, deltaT_nuMass[i, int(mm*10)], pdffilename, can)
 
-                #    drawRes(can2, nuMass, minVal_nuMass[i, :], deltaT_nuMass[i, :], nsig_nuMass[i, :], pdffilename)
+                    drawRes(can2, nuMass, minVal_nuMass[i, :], deltaT_nuMass[i, :], nsig_nuMass[i, :], pdffilename)
 
                 #    plotNum += 1
 
@@ -347,26 +421,32 @@ if __name__ == "__main__" :
             #    plotNum += 1
 
             goodPlot += 1
-        """
+
+    """
 
     #print("good fitting for all nuMass in one event number : %d " %goodSelf)
     #print("Final good plots number = %d" %(goodPlot) )
+    
+    #ax0.set_xlim(0, 2)
+    ##ax0.set_ylim(0, 10)
+
+    #
     #plt.xlabel("fitNuMass/eV")
     #plt.ylabel("nll")
-    
-    ax0.set_xlabel("fitNuMass/eV")
-    ax0.set_ylabel("nll")
     #
-    ax1.set_xlabel("fitNuMass/eV")
-    ax1.set_ylabel("deltaT/ns")
+    #ax0.set_xlabel("fitNuMass/eV")
+    #ax0.set_ylabel("nll")
+    ##
+    #ax1.set_xlabel("fitNuMass/eV")
+    #ax1.set_ylabel("deltaT/ns")
 
-    ax2.set_xlabel("fitNuMass/eV")
-    ax2.set_ylabel("nEvt")
-    
-    plt.show()
+    #ax2.set_xlabel("fitNuMass/eV")
+    #ax2.set_ylabel("nEvt")
+    #
+    #plt.show()
 
 
-    #can.Print(pdffilename + ']')
+    can.Print(pdffilename + ']')
 
 
 
