@@ -154,6 +154,29 @@ def loadPDFfile(filename, histname):
 
 
 
+def loadPDFfileY(filename, histname, t1, t2):
+    fin = ROOT.TFile(filename, "read")
+    hh  = fin.Get(histname)
+
+    # projection manually
+    cent_T, cont_T = [], []
+    for i in range(hh.GetNbinsY()):
+        cent_T.append(hh.GetYaxis().GetBinCenter(i+1))
+        yy = 0
+        for j in range(hh.GetNbinsX()):
+            if hh.GetXaxis().GetBinCenter(j+1) < t1 or hh.GetXaxis().GetBinCenter(j+1) > t2:
+                continue
+            yy += hh.GetBinContent(j+1, i+1) * hh.GetXaxis().GetBinWidth(j+1)
+
+        cont_T.append(yy)
+
+    cent_T = np.array(cent_T)
+    cont_T = np.array(cont_T)
+    return cent_T, cont_T
+
+
+
+
 
 def TimeSpectra():
 
@@ -175,29 +198,29 @@ def TimeSpectra():
     #    print(i, arr0[-1], arr1[-1], arr2[-1])
 
     #cent_T, cont_T = loadPDFfile("/junofs/users/miaoyu/supernova/wenlj/etSpec/fineSpec/TEvisPDF_mod82503_cha1nue_nuType0_mh0_mNu0.0eV_10.0kpc_0.1s_Evismax25.root", "hET_mod82503_cha1_mh0")
-    tt, arr0 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 0, nuType, Evismax), "TEvisPdf")
-    tt, arr1 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 1, nuType, Evismax), "TEvisPdf")
-    tt, arr2 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 2, nuType, Evismax), "TEvisPdf")
-    
-    plt.plot(tt, arr0, "-" , label="no osc", color="royalblue")
-    plt.plot(tt, arr1, "-" , label="NO", color="orange")
-    plt.plot(tt, arr2, "-" , label="IO", color="seagreen")
+    #tt, arr0 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 0, nuType, Evismax), "TEvisPdf")
+    #tt, arr1 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 1, nuType, Evismax), "TEvisPdf")
+    #tt, arr2 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 2, nuType, Evismax), "TEvisPdf")
+    #
+    #plt.plot(tt, arr0, "-" , label="no osc", color="royalblue")
+    #plt.plot(tt, arr1, "-" , label="NO", color="orange")
+    #plt.plot(tt, arr2, "-" , label="IO", color="seagreen")
 
 
     nuType = -1
-    tt, arr3 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 0, nuType, Evismax), "TEvisPdf")
-    tt, arr4 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 1, nuType, Evismax), "TEvisPdf")
-    tt, arr5 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,nuMass, 2, nuType, Evismax), "TEvisPdf")
+    tt, arr3 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,0.0, 2, nuType, Evismax), "TEvisPdf")
+    tt, arr4 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,0.5, 2, nuType, Evismax), "TEvisPdf")
+    tt, arr5 = loadPDFfile(ns.pdfSumFileName(mod, dist, chaname ,1.0, 2, nuType, Evismax), "TEvisPdf")
     
-    plt.plot(tt, arr3, "--" , label="no osc", color="royalblue")
-    plt.plot(tt, arr4, "--" , label="NO", color="orange")
-    plt.plot(tt, arr5, "--" , label="IO", color="seagreen")
+    plt.plot(tt, arr3, "-" , label="0.0eV", color="royalblue")
+    plt.plot(tt, arr4, "-" , label="0.5eV", color="orange")
+    plt.plot(tt, arr5, "-" , label="1.0eV", color="seagreen")
 
 
     plt.legend()
     plt.xlabel("time/s")
     plt.ylabel(r"dN/dt($s^{-1}$)")
-    plt.savefig("./spectra/valid/eESRate_osc_10kpc_0.0eV_onlynue+allflavour.pdf")
+    plt.savefig("./spectra/valid/eESRate_IO_10kpc_mass_allflavour.pdf")
     plt.show()
 
 
@@ -212,13 +235,44 @@ def integral(hh, tlow, thigh, Elow, Ehigh):
 
 
 
+def EnergySpectra():
+    mod = 82503
+    dist = 10
+    nuMass = 0.0
+    Evismax = 25.00
+    chaname = 1
+    nuType = 0
+
+    nuType = -1
+    t1 = -0.04
+    t2 = 0.04
+    tt, arr3 = loadPDFfileY(ns.pdfSumFileName(mod, dist, chaname ,0.0, 1, nuType, Evismax), "TEvisPdf", t1, t2)
+    tt, arr4 = loadPDFfileY(ns.pdfSumFileName(mod, dist, chaname ,0.5, 1, nuType, Evismax), "TEvisPdf", t1, t2)
+    tt, arr5 = loadPDFfileY(ns.pdfSumFileName(mod, dist, chaname ,1.0, 1, nuType, Evismax), "TEvisPdf", t1, t2)
+
+    plt.plot(tt, arr3, "-" , label="0.0eV", color="royalblue")
+    plt.plot(tt, arr4, "-" , label="0.5eV", color="orange")
+    plt.plot(tt, arr5, "-" , label="1.0eV", color="seagreen")
+
+    plt.legend()
+    plt.xlabel("energy/MeV")
+    plt.ylabel(r"dN/dE($s^{-MeV}$)")
+    plt.xlim(0, 15)
+    plt.ylim(0.2, 2)
+    plt.savefig("./spectra/valid/eESSpectra_NO_10kpc_mass_allflavour_-40ms+40ms.pdf")
+    plt.show()
+
+
+
+
 
 if __name__ == "__main__":
     #EvisSpectrumAtTime()
     #numIntg()
     #EvisSpectrum()
 
-    TimeSpectra()
+    #TimeSpectra()
+    EnergySpectra()
     #print(snDet.getEventAboveEthrVis(0.1, 0, 0))
     #print(snDet.getEventAboveEthrVis(0.1, 0, 1))
     #print(snDet.getEventAboveEthrVis(0.1, 0, 2))
