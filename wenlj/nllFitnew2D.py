@@ -167,9 +167,9 @@ if __name__ == "__main__":
     Emax = inputHist.GetYaxis().GetXmax()
     print('fitting PDF, Tmin, Tmax, Emin, Emax: ', Tmin, Tmax, Emin, Emax)
     nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
-    nuTime   = ROOT.RooRealVar("nuTime", "nuTime", Tmin, Tmax)
+    nuTime1D   = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
     nuEnergy.setRange('fullRange', Emin, Emax)
-    nuTime.setRange('fullRange', Tmin, Tmax)
+    nuTime1D.setRange('fullRange', Tmin, Tmax)
 
     # Integrated Number of Events in the full range of the histograms
     NEVENTS = getIntegral(inputHist, Tmin, Tmax, Emin, Emax ,"width")
@@ -181,8 +181,8 @@ if __name__ == "__main__":
     #NEVENTS = NEVENTS * 25 # special test for 10 kpc, group # == 88X
     #print('Modified NEVENTS in full range (round): %10.3f'%(NEVENTS))
 
-    NEVENTS = NEVENTS * 100 # special test for 10 kpc, group # == 77X
-    print('Modified NEVENTS in full range (round): %10.3f'%(NEVENTS))
+    #NEVENTS = NEVENTS * 100 # special test for 10 kpc, group # == 77X
+    #print('Modified NEVENTS in full range (round): %10.3f'%(NEVENTS))
 
     # 1D histogram in time domain
     binEthr = inputHist.GetYaxis().FindBin(Ethr)
@@ -192,32 +192,60 @@ if __name__ == "__main__":
     ################# Input 1D Signal/Background 1D Histograms
 
     sigHist = ROOT.RooDataHist('sigHist', 'sigHist', 
-          ROOT.RooArgList(nuTime, nuEnergy), 
+          ROOT.RooArgList(nuTime1D, nuEnergy), 
           ROOT.RooFit.Import(inputHist, True) )
 
     bkgHist = ROOT.RooDataHist('bkgHist', 'bkgHist', 
-          ROOT.RooArgList(nuTime, nuEnergy), 
+          ROOT.RooArgList(nuTime1D, nuEnergy), 
           ROOT.RooFit.Import(inputBKG, True) )
 
     sigPdf = ROOT.RooHistPdf('sigPdf', 'sigPdf', 
-          ROOT.RooArgList(nuTime, nuEnergy), sigHist, 2)
+          ROOT.RooArgList(nuTime1D, nuEnergy), sigHist, 2)
 
     bkgPdf = ROOT.RooHistPdf('bkgPdf', 'bkgPdf', 
-          ROOT.RooArgList(nuTime, nuEnergy), bkgHist, 2)
+          ROOT.RooArgList(nuTime1D, nuEnergy), bkgHist, 2)
 
 
     #scaleFac = ROOT.RooRealVar('scaleFac', 'scaleFac', )
     nsig = ROOT.RooRealVar("nsig","#signal events", NEVENTS, 0., NEVENTS*1.2)
     nbkg = ROOT.RooRealVar("nbkg","#background events", 0.0)
 
+    inputHist1D = inputHist.ProjectionX('_pdfsigpx', binEthr, -1, '')
+    sigHist1D = ROOT.RooDataHist('sigHist1D', 'sigHist1D', 
+          ROOT.RooArgList(nuTime1D), 
+          ROOT.RooFit.Import(inputHist1D, True) )
+    sigPdf1D = ROOT.RooHistPdf('sigPdf1D', 'sigPdf1D', 
+          ROOT.RooArgList(nuTime1D), sigHist1D, 2)
+    fitPdf1D = ROOT.RooExtendPdf("fitPdf1D", "fitPdf1D", sigPdf1D, nsig)
 
     # fitPdf1D from nllFit.py
     fitPdf2D = ROOT.RooExtendPdf("fitPdf2D", "fitPdf2D", sigPdf, nsig)
+    
+    
+    can = ROOT.TCanvas("can", "can", 1200, 800)
+    pdfilename = "test.pdf"
+    can.Print(pdfilename + '[')
+    
+    xframe = nuTime1D.frame()
+    fitPdf2D.plotOn(xframe)
+    fitPdf1D.plotOn(xframe, ROOT.RooFit.LineColor(2))
+    xframe.Draw()
+    can.Print(pdfilename)
 
+    yframe = nuEnergy.frame()
+    fitPdf2D.plotOn(yframe)
+    yframe.Draw()
+    can.Print(pdfilename)
+
+    can.Print(pdfilename + ']')
+    
+    
+    
+    """
 
     ##################################
     # Obtain data sets from the root files
-    filename = ns.dataFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
+    filename = ns.dataOldFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
     print(filename)
     dataFile  = ROOT.TFile(filename, 'read')
     inputTree = dataFile.Get('tFixedStat')
@@ -228,10 +256,9 @@ if __name__ == "__main__":
     if chaname == 1:  # snDet.NuE
         Tmin, Tmax, Emin, Emax = -0.02, 0.025, 0.1, 10.0
 
-    nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
-    nuEnergy2D = ROOT.RooRealVar("nuEnergy2D", "nuEnergy2D", Emin, Emax)
+    nuTime1D = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
+    nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
     evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 5000)
-
 
     resFiles = ns.fit2DResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
     resfileRaw = open(resFiles[0], "w")
@@ -251,15 +278,16 @@ if __name__ == "__main__":
     #can2.cd(1).SetRightMargin(0.05)
     #can2.cd(2).SetRightMargin(0.05)
 
-    newArgSet2D = ROOT.RooArgSet(nuTime2D, nuEnergy2D)
+    newArgSet2D = ROOT.RooArgSet(nuTime1D, nuEnergy)
 
     nStat = 500
-    for iSub in range(1, nStat+1):
+    #for iSub in range(1, nStat+1):
+    for iSub in range(1, 2):
         print('Process toy dataset %d'%iSub)
         # Get RooDataSet from the tree
 
         preSelData2D = ROOT.RooDataSet("dataGroup%d"%(iSub), "2d dataset with (e, t)", 
-                        inputTree, ROOT.RooArgSet(nuTime2D, nuEnergy, evtID),
+                        inputTree, ROOT.RooArgSet(nuTime1D, nuEnergy, evtID),
                         "evtID==%d"%(iSub))
     
         nFitEvts2D = round(preSelData2D.sumEntries())
@@ -287,27 +315,30 @@ if __name__ == "__main__":
             #print('################ iSub %d, Start of Coase Scan %d ################'%(iSub, iScan))
             fitdata2D = ROOT.RooDataSet('fitdata2D', 'fitdata2D', newArgSet2D)
             # change the range for NLL fitting the dataset
-            nuTime2D.setRange('nllRange', Tmin + dT, Tmax + dT)
-            nuEnergy2D.setRange('nllRange', Emin, Emax)
+            nuTime1D.setRange('nllRange', Tmin + dT, Tmax + dT)
+            nuEnergy.setRange('nllRange', Emin, Emax)
 
             for iEvt in range(nFitEvts2D):
                 argSet = preSelData2D.get(iEvt)
-                timeTmp = argSet.getRealValue("nuTime2D")
-                energyTmp = argSet.getRealValue("nuEnergy2D")
+                timeTmp = argSet.getRealValue("nuTime1D")
+                energyTmp = argSet.getRealValue("nuEnergy")
                 weight = preSelData2D.weight()
                 weightError = preSelData2D.weightError()
-                newArgSet2D.setRealValue('nuTime2D', timeTmp+dT)
-                newArgSet2D.setRealValue('nuEnergy2D', energyTmp)
+                newArgSet2D.setRealValue('nuTime1D', timeTmp+dT)
+                newArgSet2D.setRealValue('nuEnergy', energyTmp)
 
                 fitdata2D.add( newArgSet2D, weight, weightError)
             
             #print('fitdata2D.sumEntries()', round(fitdata2D.sumEntries()))
-            res = fitPdf2D.fitTo(fitdata2D, ROOT.RooFit.Range('nllRange'),
-                            ROOT.RooFit.Save(), ROOT.RooFit.Extended(),
-                            ROOT.RooFit.PrintLevel(-1))
+            #res = fitPdf2D.fitTo(fitdata2D, ROOT.RooFit.Range('nllRange'),
+            #                ROOT.RooFit.Save(), ROOT.RooFit.Extended(),
+            #                ROOT.RooFit.PrintLevel(-1))
+
+            #res = fitPdf2D.fitTo(fitdata2D)
+            res = sigPdf.fitTo(fitdata2D)
 
             nllVal = res.minNll()
-            #print(nllVal)
+            print("coarse scanning : ", dT, nllVal)
 
             del fitdata2D
 
@@ -322,6 +353,10 @@ if __name__ == "__main__":
 
         print("coarse minimum : ", bestfitDT, locMinNLL )
         print('################ End of Coase Scan ################')
+
+        #############################################################
+        ###################   Fine Time Scannig   ###################
+        #############################################################
 
         nllList, tScan, nsigList = [], [], []
         dTexp = bestfitDT    # initial value for deltaT ...
@@ -340,23 +375,25 @@ if __name__ == "__main__":
             fitdata2D = ROOT.RooDataSet('fitdata2D', 'fitdata2D', newArgSet2D)
             for iEvt in range(nFitEvts2D):
                 argSet = preSelData2D.get(iEvt)
-                timeTmp = argSet.getRealValue('nuTime2D')
+                timeTmp = argSet.getRealValue('nuTime1D')
                 energyTmp = argSet.getRealValue("nuEnergy")
                 weight = preSelData2D.weight()
                 weightError = preSelData2D.weightError()
-                newArgSet2D.setRealValue('nuTime2D', timeTmp+dT)
-                newArgSet2D.setRealValue('nuEnergy2D', energyTmp)
+                newArgSet2D.setRealValue('nuTime1D', timeTmp+dT)
+                newArgSet2D.setRealValue('nuEnergy', energyTmp)
 
                 fitdata2D.add( newArgSet2D, weight, weightError)
 
                 fitdata2D.add( newArgSet2D, weight, weightError)
 
-            nuTime2D.setRange('nllRange', Tmin+dT, Tmax + dT)
+            nuTime1D.setRange('nllRange', Tmin+dT, Tmax + dT)
 
             res = fitPdf2D.fitTo(fitdata2D, ROOT.RooFit.Range('nllRange'),
                             ROOT.RooFit.Save(), ROOT.RooFit.Extended(),
                             ROOT.RooFit.PrintLevel(-1))
             nllVal = res.minNll()
+
+            print("fine scanning : ", dT, nllVal)
 
             if math.isnan(nllVal) != True:
                 tScan.append( dT )
@@ -401,10 +438,11 @@ if __name__ == "__main__":
     resfileSummary.close()
     pdfFile.Close()
 
+    """
 
          #   #if iSub % 5 == 0:
          #    if badFlag == True:
-         #       xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
+         #       xframe = nuTime1D.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
          #                       ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
          #       xframe.GetYaxis().SetTitleOffset(1.4)
          #       can.cd()
