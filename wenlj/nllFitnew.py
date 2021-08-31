@@ -141,14 +141,11 @@ if __name__ == "__main__":
 
     # ###################################
     # # Obtain the fitting PDF
-    #prefix = "./etSpec/fineSpec/TEvisPDF_"
-    #prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],fitMH)
-    #filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25.root'%(nuMass2, dist)
-    filename = ns.pdfFileName(modelNum, dist, chaname, nuMass2, fitMH)
+    filename = ns.pdfSumFileName(modelNum, dist, chaname, nuMass2, fitMH, nuType, 25.00)
     print(filename)
     pdfFile  = ROOT.TFile(filename, 'read')
-    inputHist = pdfFile.Get(ns.pdfSigHist2DName(modelNum, chaname, fitMH))
-    inputBKG  = pdfFile.Get(ns.pdfBkgHist2DName(modelNum, chaname, fitMH))
+    inputHist = pdfFile.Get("TEvisPdf")
+    #inputBKG  = pdfFile.Get("TBkgEvisPdf")
 
     Tmin = inputHist.GetXaxis().GetXmin()
     Tmax = inputHist.GetXaxis().GetXmax()
@@ -177,51 +174,55 @@ if __name__ == "__main__":
     binEthr = inputHist.GetYaxis().FindBin(Ethr)
     print('Ethr, binEthr, lower bin edge of binEthr: ', 
           Ethr, ',', binEthr, ', ', inputHist.GetYaxis().GetBinLowEdge(binEthr)) 
+    binEmax = inputHist.GetYaxis().FindBin(4.)
+    print('Ethr, binEmax, lower bin edge of binEmax: ', 
+          10., ',', binEmax, ', ', inputHist.GetYaxis().GetBinLowEdge(binEmax)) 
 
     ################# Input 1D Signal/Background 1D Histograms
 
-    inputHist1D = inputHist.ProjectionX('_pdfsigpx', binEthr, -1, '')
-    inputBKG1D  =  inputBKG.ProjectionX('_pdfbkgpx', binEthr, -1, '')
+    inputHist1D = inputHist.ProjectionX('_pdfsigpx', binEthr, binEmax, '')
+    #inputBKG1D  =  inputBKG.ProjectionX('_pdfbkgpx', binEthr, -1, '')
 
     sigHist = ROOT.RooDataHist('sigHist', 'sigHist', 
           ROOT.RooArgList(nuTime, nuEnergy), 
           ROOT.RooFit.Import(inputHist, True) )
 
-    bkgHist = ROOT.RooDataHist('bkgHist', 'bkgHist', 
-          ROOT.RooArgList(nuTime, nuEnergy), 
-          ROOT.RooFit.Import(inputBKG, True) )
+    #bkgHist = ROOT.RooDataHist('bkgHist', 'bkgHist', 
+    #      ROOT.RooArgList(nuTime, nuEnergy), 
+    #      ROOT.RooFit.Import(inputBKG, True) )
 
     sigPdf = ROOT.RooHistPdf('sigPdf', 'sigPdf', 
           ROOT.RooArgList(nuTime, nuEnergy), sigHist, 2)
 
-    bkgPdf = ROOT.RooHistPdf('bkgPdf', 'bkgPdf', 
-          ROOT.RooArgList(nuTime, nuEnergy), bkgHist, 2)
+    #bkgPdf = ROOT.RooHistPdf('bkgPdf', 'bkgPdf', 
+    #      ROOT.RooArgList(nuTime, nuEnergy), bkgHist, 2)
 
     # 1D PDF in time domain
     sigHist1D = ROOT.RooDataHist('sigHist1D', 'sigHist1D', 
           ROOT.RooArgList(nuTime), 
           ROOT.RooFit.Import(inputHist1D, True) )
 
-    bkgHist1D = ROOT.RooDataHist('bkgHist1D', 'bkgHist1D', 
-          ROOT.RooArgList(nuTime), 
-          ROOT.RooFit.Import(inputBKG1D, True) )
+    #bkgHist1D = ROOT.RooDataHist('bkgHist1D', 'bkgHist1D', 
+    #      ROOT.RooArgList(nuTime), 
+    #      ROOT.RooFit.Import(inputBKG1D, True) )
 
     sigPdf1D = ROOT.RooHistPdf('sigPdf1D', 'sigPdf1D', 
           ROOT.RooArgList(nuTime), sigHist1D, 2)
 
-    bkgPdf1D = ROOT.RooHistPdf('bkgPdf1D', 'bkgPdf1D', 
-          ROOT.RooArgList(nuTime), bkgHist1D, 2)
+    #bkgPdf1D = ROOT.RooHistPdf('bkgPdf1D', 'bkgPdf1D', 
+    #      ROOT.RooArgList(nuTime), bkgHist1D, 2)
 
     #scaleFac = ROOT.RooRealVar('scaleFac', 'scaleFac', )
     nsig = ROOT.RooRealVar("nsig","#signal events", NEVENTS, 0., NEVENTS*1.2)
-    nbkg = ROOT.RooRealVar("nbkg","#background events", 0.0)
+    #nbkg = ROOT.RooRealVar("nbkg","#background events", 0.0)
 
-    fitPdf = ROOT.RooAddPdf('fitPdf', 'fitPdf', 
-          ROOT.RooArgList(sigPdf, bkgPdf), 
-          ROOT.RooArgList(nsig, nbkg) )
+    #fitPdf = ROOT.RooAddPdf('fitPdf', 'fitPdf', 
+    #      ROOT.RooArgList(sigPdf, bkgPdf), 
+    #      ROOT.RooArgList(nsig, nbkg) )
 
     # fitPdf1D from nllFit.py
     fitPdf1D = ROOT.RooExtendPdf("fitPdf1D", "fitPdf1D", sigPdf1D, nsig)
+    print("1DfitPdf has been constructed successfully !")
 
     # old fitPdf1D in this script:
     #fitPdf1D = ROOT.RooAddPdf('fitPdf1D', 'fitPdf1D', 
@@ -230,10 +231,13 @@ if __name__ == "__main__":
 
     ##################################
     # Obtain data sets from the root files
-    #prefix = './dataset/fineSpec/%2.1fkpc/TEvisDATA_'%(dist)
-    #prefix += 'mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname],dataMH)
-    #filename = prefix+'_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25_Ethr%2.1fMeV_group%d.root'%(nuMass1, dist, Ethr, group)
-    filename = ns.dataFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
+    if dataMH == 1:
+        dmo = "NO"
+    if dataMH == 2:
+        dmo = "IO"
+    #filename = "/junofs/users/miaoyu/supernova/miao/mini-pkg/fitter/nuMass0.0eV_"+dmo+"_stat1000.root"
+    filename = ns.dataFileName(modelNum, dist, chaname, nuType, nuMass1, dataMH, Ethr, group)
+    #filename = ns.dataOldFileName(modelNum, dist, chaname, nuMass1, dataMH, Ethr, group)
     print(filename)
     dataFile  = ROOT.TFile(filename, 'read')
     inputTree = dataFile.Get('tFixedStat')
@@ -245,26 +249,21 @@ if __name__ == "__main__":
         Tmin, Tmax, Emin, Emax = -0.02, 0.025, 0.1, 4.0
 
     nuTime1D = ROOT.RooRealVar("nuTime1D", "nuTime1D", Tmin, Tmax)
-    #nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
-    #nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
+    nuTime2D = ROOT.RooRealVar("nuTime2D", "nuTime2D", Tmin, Tmax)
+    nuEnergy = ROOT.RooRealVar("nuEnergy", "nuEnergy", Emin, Emax)
     evtID    = ROOT.RooRealVar("evtID", "evtID", 0, 500)
 
-    prefix = './dataset/%2.1fkpc/TEvisDATA_'%(dist)
-    prefix += 'mod%d_cha%d%s_dataMH%d_fitMH%d'%(modelNum, chaname, chaName[chaname], dataMH, fitMH)
-    resFilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_num2'%(nuMass1, nuMass2, dist, Ethr, group)
-    resfileRaw = open(resFilename + '_1DFitRaw.txt', 'w')
-    resfileSummary = open(resFilename + '_1DFitSummary.txt', 'w')
-
+    resFiles = ["tt0.txt", "tt1.txt"]
     #resFiles = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
-    #resfileRaw = open(resFiles[0], "w")
-    #resfileSummary = open(resFiles[1], 'w')
-    #print(resFiles[0])
-    #print(resFiles[1])
-    #resfileRaw = open(resFiles[0], 'w')
-    
+    resfileRaw = open(resFiles[0], "w")
+    resfileSummary = open(resFiles[1], 'w')
+    ##print(resFiles[0])
+    ##print(resFiles[1])
+    resfileRaw = open(resFiles[0], 'w')
+    #
     can = ROOT.TCanvas("can", "can", 1200, 800)
-    pdfilename = prefix+'_data%2.1feV_pdf%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_1DFit.pdf'%(nuMass1, nuMass2, dist, Ethr, group)
-    pdfilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
+    pdfilename = "tt.pdf"
+    #pdfilename = ns.fitResPdfName(modelNum, chaname, dataMH, nuMass1, fitMH, nuMass2, dist, Ethr, group)
     can.Print(pdfilename + '[')
 
     can2 = ROOT.TCanvas("can2", "can2", 1200, 800)
@@ -274,15 +273,17 @@ if __name__ == "__main__":
     can2.cd(2).SetRightMargin(0.05)
 
     newArgSet = ROOT.RooArgSet(nuTime)
-    #newArgSet = ROOT.RooArgSet(nuTime, nuEnergy)
 
-    nStat = 500
-    for iSub in range(1, nStat+1):
+
+    nStat = 100
+    #for iSub in range(1, nStat+1):
+    for iSub in range(29, 30):
         print('Process toy dataset %d'%iSub)
         # Get RooDataSet from the tree
         preSelData1D = ROOT.RooDataSet("dataGroup%d"%(iSub), "dataset with (e,t)", 
                         inputTree, ROOT.RooArgSet(nuTime1D, evtID), 
                         "evtID==%d"%(iSub) )
+
     
         nFitEvts1D = round(preSelData1D.sumEntries())
         print('preSelData1D.sumEntries(): ', nFitEvts1D )
@@ -311,12 +312,15 @@ if __name__ == "__main__":
             #print('fitdata.sumEntries()', round(fitdata.sumEntries()))
             # change the range for NLL fitting the dataset
             nuTime.setRange('nllRange', Tmin + dT, Tmax + dT)
-            #nuEnergy.setRange('nllRange', Emin, Emax)
+            nuEnergy.setRange('nllRange', Emin, Emax)
         
             #newTList, energyList = [], []
+            nNu_nllRange = 0
             for iEvt in range(nFitEvts1D):
                 argSet = preSelData1D.get(iEvt)
                 timeTmp = argSet.getRealValue('nuTime1D')
+                if timeTmp >-0.015 and timeTmp <= 0.02:
+                    nNu_nllRange += 1
                 #energyTmp = argSet.getRealValue('nuEnergy')
                 weight = preSelData1D.weight()
                 weightError = preSelData1D.weightError()
@@ -331,12 +335,14 @@ if __name__ == "__main__":
                 #print('change, timeTmp: ', newArgSet.getRealValue('nuTime1D'))
                 fitdata.add( newArgSet, weight, weightError)
 
+            print("Neutrino number in ROI : %d"%nNu_nllRange)
             res = fitPdf1D.fitTo(fitdata, ROOT.RooFit.Range('nllRange'),
                             ROOT.RooFit.Save(), ROOT.RooFit.Extended(),
                             ROOT.RooFit.PrintLevel(-1))
             nllVal = res.minNll()
             
-            # print('fitdata.sumEntries()', round(fitdata.sumEntries()))
+            #print("final sat. neutrino number : %d" %nNu_nllRange)
+            #print('fitdata.sumEntries()', round(fitdata.sumEntries()))
             # print('################ iSub %d, End of Coase Scan %d ################'%(iSub, iScan))
             del fitdata
 
@@ -390,29 +396,6 @@ if __name__ == "__main__":
             nllVal = res.minNll()
 
 
-            if iSub % 50 == 0:
-                xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
-                                ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
-                xframe.GetYaxis().SetTitleOffset(1.4)
-                can.cd()
-                fitdata.plotOn(xframe)
-                ## fitPdf.plotOn(xframe, ROOT.RooFit.ProjectionRange('nllRange'),
-                ##                 ROOT.RooFit.LineColor(2) )
-                #                    #ROOT.RooFit.DrawOption("E"),
-                #                    #ROOT.RooFit.FillColor(ROOT.kOrange),
-                #                    #ROOT.RooFit.MoveToBack() )
-                fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
-                        ROOT.RooFit.Normalization(nFitEvts1D, ROOT.RooAbsReal.NumEvent),
-                        ROOT.RooFit.LineColor(2))
-                xframe.Draw()
-                can.Print(pdfilename)
-
-         # fitdata.plotOn(yframe)
-         # fitPdf3.plotOn(xframe, ROOT.RooFit.ProjectionRange('fitRange'), 
-         #         ROOT.RooFit.Normalization(fitNevts, ROOT.RooAbsReal.NumEvent),
-         #         ROOT.RooFit.LineColor(2))
-            del fitdata
-
             if math.isnan(nllVal) != True:
                 tScan.append( dT )
                 nllList.append( nllVal )
@@ -423,13 +406,63 @@ if __name__ == "__main__":
                     bestfitNSIG = nsig.getVal()
                     bestStatus = res.status()
 
+
+            xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
+                            ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
+            xframe.GetYaxis().SetTitleOffset(1.4)
+            can.cd()
+            fitdata.plotOn(xframe)
+            fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
+                     ROOT.RooFit.Normalization(nFitEvts1D, ROOT.RooAbsReal.NumEvent),
+                     ROOT.RooFit.LineColor(2))
+            xframe.Draw()
+            can.Print(pdfilename)
+            del fitdata
+
+        ## ----- Here is a preliminary checks on fitting quantities ----- #
+        
+        badFlag = False
+        locMinNll, locMaxNll = [], []
+        for idd in range(1, len(nllList)-1, 1):
+            if nllList[idd-1] < nllList[idd] and nllList[idd] > nllList[idd+1] :
+                locMaxNll.append(nllList[idd])
+            if nllList[idd-1] > nllList[idd] and nllList[idd] < nllList[idd+1] :
+                locMinNll.append(nllList[idd])
+
+        if len(locMaxNll) > 0 or len(locMinNll) > 1 :   # unexpected shape
+            badFlag = True
+            print("locMinNum = %d, locMaxNum = %d" %(len(locMinNll), len(locMaxNll))) 
+
+        ## -------------------------------------------------------------- #
+
+
+
+
+         #   #if iSub % 5 == 0:
+         #    if badFlag == True:
+        #xframe = nuTime.frame(ROOT.RooFit.Title("data group %d, dT: %8.5f"%(iSub, dT)), 
+        #                ROOT.RooFit.Range('nllRange'), ROOT.RooFit.Bins(100))
+        #xframe.GetYaxis().SetTitleOffset(1.4)
+        #can.cd()
+        #fitdata.plotOn(xframe)
+        #fitPdf1D.plotOn(xframe, ROOT.RooFit.Range('nllRange'),
+        #         ROOT.RooFit.Normalization(nFitEvts1D, ROOT.RooAbsReal.NumEvent),
+        #         ROOT.RooFit.LineColor(2))
+        #xframe.Draw()
+        #can.Print(pdfilename)
+
+        #del fitdata
+
+
         print('nll: ', nllList)
         #print(preSelData1D)
         print('################ End of Fine Scan ################')
         del preSelData1D    
 
+
         # Draw the nll profile of iSub toy dataset
-        if iSub % 50 == 0:
+        #if badFlag == True:
+        if iSub % 1 == 0:
             tScanX = array('d', tScan)
             nllListY = array('d', nllList)
             nsigListY = array('d', nsigList)
