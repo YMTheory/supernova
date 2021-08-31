@@ -26,10 +26,18 @@ def pdfSumFileName(modelNum, dist, chaname, fitNuMass, fitMH, nuType, Evismax):
     prefix += MO[int(fitMH)] + "/"
     filename = prefix + 'TEvisPDF_mod%d_cha%d%s_nuType%d_mh%d'%(modelNum, chaname, chaName[chaname], nuType, fitMH)
     filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evismax%.2f_Sum.root'%(fitNuMass, dist, Evismax)
-    print("-----> PDF filename: %s" %filename)
+    #print("-----> PDF filename: %s" %filename)
 
     return filename
 
+def pdfOldFileName(modelNum, dist, chaname, fitNuMass, fitMH):
+    ## fitting pdf filename
+    MO = ["noOsc", "NO", "IO"]
+    filename = pdfPathPrefix + 'TEvisPDF_mod%d_cha%d%s_mh%d'%(modelNum, chaname, chaName[chaname], fitMH)
+    filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25.root'%(fitNuMass, dist)
+    print("-----> PDF filename: %s" %filename)
+
+    return filename
 
 
 
@@ -57,12 +65,33 @@ def pdfGenShName(modelNum, chaname, nuType, nuMass, MH, dist, no):
     return logname
 
 
-def dataFileName(modelNum, dist, chaname, dataNuMass, dataMH, Ethr, group):
+def fitGenShName(modelNum, chaname, nuType, dataMass, dataMH, fitMass, fitMH, dist, group):
+    shname = ShPathPrefix + "run-fitmiao-mod%d-cha%d-nuType%d-dataMass%.1f-dataMH%d-fitMass%.1f-fitMH%d-dist-%.1f-group%d.sh" %(modelNum, chaname, nuType, dataMass, dataMH, fitMass, fitMH, dist, group)
+    return shname
+
+
+def fitGenLogName(modelNum, chaname, nuType, dataMass, dataMH, fitMass, fitMH, dist, group):
+    shname = LogPathPrefix + "log-fitmiao-mod%d-cha%d-nuType%d-dataMass%.2f-dataMH%d-fitMass%.2f-fitMH%d-dist-%.1f-group%d.txt" %(modelNum, chaname, nuType, dataMass, dataMH, fitMass, fitMH, dist, group)
+    return shname
+
+
+
+
+
+def dataFileName(modelNum, dist, chaname, nuType, dataNuMass, dataMH, Ethr, group):
     filename = toyDataPathPrefix + "%2.1fkpc/TEvisDATA_" %(dist)
-    filename = filename + 'mod%d_cha%d%s_mh%d' %(modelNum, chaname, chaName[chaname], dataMH)
+    filename = filename + 'mod%d_cha%d%s_nuType%d_mh%d' %(modelNum, chaname, chaName[chaname], nuType, dataMH)
     filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25_Ethr%2.1fMeV_group%d.root' %(dataNuMass, dist, Ethr, group)
 
-    print("-----> toyData filename: %s" %filename)
+    #print("-----> toyData filename: %s" %filename)
+    return filename
+    
+def dataOldFileName(modelNum, dist, chaname, dataNuMass, dataMH, Ethr, group):
+    filename = toyDataPathPrefix + "%2.1fkpc/TEvisDATA_" %(dist)
+    filename = filename + 'mod%d_cha%d%s_mh%d' %(modelNum, chaname, chaName[chaname],  dataMH)
+    filename = filename + '_mNu%2.1feV_%2.1fkpc_0.1s_Evmax25_Ethr%2.1fMeV_group%d.root' %(dataNuMass, dist, Ethr, group)
+
+    #print("-----> toyData filename: %s" %filename)
     return filename
     
     
@@ -75,6 +104,19 @@ def fitResFileName(modelNum, chaname, dataMH, dataNuMass, fitMH, fitNuMass, dist
     sumfile = filename + "Summary.txt"
 
     return rawfile, sumfile
+
+
+
+def fit2DResFileName(modelNum, chaname, dataMH, dataNuMass, fitMH, fitNuMass, dist, Ethr, group):
+    filename = fitResPathPrefix + "%2.1fkpc/TEvisDATA_" %(dist)
+    filename = filename + "mod%d_cha%d%s_dataMH%d_datamNu%2.1feV_fitMH%d_fitmNu%2.1feV_%2.1fkpc_Ethr%2.1fMeV_group%d_2DFit" %(modelNum, chaname, chaName[chaname], dataMH, dataNuMass, fitMH, fitNuMass, dist, Ethr, group)
+
+    rawfile = filename + "Raw.txt"
+    sumfile = filename + "Summary.txt"
+
+    return rawfile, sumfile
+
+
 
 
 

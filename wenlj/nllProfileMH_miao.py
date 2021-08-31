@@ -6,6 +6,7 @@ import numpy.ma as ma
 import namespace as ns
 
 
+
 def getValue(strline):
     values = strline.split()
     x1 = int(values[0])
@@ -91,8 +92,8 @@ if __name__ == "__main__":
 
     
 
-    num_datasets = 100
-    numass_hypotheses = 21
+    num_datasets = 100 #500
+    numass_hypotheses = 20
 
     xvals_NO = np.linspace(0, 2.0, numass_hypotheses)
     xvals_IO = np.linspace(0, 2.0, numass_hypotheses)
@@ -109,6 +110,8 @@ if __name__ == "__main__":
     deltaChi2 = np.zeros((num_datasets, numass_hypotheses))
 
     fig, axs = plt.subplots(3, 7, figsize=(30, 5))
+
+    # Loading fitting results from output txt
     for iPDF in range(numass_hypotheses):
 
         groupNum_NO, deltaT_NO, nllVal_NO, nsig_NO = [], [], [], []
@@ -121,6 +124,7 @@ if __name__ == "__main__":
             nuMass2 = iPDF * 0.1
 
             filename = ns.fitResFileName(modelNum, chaname, dataMH, nuMass1, imh, nuMass2, dist, Ethr, group)[1]
+            print(filename)
             t1, t2, t3, t4, t5, t6 = getNLL(filename, num_datasets)
 
             if imh == 1:   #NO
@@ -138,7 +142,7 @@ if __name__ == "__main__":
                 nsig_IO     = nsig_IO   + t4
                 nStat_IO    = nStat_IO  + t5
                 status_IO   = status_IO  + t6
-
+        
         for iData in range(num_datasets):
             lambdas_NO[iData, iPDF] = nllVal_NO[iData] * 2 # chi2 ~ 2* (NLL(x) - NLL_loc_min)
             lambdas_IO[iData, iPDF] = nllVal_IO[iData] * 2 # chi2 ~ 2* (NLL(x) - NLL_loc_min)
@@ -219,18 +223,21 @@ if __name__ == "__main__":
     for iPDF in range(numass_hypotheses):
 
         # remove the bad fits
-        mask_NO = (nllStatus_NO[:,iPDF]!=0)
-        mask_IO = (nllStatus_IO[:,iPDF]!=0)
-        mask    = (nllStatus_IO[:,iPDF]!=0) | (nllStatus_NO[:,iPDF]!=0)
+        #mask_NO = (nllStatus_NO[:,iPDF]!=0)
+        #mask_IO = (nllStatus_IO[:,iPDF]!=0)
+        #mask    = (nllStatus_IO[:,iPDF]!=0) | (nllStatus_NO[:,iPDF]!=0)
+        mask_NO = (nllStatus_NO[:,iPDF]==0)
+        mask_IO = (nllStatus_IO[:,iPDF]==0)
+        mask    = (nllStatus_IO[:,iPDF]==0) | (nllStatus_NO[:,iPDF]==0)
 
         maskedDchisq = ma.masked_array(deltaChi2[:,iPDF], mask)
-        if iPDF==0:
-            print('test mask_NO: ', mask_NO)
-            print('test mask_IO: ', mask_IO)
-            print('test mask: ', mask)
-            print('test deltaChi2 original: ', deltaChi2[:,iPDF])
-            print('test deltaChi2 masked: ', deltaChi2[mask][iPDF])
-            print('maskedDchisq: ', maskedDchisq)
+        #if iPDF==0:
+        #    print('test mask_NO: ', mask_NO)
+        #    print('test mask_IO: ', mask_IO)
+        #    print('test mask: ', mask)
+        #    print('test deltaChi2 original: ', deltaChi2[:,iPDF])
+        #    print('test deltaChi2 masked: ', deltaChi2[mask][iPDF])
+        #    print('maskedDchisq: ', maskedDchisq)
 
         axs[ix, iy] = plt.subplot(3, 7, 1+iPDF)
         axs[ix, iy].hist(maskedDchisq, bins=20, range=(chi2Min, chi2Max), \
@@ -349,9 +356,10 @@ if __name__ == "__main__":
             else:
                 mask = (nllShifted_NO[iData]<0.) | (nllShifted_NO[iData]>7.)
 
-            if np.count_nonzero(mask)!=21:
+            if np.count_nonzero(mask)!=20:
                 p = np.polyfit(maskedX, maskedNLL, 2.)
-                crossings_NO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
+                crossings_NO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-0.88) ))/(2*p[0])
+                #crossings_NO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
                 if math.isnan(crossings_NO[iData])==True:
                     print('2 crossings_NO[iData]==math.nan')
                     crossings_mask_NO[iData] = True
@@ -369,9 +377,10 @@ if __name__ == "__main__":
             else:
                 mask = (nllShifted_IO[iData]<0.) | (nllShifted_IO[iData]>7.)
 
-            if np.count_nonzero(mask)!=21:
+            if np.count_nonzero(mask)!=20:
                 p = np.polyfit(maskedX, maskedNLL, 2.)
-                crossings_IO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
+                crossings_IO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-0.96) ))/(2*p[0])
+                #crossings_IO[iData] = (-p[1] + np.sqrt( p[1]**2 - 4*(p[0])*(p[2]-2.706) ))/(2*p[0])
                 if math.isnan(crossings_IO[iData])==True:
                     print('2 crossings_IO[iData]==math.nan')
                     crossings_mask_IO[iData] = True
@@ -428,7 +437,7 @@ if __name__ == "__main__":
             maskedNLL = ma.masked_array(nllShifted_NO[iData,:], mask)
             maskedX = ma.masked_array(xvals_NO, mask)
 
-        if np.count_nonzero(mask)!=21:
+        if np.count_nonzero(mask)!=20:
             plt.plot(maskedX,maskedNLL,'--',label='ToyData{}'.format(iData),linewidth=0.5)
 
     plt.plot(xvals_NO,np.ones(len(xvals_NO))*2.706,'--k')
@@ -440,7 +449,7 @@ if __name__ == "__main__":
     picName = './spectra/fineSpec/numass_data%2.1feV_mh%d_%2.1fkpc_Ethr%2.1fMeV_group%d'%\
               (nuMass1, dataMH, dist, Ethr, group)
     plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
-    plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
+    #plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
     #plt.savefig('./spectra/numass_data%2.1feV_%2.1fkpc_group%d.png'%(nuMass1, dist, group), dpi=400, bbox_inches='tight')
 
     meanSens, medianSens = 0., 0.
@@ -474,16 +483,23 @@ if __name__ == "__main__":
     picName = './spectra/fineSpec/nuMassSens_data%2.1f_mh%d_%2.1fkpc_group%d'\
               %(nuMass1, dataMH, dist, group)
     plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
-    plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
+    #plt.savefig(picName+'.png', dpi=400, bbox_inches='tight')
 
     fig4, ax4 = plt.subplots(1,1)
     print("========>")
     print(chi2Max)
     print(DeltaChisq)
-    nCounts, bins, patches = plt.hist(DeltaChisq,bins=np.linspace(0, DeltaChisq.max()+10,100))
+    meanNMOSens = DeltaChisq.mean()
+    medianNMOSens = ma.median(DeltaChisq)
+    nCounts, bins, patches = plt.hist(DeltaChisq,bins=np.linspace(0, DeltaChisq.max()+10,100), color="blue", edgecolor="black")
     nCounts = np.array(nCounts)
+    plt.plot([medianNMOSens, medianNMOSens], [0, np.max(nCounts)], "--k")
+    plt.text(medianNMOSens+4, 0.9*np.max(nCounts), r"median $\Delta \chi^2$: %3.2f "%medianNMOSens )
     ax4.set_ylabel('Counts ({} trials total)'.format(num_datasets))
-    ax4.set_xlabel(r'$\chi^2(NO) - \chi^2(IO)$')
+    if dataMH == 2:
+        ax4.set_xlabel(r'$\chi^2(NO) - \chi^2(IO)$')
+    if dataMH == 1:
+        ax4.set_xlabel(r'$\chi^2(IO) - \chi^2(NO)$')
     picName = './spectra/fineSpec/NMOSens_data%2.1f_mh%d_%2.1fkpc_group%d'\
               %(nuMass1, dataMH, dist, group)
     plt.savefig(picName+'.pdf', dpi=400, bbox_inches='tight')
