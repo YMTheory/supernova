@@ -226,7 +226,7 @@ if __name__ == "__main__" :
     dist = 10.0
     MH = 2
     Ethr = 0.1
-    group = 1
+    group = 770
     mNu, minNLL = [], []
     prefix = "./dataset/%2.1fkpc/TEvisDATA_" %(dist)
 
@@ -270,9 +270,14 @@ if __name__ == "__main__" :
                     print("Check Sample : %d Event with nuMass %.1f" %(evtid, k/10.))
                     
                     mm = k/10.
-                    pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+                    #pdfname = ns.pdfOldFileName(modelNum, dist, chaname, mm, MH)
+                    #pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
+                    ##dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+                    #dataname = "/junofs/users/miaoyu/supernova/miao/mini-pkg/fitter/nuMass0.0eV_"+dmo+"_stat1000.root"
+                    pdfname = filename = ns.pdfSumFileName(modelNum, dist, chaname, nuMass2, fitMH, nuType, 25.00)
                     pdfHistname = ns.pdfEvisHist2DName(modelNum, chaname, MH)
-                    dataname = ns.dataFileName(modelNum, dist, chaname, 0, MH, 0.1, 1)
+                    pdfHistname = "TEvisPdf"
+                    dataname = ns.dataFileName(modelNum, dist, chaname, nuType, nuMass1, dataMH, Ethr, group)
                     print(pdfname)
 
                     print(pdfHistname)
