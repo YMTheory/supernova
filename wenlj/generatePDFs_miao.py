@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # time binning 
     tmin, tmax = -0.1, 0.1
     t1_thr, t2_thr = -0.025, 0.1
-    step_t0, step_t1, step_t2 = 0.00005, 0.00005, 0.0005
+    step_t0, step_t1, step_t2 = 0.00005, 0.00005, 0.00005
     #step_t0, step_t1, step_t2 = 0.001, 0.001, 0.001
     npt0 = round( (t1_thr-tmin)/step_t0 )
     npt1 = round( (t2_thr-t1_thr)/step_t1 )
@@ -113,6 +113,8 @@ if __name__ == "__main__":
     
     if chaname == snDet.NuP:
         Evismax, step_Evis = 5.0, 0.01
+        Evismin = float( sys.argv[7] )
+        Evismax = float( sys.argv[8] )
     if chaname == snDet.NuE:
         Evismax, step_Evis = 25,  0.05
         #Evismax, step_Evis = 25,  0.5
@@ -246,6 +248,25 @@ if __name__ == "__main__":
                             #print(timeTmp[0], EvTmp, EvisTmp, fluence, dxs, tot_fluence)
                             
                         if tot_fluence > 0. :
+                            h2d_etSpec[0].Fill(timeTmp[0], EvisTmp, tot_fluence*step_Ev)
+                            h2d_eNuTSpec[0].Fill(timeTmp[0], EvTmp, tot_fluence)
+
+
+            if chaname == snDet.NuP:
+                for j in range(nbins_Ev):
+                    EvTmp = Evmin + (j+0.5)*step_Ev
+                    timeTmp[0] = binning_time[ipt] + 0.5*itwidth
+
+                    if nuType == -1 :
+                        tot_fluence = 0
+                        for i in range(6) :
+                            timeTmp[0] = binning_time[ipt] + 0.5 * itwidth
+                            fluence = modelSrc.snFluenceDetAtTime(timeTmp, nuMass, EvTmp, i, MH)
+                            T = snDet.getTFromEvis(EvisTmp)
+                            dxs = peffLS.differentialXS(EvTmp, T, i)
+                            tot_fluence += fluence * Npar * dxs
+
+                        if tot_fluence > 0:
                             h2d_etSpec[0].Fill(timeTmp[0], EvisTmp, tot_fluence*step_Ev)
                             h2d_eNuTSpec[0].Fill(timeTmp[0], EvTmp, tot_fluence)
 
