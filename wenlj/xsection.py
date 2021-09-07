@@ -9,7 +9,18 @@ import matplotlib.pyplot as plt
 libSNsimDir = '/junofs/users/miaoyu/supernova/wenlj/simulation/lib/libSNsim.so'
 ROOT.gSystem.Load(libSNsimDir)
 
-if __name__ == "__main__":
+def pES_XS(Ev, Tp, nutype):  # all in MeV
+    Mp = 938.    # MeV
+    index = 7.88e-42   # cm2/MeV
+    cV, cA = 0.04, 0.635
+    if nutype == 0 :
+        return index * ( (cV+cA)**2*Ev**2 + (cV-cA)**2*(Ev-Tp)**2 - (cV**2-cA**2)*Mp*Tp) / Ev**2
+    if nutype == 1:
+        return index * ( (cV-cA)**2*Ev**2 + (cV+cA)**2*(Ev-Tp)**2 - (cV**2-cA**2)*Mp*Tp) / Ev**2
+
+
+
+def generator():
 
     # ------------- Configure Suprenova model ---------------#
     snDet = ROOT.SNdetect.instance()
@@ -67,3 +78,72 @@ if __name__ == "__main__":
     plt.ylabel(r"$\sigma/cm^{-2}$")
     plt.savefig("xsection_eES+pES.pdf")
     plt.show()
+
+
+def TpMax(Ev):
+    Mp = 938
+    return 2*Ev**2/(Mp+2*Ev)
+
+
+def calculation():
+
+    Env = 30
+    Tmax = TpMax(Env)
+    print("%.1f MeV neutrino -> maximum proton KE = %.2f MeV" %(Env, Tmax))
+
+    Tp = np.arange(0, Tmax, 0.1)
+
+    xs_nu, xs_antinu = [], []
+    for i in Tp:
+        xs_nu.append(pES_XS(Env, i, 0))
+        xs_antinu.append(pES_XS(Env, i, 1))
+
+
+
+    plt.plot(Tp, xs_nu, "-", color="blue", label="Enu=30MeV, nu")
+    plt.plot(Tp, xs_antinu, "--", color="blue", label="Enu=30MeV, anti-nu")
+
+    Env = 40
+    Tmax = TpMax(Env)
+    print("%.1f MeV neutrino -> maximum proton KE = %.2f MeV" %(Env, Tmax))
+
+    Tp = np.arange(0, Tmax, 0.1)
+
+    xs_nu, xs_antinu = [], []
+    for i in Tp:
+        xs_nu.append(pES_XS(Env, i, 0))
+        xs_antinu.append(pES_XS(Env, i, 1))
+
+
+
+    plt.plot(Tp, xs_nu, "-", color="seagreen", label="Enu=40MeV, nu")
+    plt.plot(Tp, xs_antinu, "--", color="seagreen", label="Enu=40MeV, anti-nu")
+    Env = 50
+    Tmax = TpMax(Env)
+    print("%.1f MeV neutrino -> maximum proton KE = %.2f MeV" %(Env, Tmax))
+
+    Tp = np.arange(0, Tmax, 0.1)
+
+    xs_nu, xs_antinu = [], []
+    for i in Tp:
+        xs_nu.append(pES_XS(Env, i, 0))
+        xs_antinu.append(pES_XS(Env, i, 1))
+
+
+
+    plt.plot(Tp, xs_nu, "-", color="orange", label="Enu=50MeV, nu")
+    plt.plot(Tp, xs_antinu, "--", color="orange", label="Enu=50MeV, anti-nu")
+
+    plt.legend()
+    plt.xlabel(r"$T_p/MeV$")
+    plt.ylabel(r"$\frac{d\sigma}{dT_p} [cm^{2}/MeV]$")
+
+    plt.savefig("pES_xsection.pdf")
+    plt.show()
+
+
+
+
+
+if __name__ == "__main__" :
+    calculation()
