@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 plt.style.use("science")
 
 do_fine_scan = False
-combined_pES_time = True
+combined_pES = False
 
 def getIntegral(hist1d, x1, x2, opt):
     binx1 = hist1d.GetXaxis().FindBin(x1)
@@ -27,10 +27,10 @@ def calc_NLL(data, pdf, dT)->float:
         nll += np.log(pdf.Interpolate(i+dT))
     nu = getIntegral(pdf, -20+dT, 20+dT, "width")  # expected event numebr
     nll -= nu
-    N = len(data)
+    #N = len(data)
 
-    nll += N * np.log(nu)
-    nll -= nu
+    #nll += N * np.log(nu)
+    #nll -= nu
 
     return -nll
 
@@ -66,7 +66,7 @@ if __name__ == "__main__" :
 
 
 
-    if combined_pES_time:
+    if combined_pES:
         fig0, ax0 = plt.subplots(figsize=(6, 6))
         time0_pES = []
 
