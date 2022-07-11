@@ -70,6 +70,8 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Neutrio Mass = " << nuMass << " eV" << std::endl;
 
+    TString MO[3] = {"NONE", "NO", "IO"};
+
 
     //=========================analyze===========================//
     //--------initial SNdetect--------//
@@ -121,7 +123,7 @@ int main(int argc, char* argv[]) {
 
     Int_t nbins_Evis = (Evismax-Evismin)/step_Evis;
     std::cout << "nbins_Evis " << nbins_Evis << std::endl;
-    TString chaName[3] = {"nup","nue","IBD"};
+    TString chaName[3] = {"pES","eES","IBD"};
 
 
 
@@ -157,22 +159,45 @@ int main(int argc, char* argv[]) {
     h2d_nuxbar->Write();
     fout->Close();
     */
+    TString modelName;
+    if (imod > 6000 and imod < 7000)  { imod -= 6500; modelName = Form("Burrows2D%d", imod); }
+    else
+        modelName = Form("Garching%d", imod);
+    
 
+    TFile* f = new TFile(Form("/junofs/users/miaoyu/supernova/production/PDFs/10kpc/%s_PDF_%s_10kpc_%s_%.2fMeV.root", modelName.Data(), MO[MH].Data(), chaName[icha].Data(), Ethr), "recreate");
+    TH1D* h1 ;
+    if (imod > 0 and imod < 100)
+        h1 = new TH1D("h1", "visible energy spectrum rate", 60, -0.5, 60.5);
+    else
+        h1 = new TH1D("h1", "visible energy spectrum rate", 60, -30.5, 30.5);
 
-
-    for (int ipt=0; ipt<nbin_time; ipt++) {
-        double tshift;
-        if (imod == 6500) {
-            tshift = 0;
-        }
-        if (imod == 82503) {
-            tshift = -0.03;
-        }
-        double t = tmin + ipt * step_t + tshift;
-        for(int ii=0; ii<6; ii++) {
-            std::cout << t << " " << ii << " " << pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) << std::endl;
-        }
+    double factor;
+    if (imod > 0 and imod < 100) {
+        factor = 1e50;
     }
+    else {
+        factor = 1;
+    }
+    double tshift;
+    if (imod > 0 and imod < 100) {
+        tshift = 0;
+    }
+    else {
+        tshift = -0.03;
+    }
+    for (int ipt=0; ipt<nbin_time; ipt++) {
+        double t = tmin + ipt * step_t + tshift;
+        double flu = 0;
+        for(int ii=0; ii<6; ii++) {
+            //std::cout << t << " " << ii << " " << pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) << std::endl;
+            flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor / 1000.;  // for 1 ms interval
+        }
+        h1->SetBinContent(ipt+1, flu);
+    }
+
+    h1->Write();
+    f->Close();
 
     
     //TFile* fout = new TFile("/junofs/users/miaoyu/supernova/production/PDFs/NeutrinoAverageET_Burrows2D.root", "recreate");
