@@ -7,36 +7,36 @@
 #include "TString.h"
 
 #include "SNsource.hh"
-#include "SNnumGarchingSrc.hh"
-#include "SNGarchingIntegFcn.hh"
+#include "SNnumNakazatoSrc.hh"
+#include "SNNakazatoIntegFcn.hh"
 
-SNnumGarchingSrc::SNnumGarchingSrc() : SNsource(){
+SNnumNakazatoSrc::SNnumNakazatoSrc() : SNsource(){
     for(int it=0; it<3; it++){
         grspectrum[it] = NULL;
         //grSpecTimeInterv[it] = NULL;
     }
     fcnTimeInterval = NULL;
 }
-SNnumGarchingSrc::SNnumGarchingSrc(int imode) : SNsource(){
+SNnumNakazatoSrc::SNnumNakazatoSrc(int imode) : SNsource(){
     //timeInterval[0] = 0;
     //timeInterval[1] = 0;
-    readSpectrum(imode);
-    pgarfcn = new SNGarchingIntegFcn(imode);
-    fcnTimeInterval = new TF1("fcnTimeInterval",pgarfcn,&SNGarchingIntegFcn::fcnfluxtime, -1,12,2,"SNGarchingIntegFcn","fcnfluxtime"); 
+    //readSpectrum(imode);
+    pgarfcn = new SNNakazatoIntegFcn(imode);
+    fcnTimeInterval = new TF1("fcnTimeInterval",pgarfcn,&SNNakazatoIntegFcn::fcnfluxtime, -1,12,2,"SNNakazatoIntegFcn","fcnfluxtime"); 
 }
 
-SNnumGarchingSrc::~SNnumGarchingSrc(){
+SNnumNakazatoSrc::~SNnumNakazatoSrc(){
     if(fcnTimeInterval)delete fcnTimeInterval;
     if(pgarfcn)delete pgarfcn;
 
 }
 
-void SNnumGarchingSrc::readSpectrum(int imode){
+void SNnumNakazatoSrc::readSpectrum(int imode){
     if (imode == 11) { imode = 82503; std::cout << "YB mode has been modified as 82503" << std::endl;}
-    TString path="/junofs/users/miaoyu/supernova/wenlj/simulation/data/Garching/energySpeFiles";
-    TFile* fin = TFile::Open(Form("%s/energySpecGarching_%d.root",path.Data(),imode));
+    TString path="/junofs/users/miaoyu/supernova/wenlj/simulation/data/Nakazato/energySpeFiles";
+    TFile* fin = TFile::Open(Form("%s/energySpecNakazato_%d.root",path.Data(),imode));
     if(!fin){
-        printf("%s/energySpecGarching_%d.root can't be opened!!\n",path.Data(), imode);
+        printf("%s/energySpecNakazato_%d.root can't be opened!!\n",path.Data(), imode);
         exit(-1);
     }
     for(int it=0; it<3; it++){
@@ -46,7 +46,7 @@ void SNnumGarchingSrc::readSpectrum(int imode){
 }
 
 
-double SNnumGarchingSrc::oneSNFluenceDet(double E, int type){
+double SNnumNakazatoSrc::oneSNFluenceDet(double E, int type){
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     if(type < 2){
         //return index*grspectrum[type]->Eval(E,0,"s");
@@ -58,7 +58,7 @@ double SNnumGarchingSrc::oneSNFluenceDet(double E, int type){
     }
     return 0;
 }
-double SNnumGarchingSrc::oneSNFluenceDet(double E, int type, int MH){
+double SNnumNakazatoSrc::oneSNFluenceDet(double E, int type, int MH){
     double fluence = 0;
     if(MH==0)return oneSNFluenceDet(E, type);
     else{
@@ -80,7 +80,7 @@ double SNnumGarchingSrc::oneSNFluenceDet(double E, int type, int MH){
 
     return fluence;
 }
-double SNnumGarchingSrc::totalSNFluenceDet(double E){
+double SNnumNakazatoSrc::totalSNFluenceDet(double E){
     int ntype = 6;
     double tfluence = 0;
     for(int ii=0; ii<ntype; ii++){
@@ -88,7 +88,7 @@ double SNnumGarchingSrc::totalSNFluenceDet(double E){
     }
     return tfluence;
 }
-double SNnumGarchingSrc::totalSNFluenceDet(double E, int MH){
+double SNnumNakazatoSrc::totalSNFluenceDet(double E, int MH){
     int ntype = 6;
     double tfluence=0;
     for(int ii=0; ii<ntype; ii++){
@@ -98,7 +98,7 @@ double SNnumGarchingSrc::totalSNFluenceDet(double E, int MH){
 }
 
 
-double SNnumGarchingSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH){
+double SNnumNakazatoSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH){
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     double fluence = 0;
     if(MH == 0){
@@ -123,7 +123,7 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH
     }
     return fluence*index;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeIntegE(double time, int MH){
+double SNnumNakazatoSrc::totalSNFluenceDetTimeIntegE(double time, int MH){
     int ntype = 6;
     double num = 0;
     for(int ii=0; ii<ntype; ii++){
@@ -135,7 +135,7 @@ double SNnumGarchingSrc::totalSNFluenceDetTimeIntegE(double time, int MH){
 //==
 // ---- Consider non-zero neutrino mass
 // ---- Assumption: each type of neutrino as the same mass
-double SNnumGarchingSrc::snFluenceDetAtTime(double &time, double nuMass, double E, int type, int MH){
+double SNnumNakazatoSrc::snFluenceDetAtTime(double &time, double nuMass, double E, int type, int MH){
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     double fluence = 0;
     if(MH == 0){
@@ -166,7 +166,7 @@ double SNnumGarchingSrc::snFluenceDetAtTime(double &time, double nuMass, double 
 
 //
 
-double SNnumGarchingSrc::oneSNFluenceDetAtTime(double time, double E, int type, int MH){
+double SNnumNakazatoSrc::oneSNFluenceDetAtTime(double time, double E, int type, int MH){
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     double fluence = 0;
     if(MH == 0){
@@ -191,7 +191,7 @@ double SNnumGarchingSrc::oneSNFluenceDetAtTime(double time, double E, int type, 
     }
     return fluence*index;
 }
-double SNnumGarchingSrc::totalSNFluenceDetAtTime(double time, double E, int MH){
+double SNnumNakazatoSrc::totalSNFluenceDetAtTime(double time, double E, int MH){
     int ntype = 6;
     double flux = 0;
     for(int ii=0; ii<ntype; ii++){
@@ -202,7 +202,7 @@ double SNnumGarchingSrc::totalSNFluenceDetAtTime(double time, double E, int MH){
 //==
 #include "Math/WrappedTF1.h"
 #include "Math/GSLIntegrator.h"
-double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type){
+double SNnumNakazatoSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type){
     double num = 0;
     double index = 1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     int nbin_Ev = 100;
@@ -228,7 +228,7 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, do
 
     return num*index;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast){
+double SNnumNakazatoSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast){
     int ntype = 6;
     double flux = 0;
     for(int ii=0; ii<ntype; ii++){
@@ -237,7 +237,7 @@ double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, 
     return flux;
 }
 
-double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type, int MH){
+double SNnumNakazatoSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type, int MH){
     double fluence = 0;
     if(MH == 0){
         fluence = oneSNFluenceDetTimeInterval(E, tfirst, tlast, type);
@@ -261,7 +261,7 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, do
     }
     return fluence;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int MH){
+double SNnumNakazatoSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int MH){
 
     int ntype = 6;
     double totflu = 0;
@@ -272,16 +272,17 @@ double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, 
     return totflu;
 }
 
-double SNnumGarchingSrc::oneSNLuminosityTime(double time, int type){
+double SNnumNakazatoSrc::oneSNLuminosityTime(double time, int type){
     return pgarfcn->getLumT(time, type);
 }
 
 
-double SNnumGarchingSrc::oneSNAverageETime(double time, int type){
-    //std::cout << "numGarching" << std::endl;
+double SNnumNakazatoSrc::oneSNAverageETime(double time, int type){
+    //std::cout << "numNakazato" << std::endl;
     return pgarfcn->getAverageET(time, type);
 }
 
-void SNnumGarchingSrc::getTimeRange(double& tmin, double& tmax,int type){
+void SNnumNakazatoSrc::getTimeRange(double& tmin, double& tmax,int type){
     pgarfcn->getTimeLimits(tmin, tmax, type);
 }
+

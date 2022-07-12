@@ -44,17 +44,17 @@ SNJapanIntegFcn::~SNJapanIntegFcn(){
 void SNJapanIntegFcn::readFluxGraph(int imode){
     TString path;
     if(imode<6000) {
-        path = Form("/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Japan/intpdata/intp%d.data",imode);
+        path = Form("/junofs/users/miaoyu/supernova/wenlj/simulation/data/Japan/intpdata/intp%d.data",imode);
         nbin_E = 20;
     }
     else if(imode== 9001){
-        path = "/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Japan/cooling/spectob147S.data";
+        path = "/junofs/users/miaoyu/supernova/wenlj/simulation/data/Japan/cooling/spectob147S.data";
         nbin_E = 25;
     }
     std::ifstream fSNmod;
     fSNmod.open(path);
     if(!fSNmod){
-        std::cout << "Error: /mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Japan/..." << imode <<".data can't be opened!" << std::endl;
+        std::cout << "Error: /junofs/users/miaoyu/supernova/wenlj/simulation/data/Japan/..." << imode <<".data can't be opened!" << std::endl;
         exit(-1);
     }
 

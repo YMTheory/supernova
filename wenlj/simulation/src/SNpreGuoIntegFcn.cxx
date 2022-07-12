@@ -51,9 +51,9 @@ SNpreGuoIntegFcn::~SNpreGuoIntegFcn(){
 void SNpreGuoIntegFcn::readFluxGraph(int imode){
     std::ifstream fSNmod;
     int tag = (imode%10000)/10;
-    fSNmod.open(Form("/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/preSN/guo/S%d_flux_tE.dat",tag));
+    fSNmod.open(Form("/junofs/users/miaoyu/supernova/wenlj/simulation/data/preSN/guo/S%d_flux_tE.dat",tag));
     if(!fSNmod){
-        std::cout << "Error: /mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/preSN/guo " << imode <<".data can't be opened!" << std::endl;
+        std::cout << "/junofs/users/miaoyu/supernova/wenlj/simulation//data/preSN/guo " << imode <<".data can't be opened!" << std::endl;
         exit(-1);
     }
 

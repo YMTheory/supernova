@@ -40,8 +40,8 @@ SNpreKatoIntegFcn::~SNpreKatoIntegFcn(){
 
 void SNpreKatoIntegFcn::readFluxGraph(int imode){
     TString filePath;
-    if(imode == 20150) filePath = "/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/preSN/kato/15";
-    if(imode == 20120) filePath = "/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/preSN/kato/12";
+    if(imode == 20150) filePath = "/junofs/users/miaoyu/supernova/wenlj/simulation/data/preSN/kato/15";
+    if(imode == 20120) filePath = "/junofs/users/miaoyu/supernova/wenlj/simulation/data/preSN/kato/12";
 
     const int npnt_E = 501;//energy bin
     //-------reading nue file--------//

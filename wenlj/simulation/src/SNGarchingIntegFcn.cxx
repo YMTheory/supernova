@@ -35,124 +35,240 @@ SNGarchingIntegFcn::~SNGarchingIntegFcn(){
 }
 
 void SNGarchingIntegFcn::readFluxGraph(int imode){
-    if(imode<70000 || imode >99999){
+
+    if (imode == 11 ) {
+        std::cout << "YB mode is using here ..." << std::endl;
+        TString path="/junofs/users/miaoyu/supernova/wenlj/YB_fromSZ";
+        std::ifstream fSNmod_antinue;
+        std::ifstream fSNmod_nue;
+        std::ifstream fSNmod_nux;
+        fSNmod_antinue.open("/junofs/users/miaoyu/supernova/wenlj/YB_fromSZ/na");
+        fSNmod_nue.open("/junofs/users/miaoyu/supernova/wenlj/YB_fromSZ/ne");
+        fSNmod_nux.open("/junofs/users/miaoyu/supernova/wenlj/YB_fromSZ/nx");
+
+        if((!fSNmod_antinue) || (!fSNmod_nue) || (!fSNmod_nux)){
+            std::cout << "Error: " << imode << " files of Garching models can't be opened!" << std::endl;
+            exit(-1);
+        }
+
+        double time, luminosity, aveE, aveE2;
+
+        //nu_e
+        std::vector<double> t_nue;
+        std::vector<double> lumin_nue;//foe/s=10^51 erg/s
+        std::vector<double> averagE_nue;//MeV; 1erg = 6.24151*10^5MeV
+        std::vector<double> averagE2_nue;
+        while(fSNmod_nue >> time >> luminosity >> aveE >> aveE2){
+            t_nue.push_back(time);
+            vecTime.push_back(time);//to be accessed by the user
+            lumin_nue.push_back(luminosity);
+            averagE_nue.push_back(aveE);
+            averagE2_nue.push_back(aveE2);
+        }
+        int npnt_nue = t_nue.size();
+        TVectorD vecTime_nue(npnt_nue);
+        TVectorD vecLumin_nue(npnt_nue);
+        TVectorD vecAlpha_nue(npnt_nue);
+        TVectorD vecAverageE_nue(npnt_nue);
+        for(int ip=0; ip<npnt_nue; ip++){
+            vecTime_nue[ip] = t_nue[ip];
+            vecLumin_nue[ip] = lumin_nue[ip];
+            vecAlpha_nue[ip] = 1./(averagE2_nue[ip]/TMath::Power(averagE_nue[ip],2)-1)-1;
+            vecAverageE_nue[ip] = averagE_nue[ip];
+        }
+
+
+        //anti_nu_e
+        std::vector<double> t_antinue;
+        std::vector<double> lumin_antinue;
+        std::vector<double> averagE_antinue;
+        std::vector<double> averagE2_antinue;
+        while(fSNmod_antinue >> time >> luminosity >> aveE >> aveE2){
+            t_antinue.push_back(time);
+            lumin_antinue.push_back(luminosity);
+            averagE_antinue.push_back(aveE);
+            averagE2_antinue.push_back(aveE2);
+        }
+        int npnt_antinue = t_antinue.size();
+        TVectorD vecTime_antinue(npnt_antinue);
+        TVectorD vecLumin_antinue(npnt_antinue);
+        TVectorD vecAlpha_antinue(npnt_antinue);
+        TVectorD vecAverageE_antinue(npnt_antinue);
+        for(int ip=0; ip<npnt_antinue; ip++){
+            vecTime_antinue[ip] = t_antinue[ip];
+            vecLumin_antinue[ip] = lumin_antinue[ip];
+            vecAlpha_antinue[ip] = 1./(averagE2_antinue[ip]/TMath::Power(averagE_antinue[ip],2)-1)-1;
+            vecAverageE_antinue[ip] = averagE_antinue[ip];
+        }
+
+
+
+        //nu_x
+        std::vector<double> t_nux;
+        std::vector<double> lumin_nux;
+        std::vector<double> averagE_nux;
+        std::vector<double> averagE2_nux;
+        while(fSNmod_nux >> time >> luminosity >> aveE >> aveE2){
+            t_nux.push_back(time);
+            lumin_nux.push_back(luminosity);
+            averagE_nux.push_back(aveE);
+            averagE2_nux.push_back(aveE2);
+        }
+        int npnt_nux = t_nux.size();
+        TVectorD vecTime_nux(npnt_nux);
+        TVectorD vecLumin_nux(npnt_nux);
+        TVectorD vecAlpha_nux(npnt_nux);
+        TVectorD vecAverageE_nux(npnt_nux);
+        for(int ip=0; ip<npnt_nux; ip++){
+            vecTime_nux[ip] = t_nux[ip];
+            vecLumin_nux[ip] = lumin_nux[ip];
+            vecAlpha_nux[ip] = 1./(averagE2_nux[ip]/TMath::Power(averagE_nux[ip],2)-1)-1;
+            vecAverageE_nux[ip] = averagE_nux[ip];
+        }
+
+        //parameter vs time graphs
+        grLuminosity[0] = new TGraph(vecTime_nue, vecLumin_nue);
+        grLuminosity[1] = new TGraph(vecTime_antinue, vecLumin_antinue);
+        grLuminosity[2] = new TGraph(vecTime_nux, vecLumin_nux);
+
+        grAlpha[0] = new TGraph(vecTime_nue, vecAlpha_nue);
+        grAlpha[1] = new TGraph(vecTime_antinue, vecAlpha_antinue);
+        grAlpha[2] = new TGraph(vecTime_nux, vecAlpha_nux);
+
+        grAverageE[0] = new TGraph(vecTime_nue, vecAverageE_nue);
+        grAverageE[1] = new TGraph(vecTime_antinue, vecAverageE_antinue);
+        grAverageE[2] = new TGraph(vecTime_nux, vecAverageE_nux);
+
+
+        //time limits
+        timeMin[0] = t_nue[0];     timeMax[0] = t_nue[npnt_nue-1];
+        timeMin[1] = t_antinue[0]; timeMax[1] = t_antinue[npnt_antinue-1];
+        timeMin[2] = t_nux[0];     timeMax[2] = t_nux[npnt_nux-1];
+        std::cout << timeMin[0]  << ";  " << timeMax[0] << ";"
+            << timeMin[1]  << ";  " << timeMax[1] << ";"
+            << timeMin[2]  << ";  " << timeMax[2] << ";"
+            <<std::endl;
+    }
+
+    else if(imode<70000 || imode >99999){
         std::cout << "Mode name Error: " << imode << " doesn't belong to Garching models!!" << std::endl;
         exit(-1);
     }
 
-    //read in data
-    TString path="/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/Garching";
-    std::ifstream fSNmod_antinue;
-    std::ifstream fSNmod_nue;
-    std::ifstream fSNmod_nux;
-    fSNmod_antinue.open(Form("%s/%d/timedata/neutrino_signal_nubar_e",path.Data(), imode));
-    fSNmod_nue.open(Form("%s/%d/timedata/neutrino_signal_nu_e",path.Data(), imode));
-    fSNmod_nux.open(Form("%s/%d/timedata/neutrino_signal_nu_x",path.Data(), imode));
+    else{
+        //read in data
+        TString path="/junofs/users/miaoyu/supernova/wenlj/simulation/data/Garching";
+        std::ifstream fSNmod_antinue;
+        std::ifstream fSNmod_nue;
+        std::ifstream fSNmod_nux;
+        fSNmod_antinue.open(Form("%s/%d/timedata/neutrino_signal_nubar_e",path.Data(), imode));
+        fSNmod_nue.open(Form("%s/%d/timedata/neutrino_signal_nu_e",path.Data(), imode));
+        fSNmod_nux.open(Form("%s/%d/timedata/neutrino_signal_nu_x",path.Data(), imode));
 
-    if((!fSNmod_antinue) || (!fSNmod_nue) || (!fSNmod_nux)){
-        std::cout << "Error: " << imode << " files of Garching models can't be opened!" << std::endl;
-        exit(-1);
+        if((!fSNmod_antinue) || (!fSNmod_nue) || (!fSNmod_nux)){
+            std::cout << "Error: " << imode << " files of Garching models can't be opened!" << std::endl;
+            exit(-1);
+        }
+
+        double time, luminosity, aveE, aveE2;
+
+        //nu_e
+        std::vector<double> t_nue;
+        std::vector<double> lumin_nue;//foe/s=10^51 erg/s
+        std::vector<double> averagE_nue;//MeV; 1erg = 6.24151*10^5MeV
+        std::vector<double> averagE2_nue;
+        while(fSNmod_nue >> time >> luminosity >> aveE >> aveE2){
+            t_nue.push_back(time);
+            vecTime.push_back(time);//to be accessed by the user
+            lumin_nue.push_back(luminosity);
+            averagE_nue.push_back(aveE);
+            averagE2_nue.push_back(aveE2);
+        }
+        int npnt_nue = t_nue.size();
+        TVectorD vecTime_nue(npnt_nue);
+        TVectorD vecLumin_nue(npnt_nue);
+        TVectorD vecAlpha_nue(npnt_nue);
+        TVectorD vecAverageE_nue(npnt_nue);
+        for(int ip=0; ip<npnt_nue; ip++){
+            vecTime_nue[ip] = t_nue[ip];
+            vecLumin_nue[ip] = lumin_nue[ip];
+            vecAlpha_nue[ip] = 1./(averagE2_nue[ip]/TMath::Power(averagE_nue[ip],2)-1)-1;
+            vecAverageE_nue[ip] = averagE_nue[ip];
+        }
+
+
+        //anti_nu_e
+        std::vector<double> t_antinue;
+        std::vector<double> lumin_antinue;
+        std::vector<double> averagE_antinue;
+        std::vector<double> averagE2_antinue;
+        while(fSNmod_antinue >> time >> luminosity >> aveE >> aveE2){
+            t_antinue.push_back(time);
+            lumin_antinue.push_back(luminosity);
+            averagE_antinue.push_back(aveE);
+            averagE2_antinue.push_back(aveE2);
+        }
+        int npnt_antinue = t_antinue.size();
+        TVectorD vecTime_antinue(npnt_antinue);
+        TVectorD vecLumin_antinue(npnt_antinue);
+        TVectorD vecAlpha_antinue(npnt_antinue);
+        TVectorD vecAverageE_antinue(npnt_antinue);
+        for(int ip=0; ip<npnt_antinue; ip++){
+            vecTime_antinue[ip] = t_antinue[ip];
+            vecLumin_antinue[ip] = lumin_antinue[ip];
+            vecAlpha_antinue[ip] = 1./(averagE2_antinue[ip]/TMath::Power(averagE_antinue[ip],2)-1)-1;
+            vecAverageE_antinue[ip] = averagE_antinue[ip];
+        }
+
+
+
+        //nu_x
+        std::vector<double> t_nux;
+        std::vector<double> lumin_nux;
+        std::vector<double> averagE_nux;
+        std::vector<double> averagE2_nux;
+        while(fSNmod_nux >> time >> luminosity >> aveE >> aveE2){
+            t_nux.push_back(time);
+            lumin_nux.push_back(luminosity);
+            averagE_nux.push_back(aveE);
+            averagE2_nux.push_back(aveE2);
+        }
+        int npnt_nux = t_nux.size();
+        TVectorD vecTime_nux(npnt_nux);
+        TVectorD vecLumin_nux(npnt_nux);
+        TVectorD vecAlpha_nux(npnt_nux);
+        TVectorD vecAverageE_nux(npnt_nux);
+        for(int ip=0; ip<npnt_nux; ip++){
+            vecTime_nux[ip] = t_nux[ip];
+            vecLumin_nux[ip] = lumin_nux[ip];
+            vecAlpha_nux[ip] = 1./(averagE2_nux[ip]/TMath::Power(averagE_nux[ip],2)-1)-1;
+            vecAverageE_nux[ip] = averagE_nux[ip];
+        }
+
+        //parameter vs time graphs
+        grLuminosity[0] = new TGraph(vecTime_nue, vecLumin_nue);
+        grLuminosity[1] = new TGraph(vecTime_antinue, vecLumin_antinue);
+        grLuminosity[2] = new TGraph(vecTime_nux, vecLumin_nux);
+
+        grAlpha[0] = new TGraph(vecTime_nue, vecAlpha_nue);
+        grAlpha[1] = new TGraph(vecTime_antinue, vecAlpha_antinue);
+        grAlpha[2] = new TGraph(vecTime_nux, vecAlpha_nux);
+
+        grAverageE[0] = new TGraph(vecTime_nue, vecAverageE_nue);
+        grAverageE[1] = new TGraph(vecTime_antinue, vecAverageE_antinue);
+        grAverageE[2] = new TGraph(vecTime_nux, vecAverageE_nux);
+
+
+        //time limits
+        timeMin[0] = t_nue[0];     timeMax[0] = t_nue[npnt_nue-1];
+        timeMin[1] = t_antinue[0]; timeMax[1] = t_antinue[npnt_antinue-1];
+        timeMin[2] = t_nux[0];     timeMax[2] = t_nux[npnt_nux-1];
+        std::cout << timeMin[0]  << ";  " << timeMax[0] << ";"
+            << timeMin[1]  << ";  " << timeMax[1] << ";"
+            << timeMin[2]  << ";  " << timeMax[2] << ";"
+            <<std::endl;
     }
-
-    double time, luminosity, aveE, aveE2;
-
-    //nu_e
-    std::vector<double> t_nue;
-    std::vector<double> lumin_nue;//foe/s=10^51 erg/s
-    std::vector<double> averagE_nue;//MeV; 1erg = 6.24151*10^5MeV
-    std::vector<double> averagE2_nue;
-    while(fSNmod_nue >> time >> luminosity >> aveE >> aveE2){
-        t_nue.push_back(time);
-        vecTime.push_back(time);//to be accessed by the user
-        lumin_nue.push_back(luminosity);
-        averagE_nue.push_back(aveE);
-        averagE2_nue.push_back(aveE2);
-    }
-    int npnt_nue = t_nue.size();
-    TVectorD vecTime_nue(npnt_nue);
-    TVectorD vecLumin_nue(npnt_nue);
-    TVectorD vecAlpha_nue(npnt_nue);
-    TVectorD vecAverageE_nue(npnt_nue);
-    for(int ip=0; ip<npnt_nue; ip++){
-        vecTime_nue[ip] = t_nue[ip];
-        vecLumin_nue[ip] = lumin_nue[ip];
-        vecAlpha_nue[ip] = 1./(averagE2_nue[ip]/TMath::Power(averagE_nue[ip],2)-1)-1;
-        vecAverageE_nue[ip] = averagE_nue[ip];
-    }
-
-
-    //anti_nu_e
-    std::vector<double> t_antinue;
-    std::vector<double> lumin_antinue;
-    std::vector<double> averagE_antinue;
-    std::vector<double> averagE2_antinue;
-    while(fSNmod_antinue >> time >> luminosity >> aveE >> aveE2){
-        t_antinue.push_back(time);
-        lumin_antinue.push_back(luminosity);
-        averagE_antinue.push_back(aveE);
-        averagE2_antinue.push_back(aveE2);
-    }
-    int npnt_antinue = t_antinue.size();
-    TVectorD vecTime_antinue(npnt_antinue);
-    TVectorD vecLumin_antinue(npnt_antinue);
-    TVectorD vecAlpha_antinue(npnt_antinue);
-    TVectorD vecAverageE_antinue(npnt_antinue);
-    for(int ip=0; ip<npnt_antinue; ip++){
-        vecTime_antinue[ip] = t_antinue[ip];
-        vecLumin_antinue[ip] = lumin_antinue[ip];
-        vecAlpha_antinue[ip] = 1./(averagE2_antinue[ip]/TMath::Power(averagE_antinue[ip],2)-1)-1;
-        vecAverageE_antinue[ip] = averagE_antinue[ip];
-    }
-
-
-
-    //nu_x
-    std::vector<double> t_nux;
-    std::vector<double> lumin_nux;
-    std::vector<double> averagE_nux;
-    std::vector<double> averagE2_nux;
-    while(fSNmod_nux >> time >> luminosity >> aveE >> aveE2){
-        t_nux.push_back(time);
-        lumin_nux.push_back(luminosity);
-        averagE_nux.push_back(aveE);
-        averagE2_nux.push_back(aveE2);
-    }
-    int npnt_nux = t_nux.size();
-    TVectorD vecTime_nux(npnt_nux);
-    TVectorD vecLumin_nux(npnt_nux);
-    TVectorD vecAlpha_nux(npnt_nux);
-    TVectorD vecAverageE_nux(npnt_nux);
-    for(int ip=0; ip<npnt_nux; ip++){
-        vecTime_nux[ip] = t_nux[ip];
-        vecLumin_nux[ip] = lumin_nux[ip];
-        vecAlpha_nux[ip] = 1./(averagE2_nux[ip]/TMath::Power(averagE_nux[ip],2)-1)-1;
-        vecAverageE_nux[ip] = averagE_nux[ip];
-    }
-
-    //parameter vs time graphs
-    grLuminosity[0] = new TGraph(vecTime_nue, vecLumin_nue);
-    grLuminosity[1] = new TGraph(vecTime_antinue, vecLumin_antinue);
-    grLuminosity[2] = new TGraph(vecTime_nux, vecLumin_nux);
-
-    grAlpha[0] = new TGraph(vecTime_nue, vecAlpha_nue);
-    grAlpha[1] = new TGraph(vecTime_antinue, vecAlpha_antinue);
-    grAlpha[2] = new TGraph(vecTime_nux, vecAlpha_nux);
-
-    grAverageE[0] = new TGraph(vecTime_nue, vecAverageE_nue);
-    grAverageE[1] = new TGraph(vecTime_antinue, vecAverageE_antinue);
-    grAverageE[2] = new TGraph(vecTime_nux, vecAverageE_nux);
-
-
-    //time limits
-    timeMin[0] = t_nue[0];     timeMax[0] = t_nue[npnt_nue-1];
-    timeMin[1] = t_antinue[0]; timeMax[1] = t_antinue[npnt_antinue-1];
-    timeMin[2] = t_nux[0];     timeMax[2] = t_nux[npnt_nux-1];
-    std::cout << timeMin[0]  << ";  " << timeMax[0] << ";"
-              << timeMin[1]  << ";  " << timeMax[1] << ";"
-              << timeMin[2]  << ";  " << timeMax[2] << ";"
-              <<std::endl;
 }
-
 
 
 double SNGarchingIntegFcn::fcnfluxtime(double* x, double* par){
@@ -216,6 +332,7 @@ double SNGarchingIntegFcn::getEventAtTime(double time, double E, int type){
         luminosity = grLuminosity[type]->Eval(time);
         A = grAverageE[type]->Eval(time);
         alpha = grAlpha[type]->Eval(time);
+        if (A == 0 ) return 0 ;
         // test line
         //std::cout << "getEventAtTime: time, luminosity, A, alpha: " 
         //         << time << ", " << luminosity << ", " << A << ", " << alpha << std::endl;
@@ -227,6 +344,7 @@ double SNGarchingIntegFcn::getEventAtTime(double time, double E, int type){
         luminosity = grLuminosity[2]->Eval(time);
         A = grAverageE[2]->Eval(time);
         alpha = grAlpha[2]->Eval(time);
+        if (A == 0 ) return 0 ;
     }
    
     double index = 6.24151e56;

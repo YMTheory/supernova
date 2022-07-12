@@ -19,9 +19,10 @@ double SNnupLS::differentialXS(double E, double T, int type){
 }
 
 double SNnupLS::totalXS(double E, int type){
-    //double mp = 938;
-    //double totxs = (2./mp+233*4/(mp*mp))*E*E*4.83*1e-42;
-    return 0;
+    double mp = 938;
+    double totxs = (2./mp+233*4/(mp*mp))*E*E*4.83*1e-42;
+    return totxs;
+    //return 0;
 }
 
 

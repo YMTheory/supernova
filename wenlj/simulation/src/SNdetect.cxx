@@ -17,7 +17,8 @@
 #include "SNnumGarchingSrc.hh"
 #include "SNnumPreGuoSrc.hh"
 #include "SNnumPreKatoSrc.hh"
-//#include "SNnumBurrowsSrc.hh"
+#include "SNnumBurrowsSrc.hh"
+#include "SNnumNakazatoSrc.hh"
 #include "SNdetect.hh"
 #include "SNchannelNuP.hh"
 #include "SNchannelNuE.hh"
@@ -83,9 +84,9 @@ void SNdetect::initChannel(channelName cha){
                 //file = TFile::Open(Form("%s/quenchCurve.root", pathnow.data()));
 
                 if(file)file->Close();
-                file = TFile::Open("/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/quenching/quenchCurve.root");
+                file = TFile::Open("/junofs/users/miaoyu/supernova/wenlj/simulation/data/quenching/quenchCurve.root");
                 if(!file){
-                    std::cout << "/mnt/c/Users/LiangjianWen/Documents/JUNO/Physics/SNsim/simulation/data/quenching/quenchCurve.root can't be opened!" << std::endl;
+                    std::cout << "/junofs/users/miaoyu/supernova/wenlj/simulation/data/quenching/quenchCurve.root can't be opened!" << std::endl;
                     exit(-1);
                 }
                 grquench    = (TGraph*)file->Get("quenchCurve");
@@ -146,17 +147,22 @@ void SNdetect::setSrcModel(int imode){
         psrc = new SNanaSrc();
         std::cout << "Analytical SN neutrino model is being used." << std::endl;
     }
-    //if(imode > 6000 && imode < 7999){
-    //    psrc = new SNnumBurrowsSrc(imode);
-    //    std::cout << "numerical Burrows SN neutrino model " << imode << " is being used" << std::endl;
-    //}
-    if(imode > 70000 && imode < 100000){
+    if(imode > 6000 && imode < 7999){
+        std::cout << "numerical Burrows SN neutrino model " << imode << " is being used" << std::endl;
+        psrc = new SNnumBurrowsSrc(imode);
+    }
+    if(imode == 11 or (imode > 70000 && imode < 100000)){
         psrc = new SNnumGarchingSrc(imode);
         std::cout << "numerical Garching SN neutrino model " << imode << " is being used" << std::endl;
     }
-    if(imode > 1000 && imode < 9999){
-        psrc = new SNnumJapanSrc(imode);
-        std::cout <<"numerical Japan SN neutrino model " << imode << " is being used" << std::endl;
+    //if(imode > 1000 && imode < 9999){
+    //    psrc = new SNnumJapanSrc(imode);
+    //    std::cout <<"numerical Japan SN neutrino model " << imode << " is being used" << std::endl;
+    //}
+
+    if(imode > 2000 and imode < 3000) {
+        psrc = new SNnumNakazatoSrc(imode);
+        std::cout << "numerical Nakazato SN neutrino model " << imode << " is being used" << std::endl;
     }
 
     //pre-SN models 
@@ -169,6 +175,7 @@ void SNdetect::setSrcModel(int imode){
         psrc = new SNnumPreKatoSrc(imode);
         std::cout <<"numerical pre SN neutrino model from Kato " << imode << " is being used" << std::endl;
     }
+
 
 }
 //-----------------------------------------------------------------------------------//
@@ -275,6 +282,8 @@ double fcnEvCNC(double* x, double* par){
 void SNdetect::initFCN(){
     fEvmin = psrc->getSNminEv();
     fEvmax = psrc->getSNmaxEv();
+    fEvmax = 90;    // concerns for Burrows2D dataset
+    std::cout << "START of initFCN ..." << std::endl;
     // test line
     // std::cout << "initFCN: fEvmin, fEvmax " << fEvmin << ", " << fEvmax << std::endl;
     //
@@ -287,6 +296,7 @@ void SNdetect::initFCN(){
                 //fTmax = 2.*fEvmax*fEvmax/mp;
                 fTmax = getTmax();
                 f2rndEvT = new TF2("f2rndEvT", fcnEvandTES, fEvmin, fEvmax, fTmin, fTmax, 2);
+                //std::cout << fcnEvandTES << " " << fEvmin << " " << fEvmax << " " << fTmin << " " << fTmax << std::endl;
                 f2rndEvT->SetNpx(200);
                 f2rndEvT->SetNpy(200);
 
@@ -346,6 +356,7 @@ void SNdetect::initFCN(){
             }
 
     }
+    std::cout << "END of initFCN ..." << std::endl;
 
 }
 
@@ -750,6 +761,7 @@ double SNdetect::getEventAboveEthrVis(double Ethr, int type, int MH){
             }
     }
 
+    fEvismax = 80;
     if(fchannel==CNC){
         //for C12-NC, use Ev to estimate the total number of events
         TF1 f("eveVis", fcnEventsVisCNC, 0, fEvmax, 2);
@@ -767,6 +779,7 @@ double SNdetect::getEventAboveEthrVis(double Ethr, int type, int MH){
 
     else{
         TF1 f("eveVis", fcnEventsVis, 0, fEvismax, 2);
+        std::cout << "fEvismax = " << fEvismax << std::endl;
         f.SetParameter(0, type);
         f.SetParameter(1, MH);
         //ROOT::Math::WrappedTF1 wf1(f);
