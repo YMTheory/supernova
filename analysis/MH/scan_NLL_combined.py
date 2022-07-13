@@ -12,7 +12,6 @@ plt.style.use("science")
 #np.seterr(divide = 'warn') 
 
 chaname = ["eES", "pES", "IBD"]
-draw_flag = True
 
 def getIntegral(hist1d, x1, x2, opt):
     binx1 = hist1d.GetXaxis().FindBin(x1)
@@ -45,6 +44,7 @@ if __name__ == "__main__" :
     MH = "IO"
     ch = []
     Ethr = 0.2
+    draw_flag = True
 
     if len(sys.argv) > 1:
         ### parametere configuration
@@ -72,6 +72,8 @@ if __name__ == "__main__" :
             elif sys.argv[i] == "-Ethr" :
                 Ethr = float(sys.argv[i+1])
                 #print("=====> Ethr: %.2f MeV"%Ethr)
+            elif sys.argv[i] == "-draw":
+                draw_flag = sys.argv[i+1]
             else:
                 print("Error: No such argument !")
                 #exit(-1)
@@ -85,6 +87,8 @@ if __name__ == "__main__" :
         modArr = []
         if modName == "Garching" and mod == 32:   ## scanning all Garching models
             modArr = [81120,81121,81122,81123,82500,82501,82502,82503,82700,82701,82702,82703,84000,84001,84002,84003,91120,91121,91122,91123,92500,92501,92502,92503,92700,92701,92702,92703,94000,94001,94002,94003]
+        if modName == "Burrows2D" and mod == 6000:  ## scanning all Burrows 2D models
+            modArr = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26]
         else:
             modArr = [mod]
         for mod in modArr:
@@ -195,12 +199,12 @@ if __name__ == "__main__" :
             bestT2_arr = np.array(bestT2_arr)
     
             if MH == "NO":
-                f.write("%d mediumChi2 %.3f"%(mod, np.median(locMinNll2_arr - locMinNll1_arr)) + " ")
+                f.write("%d mediumChi2 %.3f "%(mod, np.median(locMinNll2_arr - locMinNll1_arr)) + " ")
                 for ic in range(len(Nnu_arr)):
                     f.write(str(Nnu_arr[ic]) + " ")
                 f.write("\n")
             elif MH == "IO":
-                f.write("%d mediumChi2 %.3f"%(mod, np.median(locMinNll1_arr - locMinNll2_arr)))
+                f.write("%d mediumChi2 %.3f "%(mod, np.median(locMinNll1_arr - locMinNll2_arr)))
                 for ic in range(len(Nnu_arr)):
                     f.write(str(Nnu_arr[ic]) + " ")
                 f.write("\n")
@@ -226,7 +230,7 @@ if __name__ == "__main__" :
     
     
                 plt.tight_layout()
-                #plt.savefig("./results/"+stitle+".pdf")
+                plt.savefig("/junofs/users/miaoyu/supernova/analysis/MH//results/"+stitle+".pdf")
                 plt.show()
     
 
