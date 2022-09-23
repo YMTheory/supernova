@@ -1,11 +1,7 @@
+from curses.textpad import Textbox
 import matplotlib as mpl
 import numpy as np
-
-font = {
-        'size'   : 16
-        }
-
-mpl.rc('font', **font)
+import pandas as pd
 
 import matplotlib.pyplot as plt
 
@@ -43,7 +39,8 @@ def plot_nll_fine(dT, arr):
         ax.plot(dTone, arrone, "-", lw=2)
     ax.set_xlabel(r"$\Delta T$ [ms]", fontsize=15)
     ax.set_ylabel(r"NLL", fontsize=15)
-    plt.show() 
+    plt.savefig("fineNLL.pdf")
+    #plt.show() 
 
 
 if __name__ == "__main__":
@@ -73,13 +70,18 @@ if __name__ == "__main__":
         cha._load_data()
         cha._load_pdf()
 
+    #fig, ax = plt.subplots(figsize=(6, 4))
+
     # caluculating NLL and sensitivity:
     ### Coarse scanning:
-    FITTING_EVENT_NUM = 500 # the sample number to run...
+    FITTING_EVENT_NUM =  500 # the sample number to run...
     dT_arr  = np.arange(-10, 11, 1) # coarse scannig, the step size is the bin width of PDFs
     nllNO   = np.zeros((FITTING_EVENT_NUM, len(dT_arr)))
     nllIO   = np.zeros((FITTING_EVENT_NUM, len(dT_arr)))
+    #abnormalID = [140, 490]
     for ievt in tqdm(range(FITTING_EVENT_NUM)):
+        #if ievt not in abnormalID:
+        #    continue
         for idx, dT in enumerate(dT_arr):
             val_NO, val_IO = 0, 0
             for cha in channels.values():
@@ -118,24 +120,54 @@ if __name__ == "__main__":
                 val_IO += cha.calc_NLL_IO(data, dT)
             nllIO[ievt, idx] = val_IO
 
+        #if ievt in [88, 255, 413]:
+        #    ax.plot(dT_arr_IO, nllIO[ievt], ":", lw=2)
+
     dTNO = np.array(dTNO)
     dTIO = np.array(dTIO)
 
-    TbestNO, TbestIO = [], []
-    #for ievt in range(FITTING_EVENT_NUM):
-    #    TbestNO.append(dT_arr_NO[np.argmin(nllNO[ievt, :])])
-    #    TbestIO.append(dT_arr_IO[np.argmin(nllIO[ievt, :])])
-
-
     ### parabola fitting :
+    TbestNO, TbestIO = [], []
     locMinNO, locMinIO = [], []
+    FITTING_EDGE_POINT = 2
     for ievt in range(FITTING_EVENT_NUM):
-        a, b, c = np.polyfit(dTNO[ievt], nllNO[ievt], 2)
+        #if ievt not in abnormalID:
+        #    continue
+        # check if the local minimum has enough neighbours for fitting.
+        tmp_loc_min = np.argmin(nllNO[ievt])
+        if tmp_loc_min < 2 or tmp_loc_min > half_step_num * 2 - 3:  ## no enough neighbours, not do fitting
+            TbestNO.append(dTNO[ievt, tmp_loc_min])
+            locMinNO.append(nllNO[ievt, tmp_loc_min])
+        a, b, c = np.polyfit(dTNO[ievt, tmp_loc_min-2:tmp_loc_min+3], nllNO[ievt, tmp_loc_min-2:tmp_loc_min+3], 2)
         TbestNO.append(-b/2/a)
         locMinNO.append((4*a*c - b**2)/4/a)
-        a, b, c = np.polyfit(dTIO[ievt], nllIO[ievt], 2)
+
+        #### Abnormal logs
+        if TbestNO[-1] <= -10 or TbestNO[-1] >= 10:
+            print(f"One abnormal event {ievt}.")
+            print(dTNO[ievt])
+            print(nllNO[ievt])
+            print(f"Fitting parameters {a}, {b}, {c}.")
+            print(f"Fitted bestT = {TbestNO[-1]} and locMinNLL = {locMinNO[-1]}.")
+
+        tmp_loc_min = np.argmin(nllIO[ievt])
+        if tmp_loc_min < 2 or tmp_loc_min > half_step_num * 2 - 3:  ## no enough neighbours, not do fitting
+            TbestIO.append(dTIO[ievt, tmp_loc_min])
+            locMinIO.append(nllIO[ievt, tmp_loc_min])
+        a, b, c = np.polyfit(dTIO[ievt, tmp_loc_min-2:tmp_loc_min+3], nllIO[ievt, tmp_loc_min-2:tmp_loc_min+3], 2)
         TbestIO.append(-b/2/a)
         locMinIO.append((4*a*c - b**2)/4/a)
+
+        #### Abnormal logs
+        if TbestIO[-1] <= -10 or TbestIO[-1] >= 10:
+            print(f"One abnormal event {ievt}.")
+            print(dTIO[ievt])
+            print(nllIO[ievt])
+            print(f"Fitting parameters {a}, {b}, {c}.")
+            print(f"Fitted bestT = {TbestIO[-1]} and locMinNLL = {locMinIO[-1]}.")
+
+        #if ievt in abnormalID:
+        #    print(TbestIO[-1], locMinIO[-1])
 
     TbestNO = np.array(TbestNO)
     locMinNO = np.array(locMinNO)
@@ -148,32 +180,23 @@ if __name__ == "__main__":
         sens = 2 * (locMinNO - locMinIO)
 
 
+    #plt.savefig("check.pdf")
+    #plt.show()
+
     ## plot single event NLL for checks
     # DISPLAY_EVENT_NUM = 10
     # plot_nll_one_event(dT_arr, nllNO[DISPLAY_EVENT_NUM], nllIO[DISPLAY_EVENT_NUM])
     # plot_nll_bundles(dT_arr, nllNO, nllIO)
     # plot_nll_fine(dTNO, nllNO)
 
-    print(locMinNO)
-    print(locMinIO)
-    print(sens)
-    print(TbestNO)
-    print(TbestIO)
     
+    ### Save outputs from fitting
+    df = pd.DataFrame({ 
+                        "locMinNO" : locMinNO,
+                        "locMinIO" : locMinIO,
+                        "sens" : sens,
+                        "TbestNO" : TbestNO,
+                        "TbestIO" : TbestIO
+                     })
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-
-    axes[0].hist(TbestNO, bins=100, range=(-10, 10), histtype="step", label="NO")
-    axes[0].hist(TbestIO, bins=100, range=(-10, 10), histtype="step", label="IO")
-    axes[0].set(xlabel=r"$\Delta T$ [ms]", ylabel="counts")
-    axes[0].legend()
-    axes[0].semilogy()
-    
-    axes[1].hist(sens, bins=50, histtype="step")
-    axes[1].set(xlabel=r"$\Delta \chi^2$", ylabel="counts")
-    median = np.median(sens)
-    axes[1].vlines(median, 0, 50, linestyle="--", linewidth=2)
-
-    plt.tight_layout()
-    plt.savefig(f"{model}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV.pdf")
-    #plt.show()
+    df.to_csv(f"./results/{model}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV.csv")
