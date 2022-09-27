@@ -61,6 +61,8 @@ if __name__ == "__main__":
     model = "Garching82503"
     Ethr = 0.15
     output = True
+    fitTmin = 10
+    fitTmax = 50
     
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--model', type=str, default='Garching82503', help='Model name of SNNu.')
@@ -68,17 +70,21 @@ if __name__ == "__main__":
     parser.add_argument('--Ethr' , type=float, default=0.20, help="Detection threshold for pES channel, unit MeV.")
     parser.add_argument('--output', dest='output', action="store_true", help="output csv file.")
     parser.add_argument('--no-output', dest='output',action="store_false", help="do not output csv file.")
+    parser.add_argument('--fitTmin', type=int, default=10, help="Minimum fitting time.")
+    parser.add_argument('--fitTmax', type=int, default=50, help="Maximum fitting time.")
     args = parser.parse_args()
     
     model   = args.model
     Ethr    = args.Ethr
     MO      = args.MO
     output  = args.output
+    fitTmin = args.fitTmin
+    fitTmax = args.fitTmax
     
     channels = {}
-    channels["pES"] = channel("pES", MO, model, Ethr)
-    channels["IBD"] = channel("IBD", MO, model, 0.20)
-    channels["eES"] = channel("eES", MO, model, 0.20)
+    channels["pES"] = channel("pES", MO, model, Ethr, fitTmin=fitTmin, fitTmax=fitTmax)
+    channels["IBD"] = channel("IBD", MO, model, 0.20, fitTmin=fitTmin, fitTmax=fitTmax)
+    channels["eES"] = channel("eES", MO, model, 0.20, fitTmin=fitTmin, fitTmax=fitTmax)
     
 
     # Initialization, data loading...
@@ -132,5 +138,5 @@ if __name__ == "__main__":
                             "TbestIO" : TbestIO
                          })
 
-        df.to_csv(f"./results/{model}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV.csv")
+        df.to_csv(f"./results/{model}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms.csv")
         
