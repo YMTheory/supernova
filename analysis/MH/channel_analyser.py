@@ -20,14 +20,26 @@ class channel :
         self.fitTmax = fitTmax
         
         production_path = "/junofs/users/miaoyu/supernova/production"
-        # for Garching 82503 Model only...
+        # for Garching 82503 Model only... time window scanning
+        # the data and PDF are from 10 to 50 in these PDFs...
+        # needs to specify fitTmin=10ms, fitTmax=50ms
         #self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms.root"
         #self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_longPDF.root"
         #self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_longPDF.root"
 
+        # for different Garching models:
+        # the data and PDF are from -20 to 20 in these PDFs...
+        # needs to specify fitTmin=-20ms, fitTmax=20ms
+        #self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV.root"
+        #self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV.root"
+
+        # for Garching 82503, scanning Ethr and distance
+        # the data and PDF are from 10 to 50 in these PDFs...
+        # needs to specify fitTmin=10ms, fitTmax=50ms
         self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV.root"
-        self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV.root"
-        self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV.root"
+        self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_0.000s-0.060s.root"
+        self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_0.000s-0.060s.root"
+
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -117,7 +129,6 @@ class channel :
         for i in data:
             #tmp_nll = self.pdfNO.Interpolate(i + dT)
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy)
-            print(i+dT, tmp_nll)
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
@@ -127,7 +138,6 @@ class channel :
         #intg = self.pdfNO.Integral(bin1, bin2, "width")
 
         intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0]
-        print(tmin, tmax, 'integral = ', intg)        
         nll -= intg    
         return -nll
 
