@@ -57,24 +57,28 @@ def parabola_fit(dT_arr, nll_arr):
 
 if __name__ == "__main__":
 
-    MO = "NO"
-    model = "Garching82503"
-    Ethr = 0.15
-    output = True
+    MO      = "NO"
+    model   = "Garching82503"
+    modelNo = 82503
+    Ethr    = 0.15
+    output  = True
     fitTmin = 10
     fitTmax = 50
-    eES = True
-    IBD = True
-    pES = True
+    fileNo  = 0
+    eES     = True
+    IBD     = True
+    pES     = True
     
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
-    parser.add_argument('--model', type=str, default='Garching82503', help='Model name of SNNu.')
+    parser.add_argument('--model', type=str, default='Garching', help='Model name of SNNu.')
+    parser.add_argument('--modelNo', type=int, default=82503, help="modelNo")
     parser.add_argument('--MO', type=str, default="NO", help="Mass ordering for the dataset.")
     parser.add_argument('--Ethr' , type=float, default=0.20, help="Detection threshold for pES channel, unit MeV.")
     parser.add_argument('--output', dest='output', action="store_true", help="output csv file.")
     parser.add_argument('--no-output', dest='output',action="store_false", help="do not output csv file.")
     parser.add_argument('--fitTmin', type=int, default=10, help="Minimum fitting time.")
     parser.add_argument('--fitTmax', type=int, default=50, help="Maximum fitting time.")
+    parser.add_argument('--fileNo', type=int, default=0, help="data file number.")
     parser.add_argument('--eES', dest='eES', action="store_true", help="enable eES")
     parser.add_argument('--no-eES', dest='eES', action="store_false", help="disable eES")
     parser.add_argument('--IBD', dest='IBD', action="store_true", help="enable IBD")
@@ -84,22 +88,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     model   = args.model
+    modelNo = args.modelNo
     Ethr    = args.Ethr
     MO      = args.MO
     output  = args.output
     fitTmin = args.fitTmin
     fitTmax = args.fitTmax
+    fileNo  = args.fileNo
     eES     = args.eES
     IBD     = args.IBD
     pES     = args.pES
     
     channels = {}
     if pES:
-        channels["pES"] = channel("pES", MO, model, Ethr, fitTmin=fitTmin, fitTmax=fitTmax)
+        channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
     if IBD:
-        channels["IBD"] = channel("IBD", MO, model, 0.20, fitTmin=fitTmin, fitTmax=fitTmax)
+        channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
     if eES:
-        channels["eES"] = channel("eES", MO, model, 0.20, fitTmin=fitTmin, fitTmax=fitTmax)
+        channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
     
 
     # Initialization, data loading...
@@ -108,7 +114,7 @@ if __name__ == "__main__":
         cha._load_pdf()
 
 
-    FITTING_EVENT_NUM =  500 # the sample number to run...
+    FITTING_EVENT_NUM =  1000 # the sample number to run...
     dT_arr  = np.arange(-10, 11, 1) # coarse scannig, the step size is the bin width of PDFs (1ms/step)
     
     TbestNO, TbestIO = np.zeros(FITTING_EVENT_NUM), np.zeros(FITTING_EVENT_NUM)
@@ -153,5 +159,5 @@ if __name__ == "__main__":
                             "TbestIO" : TbestIO
                          })
 
-        df.to_csv(f"./results/{model}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms.csv")
+        df.to_csv(f"/junofs/users/miaoyu/supernova/analysis/MH_new/results/{model}{modelNo}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}.csv")
         

@@ -9,7 +9,7 @@ class channel :
     Define a new class describing a specific detection channel in JUNO.
     """
     
-    def __init__(self, name:str, MH:str, model:str, Ethr:float, dist=10, fitTmin=10, fitTmax=50) -> None:
+    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fileNo=0) -> None:
         self.name   = name
         self.MH     = MH
         self.model  = model
@@ -18,27 +18,13 @@ class channel :
 
         self.fitTmin = fitTmin
         self.fitTmax = fitTmax
+
+        self.fileNo  = fileNo
         
-        production_path = "/junofs/users/miaoyu/supernova/production"
-        # for Garching 82503 Model only... time window scanning
-        # the data and PDF are from 10 to 50 in these PDFs...
-        # needs to specify fitTmin=10ms, fitTmax=50ms
-        self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms.root"
-        self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newlongPDF.root"
-        self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newlongPDF.root"
-
-        # for different Garching models:
-        # the data and PDF are from -20 to 20 in these PDFs...
-        # needs to specify fitTmin=-20ms, fitTmax=20ms
-        #self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV.root"
-        #self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV.root"
-
-        # for Garching 82503, scanning Ethr and distance
-        # the data and PDF are from 10 to 50 in these PDFs...
-        # needs to specify fitTmin=10ms, fitTmax=50ms
-        #self.datafile   = f"{production_path}/Data/{dist}kpc/{model}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV.root"
-        #self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_0.000s-0.060s.root"
-        #self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_0.000s-0.060s.root"
+        production_path = "/junofs/users/miaoyu/supernova/production/"
+        self.datafile   = f"{production_path}/Data/{dist}kpc/{model}/{model}{modelNo}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_new_{fileNo}.root"
+        self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
 
 
         ####### Datasets and PDFs
@@ -58,12 +44,15 @@ class channel :
         """
         try:
             with up.open(self.datafile) as f:
+                print(self.datafile)
                 evtId  = f["tFixedStat"]["evtID"].array()
                 nuTime = f["tFixedStat"]["nuTime1D"].array()
 
                 counter = Counter(evtId)
                 nuNum = counter[0]
-                nuTime = np.reshape(nuTime, (500, nuNum))
+                evtNum = int(len(nuTime) / nuNum)
+                nuTime = np.reshape(nuTime, (evtNum, nuNum))
+                nuTime = np.array(nuTime)
         except FileNotFoundError:
             print(f"The data file {self.datafile} dose not exist! :(")
             sys.exit(-1)
@@ -77,6 +66,7 @@ class channel :
         Load TH1 PDFs from root files for both NO and IO cases.
         """
         try:
+            print(self.pdfNOfile)
             f = up.open(self.pdfNOfile)
             tmp_h1 = f["h1"] 
         except FileNotFoundError:
@@ -92,6 +82,7 @@ class channel :
         self.pdfNOy = tmp_h1.values()
         
         try:
+            print(self.pdfIOfile)
             f = up.open(self.pdfIOfile)
             tmp_h1 = f["h1"] 
         except FileNotFoundError:
