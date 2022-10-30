@@ -15,6 +15,7 @@ class channel :
         self.model  = model
         self.Ethr   = Ethr
         self.dist   = dist
+        self.scale  = 10. * 10. / dist / dist
 
         self.fitTmin = fitTmin
         self.fitTmax = fitTmax
@@ -23,9 +24,8 @@ class channel :
         
         production_path = "/junofs/users/miaoyu/supernova/production/"
         self.datafile   = f"{production_path}/Data/{dist}kpc/{model}/{model}{modelNo}_{name}_data_{MH}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_new_{fileNo}.root"
-        self.pdfNOfile  = f"{production_path}/PDFs/{dist}kpc/{model}/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfIOfile  = f"{production_path}/PDFs/{dist}kpc/{model}/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-
+        self.pdfNOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfIOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -119,7 +119,7 @@ class channel :
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
             #tmp_nll = self.pdfNO.Interpolate(i + dT)
-            tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy)
+            tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
@@ -128,7 +128,7 @@ class channel :
         #bin2 = self.pdfNO.GetXaxis().FindBin(tmax)
         #intg = self.pdfNO.Integral(bin1, bin2, "width")
 
-        intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0]
+        intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
         nll -= intg    
         return -nll
 
@@ -141,7 +141,7 @@ class channel :
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
             #tmp_nll = self.pdfIO.Interpolate(i + dT)
-            tmp_nll = np.interp(i+dT, self.pdfIOx, self.pdfIOy)
+            tmp_nll = np.interp(i+dT, self.pdfIOx, self.pdfIOy) * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
@@ -150,7 +150,7 @@ class channel :
         #bin2 = self.pdfIO.GetXaxis().FindBin(tmax)
         #intg = self.pdfIO.Integral(bin1, bin2, "width")
         
-        intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0]
+        intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0] * self.scale
         
         nll -= intg 
 

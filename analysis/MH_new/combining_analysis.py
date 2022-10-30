@@ -30,6 +30,7 @@ def find_locMin(dT_arr, nll_arr):
     return Tbest, locMin, idx
 
 
+
 def generate_fine_dTarr(Tbest):
     TMIN = -9
     if Tbest < TMIN:
@@ -65,6 +66,7 @@ if __name__ == "__main__":
     fitTmin = 10
     fitTmax = 50
     fileNo  = 0
+    dist    = 10
     eES     = True
     IBD     = True
     pES     = True
@@ -79,6 +81,7 @@ if __name__ == "__main__":
     parser.add_argument('--fitTmin', type=int, default=10, help="Minimum fitting time.")
     parser.add_argument('--fitTmax', type=int, default=50, help="Maximum fitting time.")
     parser.add_argument('--fileNo', type=int, default=0, help="data file number.")
+    parser.add_argument('--dist', type=int, default=10, help="CCSNe distance")
     parser.add_argument('--eES', dest='eES', action="store_true", help="enable eES")
     parser.add_argument('--no-eES', dest='eES', action="store_false", help="disable eES")
     parser.add_argument('--IBD', dest='IBD', action="store_true", help="enable IBD")
@@ -98,14 +101,15 @@ if __name__ == "__main__":
     eES     = args.eES
     IBD     = args.IBD
     pES     = args.pES
+    dist    = args.dist
     
     channels = {}
     if pES:
-        channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
+        channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist)
     if IBD:
-        channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
+        channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist)
     if eES:
-        channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo)
+        channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist)
     
 
     # Initialization, data loading...
@@ -159,5 +163,12 @@ if __name__ == "__main__":
                             "TbestIO" : TbestIO
                          })
 
-        df.to_csv(f"/junofs/users/miaoyu/supernova/analysis/MH_new/results/{model}{modelNo}_10kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}.csv")
+        cha = ""
+        if pES:
+            cha += "pES"
+        if eES:
+            cha += "eES"
+        if IBD:
+            cha += "IBD"
+        df.to_csv(f"/junofs/users/miaoyu/supernova/analysis/MH_new/results/{model}{modelNo}_10kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}.csv")
         
