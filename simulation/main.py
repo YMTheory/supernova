@@ -55,31 +55,34 @@ def draw_EvT2D_atEarth(model, flavorID):
     plt.show()
 
 
-def calc_visibleSpectra(model, xsec, det, chaname="IBD"):
+def calc_visibleSpectra(model, xsec, det, Evismin=0, Evismax=0.1, chaname="IBD"):
     spec = visible_spectrum(chaname, model, xsec, det)
 
     t = np.arange(-0.02, 0.04, 0.001)
     Numt = len(t)
-    Evismin, Evismax, stepEvis = 0, 0.1, 0.005
+    #Evismin, Evismax, stepEvis = 0, 0.1, 0.005
+    stepEvis = 0.005
     NumEvis = int((Evismax - Evismin) / stepEvis)
 
     no, io = np.zeros(Numt), np.zeros(Numt)
     for i in tqdm(range(Numt)):
-        valno = spec.getVisibleEventAtEvisAtT(t, Evismin, Evismax, "no")
-        valio = spec.getVisibleEventAtEvisAtT(t, Evismin, Evismax, "io")
+        ti = t[i]
+        valno = spec.getVisibleEventAtEvisAtT(ti, Evismin, Evismax, "no")
+        valio = spec.getVisibleEventAtEvisAtT(ti, Evismin, Evismax, "io")
         no[i] = valno
         io[i] = valio
     return t, no, io
 
 
 
-def calc_visibleSpectra2D(model, xsec, det, chaname="IBD"):
+def calc_visibleSpectra2D(model, xsec, det, Evismin=0, Evismax=0.1, chaname="IBD"):
     solM = model.mass
     eos = model.EoS
     spec = visible_spectrum(chaname, model, xsec, det)
 
     t = np.arange(-0.02, 0.04, 0.001)
-    Evismin, Evismax, stepEvis = 0, 0.1, 0.005
+    #Evismin, Evismax, stepEvis = 0, 0.2, 0.005
+    stepEvis = 0.005
     NumEvis = int((Evismax - Evismin) / stepEvis)
     
     no = np.zeros(len(t))
@@ -163,7 +166,9 @@ def drawCEvNS():
     dist = 10
     model0 = SNNuloader(25, "Accretion", "LS220", dist)
 
-    t, no, io, _, _ = calc_visibleSpectra2D(model0, xsec, det, chaname="CEvNS")
+    #t, no, io = calc_visibleSpectra(model0, xsec, det, Evismin=0.1, Evismax=0.5, chaname="CEvNS")
+    t, no, io, _, _ = calc_visibleSpectra2D(model0, xsec, det, Evismin=0.10, Evismax=0.5, chaname="CEvNS")
+    np.savetxt("CEvNS1d.txt", no, fmt="%.3e", delimiter=" ")
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.plot(t*1000, no/1000, "-", lw=2, label="11.2solM, Shen")
     ax.plot(t*1000, io/1000, ":", lw=2, )
@@ -181,7 +186,7 @@ def drawCEvNS_2D():
     Na = 6.022e23
     gtoeV = 5.61e32
     mC12 = 12 / Na * gtoeV
-    xsec = CEvNS_XS(mC12, 6, 6)
+    xsec = CEvNS_XS(6, 6, mC12)
     dist = 10
     model0 = SNNuloader(25, "Accretion", "LS220", dist)
 
@@ -218,5 +223,6 @@ def drawNuE():
 
 
 if __name__ == '__main__':
-    drawCEvNS_2D()
+    drawCEvNS()
+    #drawCEvNS_2D()
     #drawNuE()
