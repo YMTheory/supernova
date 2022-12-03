@@ -6,6 +6,7 @@ from astropy import units as u
 
 from CEvNS_XS import CEvNS_XS
 from IBD_XS import IBD_XS
+from NuP_XS import NuP_XS
 from SNNuloader import SNNuloader
 from toyDetector import toyDetector
 
@@ -20,7 +21,7 @@ class visible_spectrum:
         self.det        = det
         self.model.load()
 
-    def getVisibleEventAtEvisAtT(self, t, Evismin, Evismax, mo):
+    def getVisibleEventAtT(self, t, Evismin, Evismax, mo):
 
         Evis = (Evismax + Evismin) / 2.
         if self.channel == "IBD":
@@ -30,7 +31,10 @@ class visible_spectrum:
             return Nevt[0]
 
 
-        elif self.channel == "CEvNS":
+        elif self.channel == "CEvNS" or self.channel == "NuP":
+            Tmin = self.det.proton_unquenchedE(Evismin)
+            Tmax = self.det.proton_unquenchedE(Evismax)
+            T = (Tmax + Tmin) / 2.
             Evmin, Evmax, stepEv = 0, 80, 0.1
             NumEv = int((Evmax - Evmin) / stepEv)
             factor0 = 0
@@ -38,10 +42,16 @@ class visible_spectrum:
                 Ev = Evmin + (i+0.5) * stepEv
                 for f in range(6):
                     fluence = self.model.getEventAtEarthAtTime(t, Ev, mo, f)
-                    factor1 = self.xsec.diffXS(Evis, Ev) * (Evismax - Evismin)
+                    factor1 = self.xsec.diffXS(T, Ev) * (Tmax - Tmin)  # quenching here
+                    #factor1 = self.xsec.diffXS(Evis, Ev) * (Evismax - Evismin)   # no quenching yet
                     #print(t, Evis, Ev, f, fluence, self.xsec.diffXS(Evis, Ev) )
                     factor0 += fluence * factor1 * stepEv
-            factor0 = factor0 * self.det.nC 
+
+            if self.channel == "CEvNS":
+                npar = self.det.nC
+            elif self.channel == "NuP":
+                npar = self.det.nH
+            factor0 = factor0 * npar
             return factor0
 
         elif self.channel == "NuE":
@@ -49,21 +59,29 @@ class visible_spectrum:
             NumEv = int((Evmax - Evmin) / stepEv)
             factor0 = 0
 
-            for f in range(6):
-                val, err = integrate.dblquad(lambda y, x: self.xsec.diffXS(x, y, f)*self.model.getEventAtEarthAtTime(t, y, mo, f), Evismin, Evismax, Evmin, Evmax )
-                factor0 += val
-            return factor0
-
-            #for i in range(NumEv):
-            #    Ev = Evmin + (i+0.5) * stepEv
-            #    for f in range(6):
-            #        fluence = self.model.getEventAtEarthAtTime(t, Ev, mo, f)
-            #        factor1 = self.xsec.diffXS(Evis, Ev, f) * (Evismax - Evismin)
-            #        factor0 += fluence * factor1 * stepEv
-            #        #print(f, t, Ev, 6*self.det.nC, self.det.nH, fluence, self.xsec.diffXS(Evis, Ev, f), fluence*factor1*stepEv)
-            #factor0 = factor0 * (6 * self.det.nC + self.det.nH)
+            #for f in range(6):
+            #    val, err = integrate.dblquad(lambda y, x: self.xsec.diffXS(x, y, f)*self.model.getEventAtEarthAtTime(t, y, mo, f), Evismin, Evismax, Evmin, Evmax )
+            #    factor0 += val
             #return factor0
 
+            for i in range(NumEv):
+                Ev = Evmin + (i+0.5) * stepEv
+                for f in range(6):
+                    fluence = self.model.getEventAtEarthAtTime(t, Ev, mo, f)
+                    factor1 = self.xsec.diffXS(Evis, Ev, f) * (Evismax - Evismin)
+                    factor0 += fluence * factor1 * stepEv
+                    #print(f, t, Ev, 6*self.det.nC, self.det.nH, fluence, self.xsec.diffXS(Evis, Ev, f), fluence*factor1*stepEv)
+            factor0 = factor0 * (6 * self.det.nC + self.det.nH)
+            return factor0
+
+        
         else:
             # not implemented yet
             return 0
+
+        
+
+
+
+
+

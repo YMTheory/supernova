@@ -23,7 +23,6 @@ if __name__ == '__main__':
     chaname = "CEvNS"
     spec = visible_spectrum(chaname, model0, xs, det)
 
-    
-    Ev = 20
-    xs.totXS(Ev)
+    val = spec.getVisibleEventAtT(0.02, 0.1, 0.105, "NO")
+    print("event number per ms : ", val)
 

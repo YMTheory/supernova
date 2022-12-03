@@ -6,6 +6,7 @@ from astropy import units as u
 from CEvNS_XS import CEvNS_XS
 from IBD_XS import IBD_XS
 from NuE_XS import NuE_XS
+from NuP_XS import NuP_XS
 from SNNuloader import SNNuloader
 from toyDetector import toyDetector
 
@@ -67,22 +68,21 @@ def calc_visibleSpectra(model, xsec, det, Evismin=0, Evismax=0.1, chaname="IBD")
     no, io = np.zeros(Numt), np.zeros(Numt)
     for i in tqdm(range(Numt)):
         ti = t[i]
-        valno = spec.getVisibleEventAtEvisAtT(ti, Evismin, Evismax, "no")
-        valio = spec.getVisibleEventAtEvisAtT(ti, Evismin, Evismax, "io")
+        valno = spec.getVisibleEventAtT(ti, Evismin, Evismax, "no")
+        valio = spec.getVisibleEventAtT(ti, Evismin, Evismax, "io")
         no[i] = valno
         io[i] = valio
     return t, no, io
 
 
 
-def calc_visibleSpectra2D(model, xsec, det, Evismin=0, Evismax=0.1, chaname="IBD"):
+def calc_visibleSpectra2D(model, xsec, det, Evismin=0, Evismax=0.5, stepEvis=0.005, chaname="IBD"):
     solM = model.mass
     eos = model.EoS
     spec = visible_spectrum(chaname, model, xsec, det)
 
     t = np.arange(-0.02, 0.04, 0.001)
     #Evismin, Evismax, stepEvis = 0, 0.2, 0.005
-    stepEvis = 0.005
     NumEvis = int((Evismax - Evismin) / stepEvis)
     
     no = np.zeros(len(t))
@@ -96,8 +96,8 @@ def calc_visibleSpectra2D(model, xsec, det, Evismin=0, Evismax=0.1, chaname="IBD
         for j in tqdm(range(NumEvis)):
             Emin = Evismin + (j) * stepEvis
             Emax = Evismin + (j + 1) * stepEvis
-            tmpno = spec.getVisibleEventAtEvisAtT(ti, Emin, Emax, "no")
-            tmpio = spec.getVisibleEventAtEvisAtT(ti, Emin, Emax, "io")
+            tmpno = spec.getVisibleEventAtT(ti, Emin, Emax, "no")
+            tmpio = spec.getVisibleEventAtT(ti, Emin, Emax, "io")
             #print(ti, Emin, Emax, tmpno, tmpio)
             no2d[NumEvis-1-j, i] = tmpno
             io2d[NumEvis-1-j, i] = tmpio
@@ -191,7 +191,7 @@ def drawCEvNS_2D():
     model0 = SNNuloader(25, "Accretion", "LS220", dist)
 
     t, _, _, no2d, io2d = calc_visibleSpectra2D(model0, xsec, det, chaname="CEvNS")
-    np.savetxt("CEvNS.txt", no2d, fmt="%.3e", delimiter=",")
+    np.savetxt("CEvNS_quenched.txt", no2d, fmt="%.3e", delimiter=",")
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.imshow(no2d, extent=[-20, 40, 0, 0.1], aspect="auto", cmap="cividis")
     ax.set_xlabel("post-bounce time [ms]", fontsize=14)
@@ -199,6 +199,26 @@ def drawCEvNS_2D():
     ax.tick_params(axis="both", labelsize=13)
     plt.tight_layout()
     plt.show()
+
+
+
+def drawNuP_2D():
+    det = toyDetector(20000, 0.12, 0.88)
+    xsec = NuP_XS()
+    dist = 10
+    model0 = SNNuloader(25, "Accretion", "LS220", dist)
+
+    t, _, _, no2d, io2d = calc_visibleSpectra2D(model0, xsec, det, Evismin=0, Evismax=5, stepEvis=0.1, chaname="NuP")
+    np.savetxt("NuP_quenched.txt", no2d, fmt="%.3e", delimiter=" ")
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.imshow(no2d, extent=[-20, 40, 0, 0.1], aspect="auto")
+    ax.set_xlabel("post-bounce time [ms]", fontsize=14)
+    ax.set_ylabel(r"$E_\nu$ [MeV]", fontsize=14)
+    ax.tick_params(axis="both", labelsize=13)
+    plt.tight_layout()
+    plt.show()
+
+
 
 
 def drawNuE():
@@ -223,6 +243,7 @@ def drawNuE():
 
 
 if __name__ == '__main__':
-    drawCEvNS()
+    #drawCEvNS()
     #drawCEvNS_2D()
     #drawNuE()
+    drawNuP_2D()
