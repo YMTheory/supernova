@@ -207,3 +207,13 @@ class SNNuloader :
 
         return index * fluence
 
+
+
+    def redefine_ufunc(self):
+        self.getLumAtTime_ufunc         = np.frompyfunc(self.getLumAtTime, 2, 1)
+        self.getAverageEAtTime_ufunc    = np.frompyfunc(self.getAverageEAtTime, 2, 1)
+        self.getAlphaAtTime_ufunc       = np.frompyfunc(self.getAlphaAtTime, 2, 1)
+        self.getEventAtTime_ufunc       = np.frompyfunc(self.getEventAtTime, 3, 1)
+        self.getEventAtEarthAtTime_ufunc= np.frompyfunc(self.getEventAtEarthAtTime, 4, 1)
+
+

@@ -23,9 +23,7 @@ class CEvNS_XS :
         eVminus1tocm = 1./51000. # 1eV-1 = 1/51000*cm
         itg = integrate.quad(lambda theta: self.totXS_intgpart(theta, Ev, A), 0, np.pi)
         Qw =  self.N - (1-4*0.2325)*self.Z
-        print(GF**2/8/np.pi, (Ev*1e-3)**2, Qw**2, itg[0], eVminus1tocm**2)
         tot = 2 * np.pi * GF**2 / (16 * np.pi**2) * (Ev*1e-3)**2 * Qw**2 * itg[0] * 1e-18 * eVminus1tocm**2
-        print("totXS = ", tot)
 
         return tot
 
@@ -46,7 +44,7 @@ class CEvNS_XS :
         
 
     
-    def diffXS(self, Enr, Ev):
+    def diffXS(self, Enr, Ev, f):
         """
         J. Phys. G, Nucl. Part. Phys. 39, 095204
         return differential cross section;
@@ -64,3 +62,8 @@ class CEvNS_XS :
             return 0
         else:
             return xs
+
+
+    def redefine_ufunc(self):
+        self.totXS_ufunc    = np.frompyfunc(self.totXS, 1, 1)
+        self.diffXS_ufunc   = np.frompyfunc(self.diffXS, 3, 1)

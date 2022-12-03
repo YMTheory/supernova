@@ -39,3 +39,6 @@ class NuE_XS:
             return diffxs
 
         return 0
+
+    def redefine_ufunc(self):
+        self.diffXS_ufunc = np.frompyfunc(self.diffXS, 3, 1)

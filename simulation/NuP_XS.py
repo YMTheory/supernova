@@ -5,7 +5,7 @@ class NuP_XS:
     def __init__(self) -> None:
         pass
 
-    def diffXS(self, T, E):
+    def diffXS(self, T, E, f):
         """
         input: T unit MeV, E unit MeV
         return: diffXS (cm2/MeV)
@@ -18,7 +18,7 @@ class NuP_XS:
         return diffxs
 
 
-    def totXS(E):
+    def totXS(self, E):
         """
         input: E unit MeV
         return: totXS (cm2/MeV)
@@ -26,3 +26,8 @@ class NuP_XS:
         mp = 938
         totxs = (2./mp+233*4/mp**2) * E**2 *4.83e-42
         return totxs
+
+
+    def redefine_ufunc(self):
+        self.diffXS_ufunc   = np.frompyfunc(self.diffXS, 3, 1)
+        self.totXS_ufunc    = np.frompyfunc(self.totXS,  1, 1)
