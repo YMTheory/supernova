@@ -7,7 +7,7 @@ Study the physics potentials like absolute neutrino mass, neutrino mass ordering
 3. Fitting and sensitivity analysis.
 
 ## PDF Generation:
-### 1. Code Tools
+### 1. C++ Code Tools
 A local numerical simulation package developed by HuiLing Li is modified and used as the PDF generation tool. It can provide information like:
 
 - Initial neutrino luminosity, event rate, average energy;
@@ -18,7 +18,12 @@ The production/nuFlux/snewpy_models.py can generate nuFlux data from SNEWPY webs
 
 Then the script ./wenlj/simulation/example/etSpec2dVis_nuMass can generate TH1D in ROOT files as the visible event spectra PDFs.
 
-### 2. Datasets
+### 2. Python Code Tools
+path -> ./simulation
+scipy intergation dbquad (2D integration) for visible event time spectra calculation
+
+
+### 3. Datasets
 1. Garching models: provided directly in the code package (total 32 models);
 2. Burrows 2D: from SNEWPY website, different data format, requiring modifications in BurrowsClass;
 3. ...
