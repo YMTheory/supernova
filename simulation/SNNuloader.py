@@ -179,6 +179,7 @@ class SNNuloader :
             else:
                 return flux
 
+    #@profile
     def getEventAtEarthAtTime(self, t, E, mo, flavorID):
         index = 1./(4*np.pi*np.power(3.086e21, 2)) / self.d**2
         fluence = 0
@@ -204,7 +205,7 @@ class SNNuloader :
             if flavorID in [3, 5]:
                 fluence = 0.5 * (1 - pbar) * self.getEventAtTime(t, E, 1) + 0.5 * pbar * self.getEventAtTime(t, E, 3)
 
-
+        #print("fluence: ", t, E, flavorID, index*fluence)
         return index * fluence
 
 

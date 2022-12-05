@@ -22,10 +22,12 @@ class toyDetector :
         self.proton_unquench_y = g.values()[1]
 
 
+    #@profile
     def proton_quenchedE(self, T):
         return np.interp(T, self.proton_quench_x, self.proton_quench_y)
 
 
+    #@profile
     def proton_unquenchedE(self, T):
         return np.interp(T, self.proton_unquench_x, self.proton_unquench_y)
 

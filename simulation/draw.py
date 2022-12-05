@@ -39,6 +39,17 @@ def draw(Ethr):
     return val
 
 
+def drawNuP(Emin, Emax):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    tarr = np.arange(-30, 30, 1)
+    for i in range(len(Emin)):
+        E1, E2 = Emin[i], Emax[i]
+        filename = f"./data/NuP_testInt_Emin{E1}MeVEmax{E2}MeV.txt"
+        tmp_arr = np.loadtxt(filename)
+        ax.plot(tarr, tmp_arr, lw=2, label=f"{E1}-{E2} MeV")
+    ax.legend(prop={"size":12})
+    ax.semilogy()
+    plt.show()
 
 
 def draw1D():
@@ -63,8 +74,30 @@ def draw1D():
 
 
 
+def NuP_debug():
+    arr = np.loadtxt("./data/NuP_check.txt")
+    arr_low = arr[0, :]
+    arr_hig = arr[1, :]
+    arr_tot = arr[2, :]
+    t = np.arange(-30, 30, 1)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(t, arr_low, lw=2, label="0.1-3 MeV")
+    #ax.plot(t, arr_hig, lw=2, label="3-4 MeV")
+    ax.plot(t, arr_tot, lw=2, label="0.1-4 MeV")
+    ax.plot(t, arr_low+arr_hig, ":", lw=2, label="sum")
+    ax.legend(prop={"size":12})
+    #ax.semilogy()
+    plt.show()
+
+
+
+
+
+
+
 if __name__ == "__main__" :
     #draw2D()
-    draw1D()
+    #draw1D()
     #draw_combined()
-
+    #drawNuP([0.1, 1, 3, 0.1], [1, 3, 5, 5])
+    NuP_debug()

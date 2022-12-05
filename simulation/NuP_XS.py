@@ -5,6 +5,7 @@ class NuP_XS:
     def __init__(self) -> None:
         pass
 
+    #@profile
     def diffXS(self, T, E, f):
         """
         input: T unit MeV, E unit MeV
