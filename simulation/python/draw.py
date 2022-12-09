@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 def draw2D():
-    arr = np.loadtxt("NuP_quenched.txt")
-    fig, ax = plt.subplots(figsize=(8, 4))
+    arr = np.loadtxt("../data/CEvNS_quenched.txt")
+    fig, ax = plt.subplots(figsize=(10, 4))
     #im = ax.imshow(arr, extent=[-20, 40, 0, 0.2], aspect="auto")
     #im = ax.imshow(arr, extent=[-20, 40, 0, 0.2], aspect="auto", norm=colors.LogNorm(vmin=arr.min(), vmax=arr.max()) )
-    im = ax.imshow(arr, extent=[-20, 40, 0, 5.0], aspect="auto", norm=colors.LogNorm(vmin=1e-12, vmax=arr.max()) )
+    im = ax.imshow(arr, extent=[-20, 40, 0, 1.0], aspect="auto", cmap='viridis',  norm=colors.LogNorm(vmin=1e-6, vmax=arr.max()) )
     cb = plt.colorbar(im, ax = ax)
     cb.set_label(r"[MeV$^{-1}\cdot$s$^{-1}$]", fontsize=13)
     
@@ -17,16 +17,17 @@ def draw2D():
     
     ax.hlines(0.10, -20, 40, lw=2, color="red", linestyle="--")
     ax.hlines(0.15, -20, 40, lw=2, color="red", linestyle="-.")
+    ax.set_ylim(0, 0.6)
     
     plt.tight_layout()
-    plt.savefig("./plots/NuP_EvisT2D_quenched.pdf")
+    plt.savefig("../plots/CEvNS_EvisT2D_quenched.pdf")
     plt.show()
 
 
 def draw(Ethr):
-    stepEvis = 0.1
+    stepEvis = 0.01
 
-    arr = np.loadtxt("NuP_quenched.txt")
+    arr = np.loadtxt("../data/CEvNS_quenched.txt")
 
     startId = int(Ethr / stepEvis)
     endId = arr.shape[0] - startId
@@ -40,7 +41,7 @@ def draw(Ethr):
 
 
 def drawNuP(Emin, Emax):
-    fig, ax = plt.subplots(figsize=(6, 4))
+    fig, ax = plt.subplots(figsize=(10, 4))
     tarr = np.arange(-30, 30, 1)
     for i in range(len(Emin)):
         E1, E2 = Emin[i], Emax[i]
@@ -57,9 +58,9 @@ def draw1D():
     c1 = draw(0.10)
     c2 = draw(0.15)
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(10, 4))
     t = np.arange(-20, 40, 1)
-    #ax.plot(t, c0, ":",  lw=2, label=r"E$_\mathrm{thr}$ = 0.00 MeV")
+    ax.plot(t, c0, ":",  lw=2, label=r"E$_\mathrm{thr}$ = 0.00 MeV")
     ax.plot(t, c1, "-",  lw=2, label=r"E$_\mathrm{thr}$ = 0.10 MeV")
     ax.plot(t, c2, "--", lw=2, label=r"E$_\mathrm{thr}$ = 0.15 MeV")
     ax.legend(prop={"size":12})
@@ -67,9 +68,9 @@ def draw1D():
     ax.set_xlabel("post-bounce time [ms]", fontsize=14)
     ax.set_ylabel("CEvNS-$^{12}$C counts per ms", fontsize=14)
     ax.tick_params(axis="both", labelsize=13)
-    #ax.semilogy()
+    ax.semilogy()
     plt.tight_layout()
-    plt.savefig("./plots/NuP_T1DEthr_quenched.pdf")
+    plt.savefig("../plots/CEvNS_T1DEthr_quenched.pdf")
     plt.show()
 
 
@@ -96,8 +97,8 @@ def NuP_debug():
 
 
 if __name__ == "__main__" :
-    #draw2D()
+    draw2D()
     #draw1D()
     #draw_combined()
     #drawNuP([0.1, 1, 3, 0.1], [1, 3, 5, 5])
-    NuP_debug()
+    #NuP_debug()

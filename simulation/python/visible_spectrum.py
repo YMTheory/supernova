@@ -47,10 +47,11 @@ class visible_spectrum:
         # Integral of neutrino energy
         self.Evmin = 0
         self.Evmax = 80
-        self.stepEv = 0.1
-        self.NumEv = int((self.Evmax - self.Evmin) / self.stepEv)
+        #self.stepEv = 0.1
+        #self.NumEv = int((self.Evmax - self.Evmin) / self.stepEv)
 
 
+    """
     def getVisibleEventAtTAtEvis(self, t, Evis, mo):
 
         if self.channel == "NuE":
@@ -115,9 +116,6 @@ class visible_spectrum:
 
 
     def getVisibleEventAtTEvisIntegral_manually(self, t, Evismin, Evismax, mo):
-        """
-        do two-fold integration manually
-        """
         N_Ev = 80
         stepEv = (self.Evmax - self.Evmin) / N_Ev
         if self.channel == "IBD":
@@ -171,22 +169,19 @@ class visible_spectrum:
                         pass
             return Nevt
 
+    """
 
 
     #@profile
     def getVisibleEventAtTEvisIntegral_root(self, t, Evismin, Evismax, mo):
 
         if self.channel == "IBD":
-            stepEvis = 1
             npar = self.det.nH
         elif self.channel == "NuE":
-            stepEvis = 1
             npar = self.det.nH + 6 * self.det.nC
         elif self.channel == "NuP":
-            stepEvis = 0.01
             npar = self.det.nH
         elif self.channel == "CEvNS":
-            stepEvis = 0.01
             npar = self.det.nC
         else:
             npar = 0
@@ -199,7 +194,7 @@ class visible_spectrum:
             Nevt = integrate.quad(lambda Ev: self.det.nH * self.model.getEventAtEarthAtTime_ufunc(t, Ev, mo, 1) * self.xsec.totXS(Ev), Enumin, Enumax )[0]
             return Nevt
         
-        else:
+        elif self.channel == "NuE":  # no quenching included
             self.fintg.SetParameter(0, t)
             self.fintg.SetParameter(1, mo)
             for f in range(6):
@@ -208,7 +203,16 @@ class visible_spectrum:
             return Nevt
 
 
+        elif self.channel == "NuP" or self.channel == "CEvNS":
+            self.fintg.SetParameter(0, t)
+            self.fintg.SetParameter(1, mo)
+            for f in range(6):
+                self.fintg.SetParameter(2, f)
+                Nevt += self.fintg.Integral(Evismin, Evismax, self.Evmin, self.Evmax)
+            return Nevt
 
+        else:
+            return Nevt
 
 
 
