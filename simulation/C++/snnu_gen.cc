@@ -90,26 +90,24 @@ int main(int argc, char* argv[]) {
     if(icha == 0)chaname = SNdetect::NuP;
     if(icha == 1)chaname = SNdetect::NuE;
     if(icha == 2)chaname = SNdetect::IBD;
+    if(icha == 3)chaname = SNdetect::CEvNS;
 
     SNdetect* pdet = SNdetect::instance();
     pdet->setSrcModel(imod);
-    //Double_t dist = 10;//kpc
     pdet->getPointerSrc()->setSNDistance(dist);
     pdet->setChannel(chaname);
     Double_t erelres = 3e-2;
     pdet->getPointerEffectLS()->setERelativeRes(erelres);
-    //Double_t Ethr = 0.;
     pdet->getPointerEffectLS()->setThresholdE(0.);
     pdet->initFCN(); 
 
-    //SNnumGarchingSrc* modelSrc = (SNnumGarchingSrc*)pdet->getPointerSrc();
 
     SNeffectLS* peffLS = pdet->getPointerEffectLS();
 
     if(0) {
-    std::cout << "-----> fluence = " << pdet->getPointerSrc()->oneSNFluenceDetAtTime(0.02, 20, 1, 1) << "\n" 
+    std::cout << "-----> fluence = " << pdet->getPointerSrc()->oneSNFluenceDetAtTime(0.02, 60, 1, 1) << "\n" 
               << "-----> total particle number = " << peffLS-> getNumberOfCarbon() << "\n"
-              << "-----> total cross section = " << peffLS->totalXS(20, 1) << " cm^2" << "\n"
+              << "-----> differential cross section = " << peffLS->differentialXS(60, 0.02, 0) << " cm^2" << "\n"
               << "-----> getEventAboveEthrVisAtTime = " << pdet->getEventAboveEthrVisAtTime(0.02, 0.15, 1, 1) << "\n"
               << std::endl;
     }
@@ -137,9 +135,13 @@ int main(int argc, char* argv[]) {
         Evismax = 80.;
         step_Evis = 0.2;
     }
+    if(chaname == SNdetect::CEvNS){
+        Evismax = 0.3;
+        step_Evis = 0.001;
+    }
     Int_t nbins_Evis = (Evismax-Evismin)/step_Evis;
     std::cout << "nbins_Evis " << nbins_Evis << std::endl;
-    TString chaName[4] = {"pES","eES","IBD", "CNC"};
+    TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
 
 
@@ -168,7 +170,29 @@ int main(int argc, char* argv[]) {
     f->Close();
 
 
+    //TString modelName;
+    //modelName = Form("Garching%d", imod);
+    //TString fn = Form("%s_PDF_%s_%s_%dkpc_%.3fs-%.3fs_scale%.3f_test2D.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist,  tmin, tmax, scale);
+    //std::cout << "output filename : " << fn << std::endl;
+    //TFile* f = new TFile(fn, "recreate");
+    //TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_time, tmin*1000-0.5, tmax*1000-0.5, nbins_Evis, Evismin, Evismax);
+    //double factor = 1;
+    //double tshift = 0;
+    //for (int ipt=0; ipt<nbin_time; ipt++) {
+    //    double t = tmin + ipt * step_t + tshift;
+    //    for (int iE=0; iE<nbins_Evis; iE++) {
+    //        double Evis = Evismin + (iE + 0.5) * step_Evis;
+    //        std::cout << "Running time " << t << ", visible energy " << Evis << std::endl;
+    //        double flu = 0;
+    //        for (int ii=0; ii<6; ii++) {
+    //            flu += pdet->getEvisSpectrumAtTime(t, Evis, ii, MH) * factor / 1000;
+    //        }
+    //        std::cout << "=======> flu = " << flu << std::endl;
+    //        h1->SetBinContent(ipt+1, iE+1, flu);
+    //    }
+    //}
 
-
+    //h1->Write();
+    //f->Close();
 
 }

@@ -16,7 +16,7 @@ class SNdetect : public TObject{
     private:   
         SNdetect();
     public:
-       enum channelName {NuP, NuE, IBD};
+       enum channelName {NuP, NuE, IBD, CEvNS};
        
        ~SNdetect();
 

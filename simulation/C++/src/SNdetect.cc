@@ -17,6 +17,7 @@
 #include "SNchannelNuP.hh"
 #include "SNchannelNuE.hh"
 #include "SNchannelIBD.hh"
+#include "SNchannelCEvNS.hh"
 
 
 SNdetect* SNdetect::pdet = NULL;
@@ -60,20 +61,6 @@ void SNdetect::initChannel(channelName cha){
                 peffLS = chaNuP->createChannel();
                 fchannel = cha;
 
-                //quenching curve
-                //std::string pathnow(gSystem->WorkingDirectory()); 
-                //std::string nowstring = "/SNsim/simulation";
-                //std::string targetstring = "/SNsim/simulation/data";
-
-                //size_t last = pathnow.rfind(nowstring);
-                //if(last != std::string::npos){
-                //    size_t lenpath = pathnow.length();
-                //    pathnow.erase(last, lenpath);
-                //    pathnow.append(targetstring);
-                //}
-                //std::cout << pathnow << std::endl;
-                //file = TFile::Open(Form("%s/quenchCurve.root", pathnow.data()));
-
                 if(file)file->Close();
                 file = TFile::Open("/junofs/users/miaoyu/supernova/wenlj/simulation/data/quenching/quenchCurve.root");
                 if(!file){
@@ -100,6 +87,22 @@ void SNdetect::initChannel(channelName cha){
                 peffLS = chaIBD->createChannel();
                 fchannel = cha;
                 std::cout << "IBD channel has been created." << std::endl;
+                break;
+            }
+        case CEvNS:
+            {
+                SNchannelCEvNS* chaCEvNS = new SNchannelCEvNS();
+                peffLS = chaCEvNS->createChannel();
+                fchannel = cha;
+                if(file)file->Close();
+                file = TFile::Open("/junofs/users/miaoyu/supernova/wenlj/simulation/data/quenching/quenchCurve.root");
+                if(!file){
+                    std::cout << "/junofs/users/miaoyu/supernova/wenlj/simulation/data/quenching/quenchCurve.root can't be opened!" << std::endl;
+                    exit(-1);
+                }
+                grquench    = (TGraph*)file->Get("quenchCurve");
+                grquenchInv = (TGraph*)file->Get("quenchCurveInv");
+                std::cout << "CEvNS channel has been created." << std::endl;
                 break;
             }
         default:
@@ -377,6 +380,9 @@ double SNdetect::getXSweightedEvSpectrumAtTime(double time, double Ev, int type,
         //Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon();
         Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon() + 8*peffLS->getNumberOfOxygen() ;
     }
+    if(fchannel == CEvNS) {
+        Npar = peffLS->getNumberOfCarbon();
+    }
     //number of carbon-12, 98.9% of carbons
     int ntype = 6;
     double totflu = 0;
@@ -402,7 +408,7 @@ double SNdetect::getXSweightedEvSpectrumAtTime(double time, double Ev, int type,
 double SNdetect::getTSpectrumAtTime(double time, double T, int type, int MH){
     double Evmin;
     double Npar;
-    if(fchannel == NuP || fchannel == NuE){
+    if(fchannel == NuP || fchannel == NuE || fchannel == CEvNS){
         if(fchannel == NuP){
             double mp = 938;//MeV
             Evmin = TMath::Sqrt(mp*T/2.);
@@ -411,12 +417,13 @@ double SNdetect::getTSpectrumAtTime(double time, double T, int type, int MH){
         if(fchannel == NuE){
             double me = 0.51;//MeV
             Evmin = 0.5*(T+TMath::Sqrt(T*T+2*T*me));
-            //Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon();
-            Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon() + 8*peffLS->getNumberOfOxygen() ;
-            //std::cout << "Nproton = " << peffLS->getNumberOfProton() 
-            //          << ", Ncarbon = " << peffLS->getNumberOfCarbon()
-            //          << ", Noxygen = " << peffLS->getNumberOfOxygen()
-            //          <<", Ne- = " << Npar << std::endl;
+            Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon();
+            //Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon() + 8*peffLS->getNumberOfOxygen() ;
+        }
+        if(fchannel == CEvNS) {
+            double mC12 = 11179.01;
+            Evmin = TMath::Sqrt(mC12*T/2);
+            Npar = peffLS->getNumberOfCarbon();
         }
 
         // test line
@@ -444,7 +451,7 @@ double SNdetect::getTSpectrumAtTime(double time, double T, int type, int MH){
 }
 
 double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int MH){
-    if(fchannel==NuP){
+    if(fchannel==NuP or fchannel==CEvNS){
         double T = grquenchInv->Eval(Evis);
         double dTqdTp = (grquench->Eval(T+0.005)-grquench->Eval(T))/0.005; 
         return getTSpectrumAtTime(time, getTFromEvis(Evis),type, MH)/dTqdTp;
@@ -463,7 +470,9 @@ double SNdetect::getEventAboveEthrVisAtTime(double time, double Ethr, int type, 
         case NuP:
             {
                 double mp = 938.;
-                fEvismax = grquench->Eval(2.*fEvmax*fEvmax/mp);
+                //fEvismax = grquench->Eval(2.*fEvmax*fEvmax/mp);
+                double m_Tmax = 2 * fEvmax * fEvmax / mp;
+                fEvismax = grquench->Eval(m_Tmax);
                 break;
             }
         case NuE:
@@ -475,6 +484,13 @@ double SNdetect::getEventAboveEthrVisAtTime(double time, double Ethr, int type, 
         case IBD:
             {
                 fEvismax = fEvmax-0.8;
+                break;
+            }
+        case CEvNS:
+            {
+                double mC12 = 11179.01;
+                double m_Tmax = 2 * fEvmax * fEvmax / mC12;
+                fEvismax = grquench->Eval(m_Tmax);
                 break;
             }
     }
@@ -511,6 +527,8 @@ double SNdetect::getEvisFromT(double T){
             return T;
         case(IBD):
             return T+0.51;
+        case(CEvNS):
+            return grquench->Eval(T);
     }
     return 0;
 }
@@ -523,6 +541,8 @@ double SNdetect::getTFromEvis(double Evis){
             return Evis;
         case(IBD):
             return Evis-0.51;
+        case(CEvNS):
+            return grquenchInv->Eval(Evis);
     }
     return 0;
 }
@@ -541,6 +561,11 @@ double SNdetect::getTFromEv(double Ev){
             }
         case(IBD):
             return Ev-1.3;
+        case(CEvNS):
+            {
+                std::cout << "CEvNS: T-Ev is not 1 to 1 related." << std::endl;
+                return -1;
+            }
     }
     return 0;
 }
@@ -559,6 +584,11 @@ double SNdetect::getEvFromT(double T){
         case(IBD):
             {
                 return T+1.3;
+                break;
+            }
+        case(CEvNS):
+            {
+                std::cout << "CEvNS: T-Ev is not 1 to 1 related." << std::endl;
                 break;
             }
         default:
