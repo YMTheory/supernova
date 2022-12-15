@@ -25,6 +25,7 @@ def scanning(dT_arr, channels, ievt, MO):
 
     return nll
 
+
 def scanning_withbkg(dT_arr, channels, ievt, MO, level, Tbkg):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
@@ -44,7 +45,6 @@ def scanning_withbkg(dT_arr, channels, ievt, MO, level, Tbkg):
         nll[idx] = val 
 
     return nll
-
 
 
 def scanning_asimov(dT_arr, channels, MO):
@@ -67,7 +67,6 @@ def find_locMin(dT_arr, nll_arr):
     Tbest = dT_arr[idx]
     locMin = nll_arr[idx]
     return Tbest, locMin, idx
-
 
 
 def generate_fine_dTarr(Tbest):
@@ -96,7 +95,7 @@ def parabola_fit(dT_arr, nll_arr, param=False):
             return Tbest, locMin
         else:
             return Tbest, locMin, a, b, c
-    
+
 
 def load_C14():
     f = ROOT.TFile("/junofs/users/miaoyu/supernova/production/PDFs/backgrounds/C14/C14_rate.root", "read")
@@ -129,7 +128,7 @@ def generate_C14(level, glow, ghig):
 if __name__ == "__main__":
 
     MO      = "NO"
-    model   = "Garching82503"
+    model   = "Garching"
     modelNo = 82503
     Ethr    = 0.15
     output  = True
@@ -212,12 +211,13 @@ if __name__ == "__main__":
 
     # Initialization, data loading...
     for cha in channels.values():
-        cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/scale10/{model}{modelNo}_{cha.name}_data_{MO}_10kpc_thr{Ethr}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_merger.root")
+        #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/scale10/{model}{modelNo}_{cha.name}_data_{MO}_10kpc_thr{Ethr}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_merger.root")
+        cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin10msTmax50ms_merger.root")
         if not asimov:
-            cha.setNevtPerFile(100000)
+            cha.setNevtPerFile(1000)
             cha.setStartEvtId(startevt)
             cha.setEndEvtId(endevt)
-            cha._load_data()
+            cha._load_data_ak()
         cha._load_pdf()
 
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
@@ -245,30 +245,34 @@ if __name__ == "__main__":
 
             if MO == "NO":
                 bestNLL = locMinFitNO
+                print(f"Asimov dataset sensitivity of NO data = {2*(locMinFitIO - bestNLL)}")
             else:
                 bestNLL = locMinFitIO
+                print(f"Asimov dataset sensitivity of IO data = {2*(locMinFitNO - bestNLL)}")
 
-            fig, ax = plt.subplots(figsize=(6, 4))
-            x1 = np.arange(TbestFitNO-3, TbestFitNO+3, 0.01)
-            ax.plot(x1, 2*(aNO*x1**2+bNO*x1+cNO) - 2*bestNLL, lw=2, color="blue", label="NO")
-            x2 = np.arange(TbestFitIO-3, TbestFitIO+3, 0.01)
-            ax.plot(x2, 2*(aIO*x2**2+bIO*x2+cIO) - 2*bestNLL, lw=2, color="red",  label="IO")
 
-            if MO == "NO":
-                ax.hlines(locMinFitIO*2-bestNLL*2, x2[0]+1, x2[-1]-1, linestyle="--", lw=2, color="black")
-                ax.text(TbestFitIO, locMinFitIO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitIO*2-bestNLL*2:.1f}", fontsize=16)
-            if MO == "IO":
-                ax.hlines(locMinFitNO*2-bestNLL*2, x1[0]+1, x1[-1]-1, linestyle="--", lw=2, color="black")
-                ax.text(TbestFitNO+0.5, locMinFitNO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitNO*2-bestNLL*2:.1f}", fontsize=16)
+            if 0:
+                fig, ax = plt.subplots(figsize=(6, 4))
+                x1 = np.arange(TbestFitNO-3, TbestFitNO+3, 0.01)
+                ax.plot(x1, 2*(aNO*x1**2+bNO*x1+cNO) - 2*bestNLL, lw=2, color="blue", label="NO")
+                x2 = np.arange(TbestFitIO-3, TbestFitIO+3, 0.01)
+                ax.plot(x2, 2*(aIO*x2**2+bIO*x2+cIO) - 2*bestNLL, lw=2, color="red",  label="IO")
 
-            ax.set_xlabel(r"$\Delta t$ [ms]", fontsize=19)
-            ax.set_ylabel(r"$\chi^2$", fontsize=19)
-            ax.set_ylim(0, 15)
-            ax.legend(prop={"size":16}, frameon=True)
-            ax.tick_params(axis="both", labelsize=18)
-            plt.tight_layout()
-            plt.savefig(f"./plots/{model}{modelNo}_data{MO}_{dist}kpc_AsimovFit.pdf")
-            plt.show()
+                if MO == "NO":
+                    ax.hlines(locMinFitIO*2-bestNLL*2, x2[0]+1, x2[-1]-1, linestyle="--", lw=2, color="black")
+                    ax.text(TbestFitIO, locMinFitIO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitIO*2-bestNLL*2:.1f}", fontsize=16)
+                if MO == "IO":
+                    ax.hlines(locMinFitNO*2-bestNLL*2, x1[0]+1, x1[-1]-1, linestyle="--", lw=2, color="black")
+                    ax.text(TbestFitNO+0.5, locMinFitNO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitNO*2-bestNLL*2:.1f}", fontsize=16)
+
+                ax.set_xlabel(r"$\Delta t$ [ms]", fontsize=19)
+                ax.set_ylabel(r"$\chi^2$", fontsize=19)
+                ax.set_ylim(0, 15)
+                ax.legend(prop={"size":16}, frameon=True)
+                ax.tick_params(axis="both", labelsize=18)
+                plt.tight_layout()
+                plt.savefig(f"./plots/{model}{modelNo}_data{MO}_{dist}kpc_AsimovFit.pdf")
+                plt.show()
 
         if not doFit:
             nllMinNO_oneEvt = scanning_asimov([0], channels.values(), "NO")[0]
@@ -368,5 +372,5 @@ if __name__ == "__main__":
                 cha += "eES"
             if IBD:
                 cha += "IBD"
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}_new_{exp}_start{startevt}end{endevt}_noFit_binning_scale10.csv")
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}_new_{exp}_start{startevt}end{endevt}_doFit_binned_PoisToyData.csv")
         

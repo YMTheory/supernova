@@ -17,8 +17,7 @@ class channel :
         self.model  = model
         self.Ethr   = Ethr
         self.dist   = dist
-        #self.scale  = 10. * 10. / dist / dist
-        self.scale = 10
+        self.scale  = 10. * 10. / dist / dist
 
         self.fitTmin = fitTmin
         self.fitTmax = fitTmax
@@ -71,6 +70,30 @@ class channel :
     def setEndEvtId(self, idd):
         self.endEvt = idd
 
+    def _load_data_ak(self) -> None:
+        """
+        Load ttree ak array data from root files.
+        """
+        try:
+            with up.open(self.datafile) as f:
+                print("--------------------------------------------------------------")
+                print(f"Load datafile of channel {self.name} from ->")
+                print(self.datafile)
+                print("--------------------------------------------------------------")
+                numEntries = f["binned"]["TbinCont"].num_entries
+                if self.endEvt == 0:
+                    self.startEvt = 0
+                    self.endEvt = numEntries # load all entries from the TBranch.
+                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                evtNum = self.endEvt - self.startEvt
+                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
+                self.data_array = nuTime
+                self.nentries = evtNum
+        except FileExistsError:
+            print(f"The data file {self.datafile} dose not exist! :(")
+            sys.exit(-1)
+
+
     def _load_data(self) -> None:
         """
         Load ttree data from root files.
@@ -78,13 +101,15 @@ class channel :
         try:
             with up.open(self.datafile) as f:
                 print(self.datafile)
-                numEntries = f["tFixedStat"]["evtID"].num_entries
+                #numEntries = f["tFixedStat"]["evtID"].num_entries
+                numEntries = f["binned"]["TbinCont"].num_entries
                 nuPerEvent = int(numEntries / self.NevtPerFile)
                 print(f"Statistics of channel {self.name} is {nuPerEvent}.")
                 if self.endEvt == 0:
                     self.startEvt = 0
                     self.endEvt = numEntries
-                nuTime = f["tFixedStat"]["nuTime1D"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
+                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
+                #nuTime = f["tFixedStat"]["nuTime1D"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
                 evtNum = self.endEvt - self.startEvt
                 print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
                 nuTime = np.reshape(nuTime, (evtNum, nuPerEvent))
