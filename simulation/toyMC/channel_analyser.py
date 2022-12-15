@@ -15,6 +15,7 @@ class channel :
         self.name   = name
         self.MH     = MH
         self.model  = model
+        self.modelNo = modelNo
         self.Ethr   = Ethr
         self.dist   = dist
         self.scale  = 10. * 10. / dist / dist

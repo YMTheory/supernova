@@ -61,15 +61,15 @@ def draw():
 
     l1 = ax.vlines(-np.median(sens_dataIO), 0, 2000, linestyle=":", lw=2.5, color="darkviolet")
     #l2 = ax.vlines(-np.median(sens_dataIO_bin), 0, 50, linestyle="--", lw=2.5, color="black")
-    l3 = ax.vlines(-asimovIO, 0, 2000, linestyle="--", lw=2.5, color="darkviolet")
+    l3 = ax.vlines(-asimovIO, 0, 2000, linestyle="--", lw=2.5, color="black")
     ax.text(-np.median(sens_dataIO)-4, 1000, f"{-np.median(sens_dataIO):.1f}", fontsize=15, color="darkviolet")
     #ax.text(-np.median(sens_dataIO_bin)-40, 10, f"{-np.median(sens_dataIO_bin):.1f}", fontsize=15, color="black")
-    ax.text(-np.median(sens_dataIO)+2, 1500, f"{-asimovIO}", fontsize=15, color="darkviolet")
+    ax.text(-np.median(sens_dataIO)+2, 1500, f"{-asimovIO}", fontsize=15, color="black")
 
-    ax.vlines(np.median(sens_dataNO),  0, 2000, linestyle=":", lw=2.5, color="black")
+    ax.vlines(np.median(sens_dataNO),  0, 2000, linestyle=":", lw=2.5, color="darkviolet")
     #ax.vlines(np.median(sens_dataNO_bin),  0, 50, linestyle="--", lw=2.5, color="black")
     ax.vlines(asimovNO, 0, 2000, linestyle="--", lw=2.5, color="black")
-    ax.text(np.median(sens_dataNO)-2, 1000, f"{np.median(sens_dataNO):.1f}", fontsize=15, color="black")
+    ax.text(np.median(sens_dataNO)-2, 1000, f"{np.median(sens_dataNO):.1f}", fontsize=15, color="darkviolet")
     #ax.text(np.median(sens_dataNO_bin)-40, 10, f"{np.median(sens_dataNO_bin):.1f}", fontsize=15, color="black")
     ax.text(np.median(sens_dataNO)+2, 1500, f"{asimovNO}", fontsize=15, color="black")
     
