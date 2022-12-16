@@ -42,6 +42,7 @@ class channel :
 
         ####### Datasets and PDFs
         self.data_array = None
+        self.binned_data_array = None
         self.nentries   = 0
         self.startEvt   = 0
         self.endEvt     = self.NevtPerFile
@@ -93,6 +94,31 @@ class channel :
         except FileExistsError:
             print(f"The data file {self.datafile} dose not exist! :(")
             sys.exit(-1)
+
+
+    def _load_data_binned(self) -> None:
+        """
+        Load binned data contents.
+        """
+        try:
+            with up.open(self.datafile) as f:
+                print("--------------------------------------------------------------")
+                print(f"Load binned datafile of channel {self.name} from ->")
+                print(self.datafile)
+                print("--------------------------------------------------------------")
+                numEntries = f["binned"]["TbinCont"].num_entries
+                if self.endEvt == 0:
+                    self.startEvt = 0
+                    self.endEvt = numEntries # load all entries from the TBranch.
+                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                evtNum = self.endEvt - self.startEvt
+                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
+                self.binned_data_array = nuTime
+                self.nentries = evtNum
+        except FileExistsError:
+            print(f"The data file {self.datafile} dose not exist! :(")
+            sys.exit(-1)
+
 
 
     def _load_data(self) -> None:
@@ -219,13 +245,13 @@ class channel :
 
         return -nll
 
+
     def calc_binnedNLL_NO(self, data, dT) -> float:
         nll = 0
         stepT = 0.01
         Nbins = int((self.fitTmax - self.fitTmin) / stepT)
-        cont, _ = np.histogram(data, bins=Nbins, range=(self.fitTmin, self.fitTmax))
         for ibin in range(Nbins):
-            n = cont[ibin]
+            n = self.binned_data_array[ibin]
             t_pdf = self.fitTmin + ibin * stepT + dT
             s = self._pdfNO_func(t_pdf) * stepT * self.scale
             if n != 0 and s != 0 :
@@ -241,9 +267,8 @@ class channel :
         nll = 0
         stepT = 0.01
         Nbins = int((self.fitTmax - self.fitTmin) / stepT)
-        cont, _ = np.histogram(data, bins=Nbins, range=(self.fitTmin, self.fitTmax))
         for ibin in range(Nbins):
-            n = cont[ibin]
+            n = self.binned_data_array[ibin]
             t_pdf = self.fitTmin + ibin * stepT + dT
             s = self._pdfIO_func(t_pdf) * stepT * self.scale
             if n != 0 and s != 0 :
