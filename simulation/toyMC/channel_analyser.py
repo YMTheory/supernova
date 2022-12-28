@@ -366,8 +366,6 @@ class channel :
         for i in Tbkg:
             alldata.append(i)
 
-        print(f"Total signals in current window ({self.name}) = {len(alldata)}.")
-        print(f"Current fit C14 rate = {self.c14rate:.2f} Hz.")
         for i in alldata:
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale + self.c14rate * 1e-3
             if tmp_nll <= 0:
@@ -394,8 +392,6 @@ class channel :
             alldata.append(i)
         for i in Tbkg:
             alldata.append(i)
-        print(f"Total signals in current window ({self.name}) = {len(alldata)}.")
-        print(f"Current fit C14 rate = {self.c14rate:.2f} Hz.")
 
         for i in alldata:
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale + self.c14rate * 1e-3

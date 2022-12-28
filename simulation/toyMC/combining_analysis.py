@@ -216,10 +216,15 @@ if __name__ == "__main__":
 
     if C14bkg:
         glow, ghig = load_C14()
+        if C14level == "low":
+            c14rate = glow.Eval(Ethr)
+        elif C14level == "high":
+            c14rate = ghig.Eval(Ethr)
 
     channels = {}
     if pES:
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+        channels["pES"].c14rate = c14rate
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     if eES:
