@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import gamma
 
-IBD = channel("IBD", "IO", "Garching", 82703, 0.15)
+IBD = channel("IBD", "NO", "Garching", 82703, 0.15)
 IBD.setNevtPerFile(100000)
 IBD.setStartEvtId(2000)
 IBD.setEndEvtId(3000)
@@ -37,13 +37,13 @@ print(f"Total binning number = {Nstep}")
 nll_asimov = 0
 for isig in range(Nstep):
     tt = tmin + isig * stepT
-    n = IBD._pdfIO_func(tt) * stepT
-    s = IBD._pdfNO_func(tt) * stepT 
+    n = IBD._pdfNO_func(tt) * stepT
+    s = IBD._pdfIO_func(tt) * stepT 
     if s != 0:
         nll_asimov += -2 * (n * np.log(s) - s - np.log(gamma(n+1)))
     if s == 0:
         nll_asimov += 2 * s
-    s = IBD._pdfIO_func(tt) * stepT
+    s = IBD._pdfNO_func(tt) * stepT
     if s != 0:
         nll_asimov += 2 * (n * np.log(s) - s - np.log(gamma(n+1)))
     if s == 0:
@@ -57,7 +57,7 @@ nll_arr = []
 for iexp in range(Nexp):
     signals = np.zeros(Nstep) # generated toy data bin by bin
     for isig in range(Nstep):
-        n = IBD._pdfIO_func(tmin + stepT * isig) * stepT
+        n = IBD._pdfNO_func(tmin + stepT * isig) * stepT
         s = np.random.poisson(n, size=1)
         if s <= 0:
             s = 0
@@ -67,17 +67,18 @@ for iexp in range(Nexp):
     #signals, _ = np.histogram(arr, bins=Nstep, range=(tmin, tmax))
     #print(signals)
     
-    print(f"===========Exp {iexp} Running, total {np.sum(signals):.2f} neutrinos===========")
+    if iexp % 100 == 0:
+        print(f"===========Exp {iexp} Running, total {np.sum(signals):.2f} neutrinos===========")
     nll = 0
     for isig in range(Nstep):
         n = signals[isig]
-        s = IBD._pdfNO_func(tmin + stepT * isig) * stepT
+        s = IBD._pdfIO_func(tmin + stepT * isig) * stepT
         if s != 0:
             nll += -2 * (n * np.log(s) - s - np.log(gamma(n+1)))
         if s == 0:
             nll += 2 * s
 
-        s = IBD._pdfIO_func(tmin + stepT * isig) * stepT
+        s = IBD._pdfNO_func(tmin + stepT * isig) * stepT
         if s != 0:
             nll += 2 * (n * np.log(s) - s - np.log(gamma(n+1)))
         if s == 0:
@@ -100,30 +101,3 @@ plt.show()
         
     
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

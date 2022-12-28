@@ -17,6 +17,7 @@ if __name__ == "__main__":
     startevt = 0
     endevt  = 100000
     cha     = "IBD"
+    output  = False
     
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--model',      type=str,   default='Garching', help='Model name of SNNu.')
@@ -30,6 +31,8 @@ if __name__ == "__main__":
     parser.add_argument('--channel',    type=str,   default="IBD",      help="Detection channel.")
     parser.add_argument("--start",      type=int,   default=0,          help="Start event for fit.")
     parser.add_argument("--end",        type=int,   default=0,          help="End event for fit.")
+    parser.add_argument('--output', dest='output', action="store_true", help="output csv file.")
+    parser.add_argument('--no-output', dest='output',action="store_false", help="do not output csv file.")
     args = parser.parse_args()
 
     model   = args.model
@@ -43,13 +46,14 @@ if __name__ == "__main__":
     startevt = args.start
     endevt  = args.end
     cha     = args.channel
+    output  = args.output
 
     Nbins = int((fitTmax - fitTmin) / fitTwidth)
 
     datafile = f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_merger.root"
     print(f"Loading datafile {datafile}...")
     with up.open(datafile) as f:
-        nuTime = f["binned"]["TbinCont"].array(entry_start=startevt, entry_stop=endevt)
+        nuTime = f["binned"]["TbinConts"].array(entry_start=startevt, entry_stop=endevt)
         nuNUM = []
         binConts = []
         for evt, nuTime_oneEvt in enumerate(nuTime):
@@ -66,15 +70,16 @@ if __name__ == "__main__":
     
     if 0:
         fig, ax = plt.subplots(figsize=(6, 5))
-        ax.hist(nuNUM, bins=100, color='blue', edgecolor="black")
+        ax.hist(nuNUM, bins=30, range=(0, 30), color='blue', edgecolor="black")
         ax.set_xlabel(r"Number of $\nu$ in fitting time window", fontsize=14)
         ax.set_ylabel("A.U.", fontsize=14)
         plt.tight_layout()
         plt.show()
     
-    outfile = f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root"
-    with up.recreate(outfile) as f:
-        f["binned"] = {"TbinConts" : binConts}
+    if output:
+        outfile = f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_start{startevt}end{endevt}_binning.root"
+        with up.recreate(outfile) as f:
+            f["binned"] = {"TbinConts" : binConts}
     
     
     

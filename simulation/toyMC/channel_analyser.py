@@ -4,7 +4,8 @@ import uproot as up
 from collections import Counter
 import scipy.integrate as integrate
 from scipy.special import gamma
-import ROOT
+#import ROOT
+import time
 
 class channel :
     """
@@ -37,8 +38,10 @@ class channel :
         ##self.pdfIOfile  = f"{production_path}/PDFs/10kpc/{exp}/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF_{exp}.root"
         #self.pdfNOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfIOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        #self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -56,6 +59,8 @@ class channel :
         self.glow       = None
         self.ghig       = None
         self.c14rate    = 0
+
+        self.binwidth   = 0.01
 
     def setNevtPerFile(self, N) -> None:
         self.NevtPerFile = N
@@ -82,11 +87,11 @@ class channel :
                 print(f"Load datafile of channel {self.name} from ->")
                 print(self.datafile)
                 print("--------------------------------------------------------------")
-                numEntries = f["binned"]["TbinCont"].num_entries
+                numEntries = f["binned"]["TbinConts"].num_entries
                 if self.endEvt == 0:
                     self.startEvt = 0
                     self.endEvt = numEntries # load all entries from the TBranch.
-                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                nuTime = f["binned"]["TbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
                 evtNum = self.endEvt - self.startEvt
                 print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
                 self.data_array = nuTime
@@ -106,11 +111,11 @@ class channel :
                 print(f"Load binned datafile of channel {self.name} from ->")
                 print(self.datafile)
                 print("--------------------------------------------------------------")
-                numEntries = f["binned"]["TbinCont"].num_entries
+                numEntries = f["binned"]["TbinConts"].num_entries
                 if self.endEvt == 0:
                     self.startEvt = 0
                     self.endEvt = numEntries # load all entries from the TBranch.
-                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                nuTime = f["binned"]["TbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
                 evtNum = self.endEvt - self.startEvt
                 print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
                 self.binned_data_array = nuTime
@@ -120,7 +125,6 @@ class channel :
             sys.exit(-1)
 
 
-
     def _load_data(self) -> None:
         """
         Load ttree data from root files.
@@ -128,15 +132,15 @@ class channel :
         try:
             with up.open(self.datafile) as f:
                 print(self.datafile)
-                #numEntries = f["tFixedStat"]["evtID"].num_entries
-                numEntries = f["binned"]["TbinCont"].num_entries
+                numEntries = f["tFixedStat"]["evtID"].num_entries
+                #numEntries = f["binned"]["TbinCont"].num_entries
                 nuPerEvent = int(numEntries / self.NevtPerFile)
                 print(f"Statistics of channel {self.name} is {nuPerEvent}.")
                 if self.endEvt == 0:
                     self.startEvt = 0
                     self.endEvt = numEntries
-                nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
-                #nuTime = f["tFixedStat"]["nuTime1D"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
+                #nuTime = f["binned"]["TbinCont"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
+                nuTime = f["tFixedStat"]["nuTime1D"].array(entry_start=self.startEvt*nuPerEvent, entry_stop=self.endEvt*nuPerEvent)
                 evtNum = self.endEvt - self.startEvt
                 print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
                 nuTime = np.reshape(nuTime, (evtNum, nuPerEvent))
@@ -147,7 +151,6 @@ class channel :
 
         self.data_array = nuTime
         self.nentries   = self.startEvt - self.endEvt
-
 
     def _load_pdf(self) -> None:
         """
@@ -186,12 +189,17 @@ class channel :
         self.pdfIOy = tmp_h1.values()
         
         
-    def get_one_event(self, event_id:int) -> None:
+    def get_one_event(self, event_id:int):
         """
         get a single event with ID == event_id.
         """
         event_id = event_id - self.startEvt
         return self.data_array[event_id]
+    
+    def get_one_binned_event(self, event_id:int):
+        event_id = event_id - self.startEvt
+        return self.binned_data_array[event_id]
+    
     
     def _pdfNO_func(self, t):
         return np.interp(t, self.pdfNOx, self.pdfNOy)
@@ -204,6 +212,7 @@ class channel :
         """
         calculate NLL for given dataset and PDF, where PDF is shifted by dT.
         """
+        #time_start = time.time()
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
@@ -219,9 +228,11 @@ class channel :
 
         intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
         nll -= intg    
+        #time_end = time.time()
+        #print(f"Time consumed = {time_end - time_start} s.")
         return -nll
 
-        
+
     def calc_NLL_IO(self, data, dT) -> float:
         """
         calculate NLL for given dataset and PDF, where PDF is shifted by dT.
@@ -249,40 +260,47 @@ class channel :
     def calc_binnedNLL_NO(self, data, dT) -> float:
         nll = 0
         stepT = 0.01
-        Nbins = int((self.fitTmax - self.fitTmin) / stepT)
-        for ibin in range(Nbins):
-            n = self.binned_data_array[ibin]
-            t_pdf = self.fitTmin + ibin * stepT + dT
-            s = self._pdfNO_func(t_pdf) * stepT * self.scale
-            if n != 0 and s != 0 :
-                tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
-                nll += tmp_nll
-            if n == 0 and s != 0:
-                tmp_nll = s
-                nll += tmp_nll
+        # bins with counts
+        t_data = np.where(data) 
+        n = data[t_data]
+        t_data = np.array(t_data) * stepT + self.fitTmin
+        t_pdf = t_data + dT 
+        s = self._pdfNO_func(t_pdf) * stepT * self.scale
+        tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+        tmp_nll = np.sum(tmp_nll) 
+        # bins without counts
+        t_data0 = np.where(data == 0)
+        t_pdf0 = self.fitTmin + np.array(t_data0) * stepT + dT
+        s = self._pdfNO_func(t_pdf0) * stepT * self.scale
+        tmp_nll += np.sum(s)
+        nll = tmp_nll
         return nll
         
 
     def calc_binnedNLL_IO(self, data, dT) -> float:
         nll = 0
         stepT = 0.01
-        Nbins = int((self.fitTmax - self.fitTmin) / stepT)
-        for ibin in range(Nbins):
-            n = self.binned_data_array[ibin]
-            t_pdf = self.fitTmin + ibin * stepT + dT
-            s = self._pdfIO_func(t_pdf) * stepT * self.scale
-            if n != 0 and s != 0 :
-                tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
-                nll += tmp_nll
-            if n == 0 and s != 0:
-                tmp_nll = s
-                nll += tmp_nll
+        # bins with counts
+        t_data = np.where(data) 
+        n = data[t_data]
+        t_data = np.array(t_data) * stepT + self.fitTmin
+        t_pdf = t_data + dT 
+        s = self._pdfIO_func(t_pdf) * stepT * self.scale
+        tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+        tmp_nll = np.sum(tmp_nll) 
+        # bins without counts
+        t_data0 = np.where(data == 0)
+        t_pdf0 = self.fitTmin + np.array(t_data0) * stepT + dT
+        s = self._pdfIO_func(t_pdf0) * stepT * self.scale
+        tmp_nll += np.sum(s)
+        nll = tmp_nll
         return nll
 
 
     def calc_Asimov_NLL_NO(self, dT) -> float:
         nll = 0
-        stepT = 0.01
+
+        stepT = self.binwidth
         binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
@@ -304,13 +322,13 @@ class channel :
             if s != 0 and n == 0:
                 tmp_nll = s
                 nll += tmp_nll
-        return nll
 
+        return nll
 
     def calc_Asimov_NLL_IO(self, dT) -> float:
         nll = 0
 
-        stepT = 0.01
+        stepT = self.binwidth
         binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
@@ -348,6 +366,8 @@ class channel :
         for i in Tbkg:
             alldata.append(i)
 
+        print(f"Total signals in current window ({self.name}) = {len(alldata)}.")
+        print(f"Current fit C14 rate = {self.c14rate:.2f} Hz.")
         for i in alldata:
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale + self.c14rate * 1e-3
             if tmp_nll <= 0:
@@ -374,6 +394,8 @@ class channel :
             alldata.append(i)
         for i in Tbkg:
             alldata.append(i)
+        print(f"Total signals in current window ({self.name}) = {len(alldata)}.")
+        print(f"Current fit C14 rate = {self.c14rate:.2f} Hz.")
 
         for i in alldata:
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale + self.c14rate * 1e-3
@@ -389,11 +411,6 @@ class channel :
         nll -= intg    
         return -nll
         
-
-
-
-
-
 
 
 

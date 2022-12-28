@@ -9,6 +9,20 @@ from channel_analyser import channel
 
 import ROOT
 
+def scanning_binned(dT_arr, channels, ievt, MO):
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            data = cha.get_one_binned_event(ievt)
+            if MO == "NO":
+                val += cha.calc_binnedNLL_NO(data, dT)
+            else:
+                val += cha.calc_binnedNLL_IO(data, dT)
+        nll[idx] = val
+    return nll
+
+
 def scanning(dT_arr, channels, ievt, MO):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
@@ -16,11 +30,9 @@ def scanning(dT_arr, channels, ievt, MO):
         for cha in channels:
             data = cha.get_one_event(ievt)
             if MO == 'NO':
-                val += cha.calc_binnedNLL_NO(data, dT)
-                #val += cha.calc_NLL_NO(data, dT)
+                val += cha.calc_NLL_NO(data, dT)
             else:
-                val += cha.calc_binnedNLL_IO(data, dT)
-                #val += cha.calc_NLL_IO(data, dT)
+                val += cha.calc_NLL_IO(data, dT)
         nll[idx] = val 
 
     return nll
@@ -122,9 +134,6 @@ def generate_C14(level, glow, ghig):
     return Tc14
 
 
-
-
-
 if __name__ == "__main__":
 
     MO      = "NO"
@@ -145,7 +154,9 @@ if __name__ == "__main__":
     asimov  = False
     C14bkg  = False
     C14level = "high"
-    doFit = True
+    doFit   = True
+    binning = False
+    binwidth = 0.01
     
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--model', type=str, default='Garching', help='Model name of SNNu.')
@@ -174,6 +185,9 @@ if __name__ == "__main__":
     parser.add_argument("--C14level", type=str, default="high", help="C14 level.")
     parser.add_argument("--doFit", dest="fit", action="store_true", help="enable time fitting.")
     parser.add_argument("--no-doFit", dest="fit", action="store_false", help="disable time fitting.")
+    parser.add_argument("--binning", dest="binning", action="store_true", help="enable binning fitting.")
+    parser.add_argument("--no-binning", dest="binning", action="store_false", help="disable binning fitting.")
+    parser.add_argument('--binwidth' , type=float, default=0.01, help="Bin width for binning fit.")
     args = parser.parse_args()
     
     model   = args.model
@@ -195,6 +209,9 @@ if __name__ == "__main__":
     C14bkg  = args.C14bkg
     C14level = args.C14level
     doFit   = args.fit
+    binning = args.binning
+    binwidth = args.binwidth
+    glow, ghig = None, None
     
 
     if C14bkg:
@@ -204,20 +221,26 @@ if __name__ == "__main__":
     if pES:
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     if IBD:
-        channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+        channels["IBD"] = channel("IBD", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     if eES:
-        channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+        channels["eES"] = channel("eES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     
 
     # Initialization, data loading...
     for cha in channels.values():
-        #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/scale10/{model}{modelNo}_{cha.name}_data_{MO}_10kpc_thr{Ethr}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_merger.root")
-        cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin10msTmax50ms_merger.root")
         if not asimov:
-            cha.setNevtPerFile(1000)
+            cha.setNevtPerFile(1e5)
             cha.setStartEvtId(startevt)
             cha.setEndEvtId(endevt)
-            cha._load_data_ak()
+            if not binning:
+                cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_merger.root")
+                cha._load_data_ak()
+            if binning:
+                cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                cha._load_data_binned()
+        else:
+            cha.binwidth = binwidth
+        
         cha._load_pdf()
 
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
@@ -251,9 +274,9 @@ if __name__ == "__main__":
                 print(f"Asimov dataset sensitivity of IO data = {2*(locMinFitNO - bestNLL)}")
 
 
-            if 0:
+            if 1:
                 fig, ax = plt.subplots(figsize=(6, 4))
-                x1 = np.arange(TbestFitNO-3, TbestFitNO+3, 0.01)
+                x1 = np.arange(TbestFitNO-4, TbestFitNO+4, 0.01)
                 ax.plot(x1, 2*(aNO*x1**2+bNO*x1+cNO) - 2*bestNLL, lw=2, color="blue", label="NO")
                 x2 = np.arange(TbestFitIO-3, TbestFitIO+3, 0.01)
                 ax.plot(x2, 2*(aIO*x2**2+bIO*x2+cIO) - 2*bestNLL, lw=2, color="red",  label="IO")
@@ -261,17 +284,21 @@ if __name__ == "__main__":
                 if MO == "NO":
                     ax.hlines(locMinFitIO*2-bestNLL*2, x2[0]+1, x2[-1]-1, linestyle="--", lw=2, color="black")
                     ax.text(TbestFitIO, locMinFitIO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitIO*2-bestNLL*2:.1f}", fontsize=16)
+                    ax.vlines(TbestFitIO, 0, locMinFitIO*2-2*bestNLL+2, linestyle=":", lw=2, color="gray")
+                    ax.text(TbestFitIO+0.5, 2, f"{TbestFitIO:.2f} ms", fontsize=16)
                 if MO == "IO":
                     ax.hlines(locMinFitNO*2-bestNLL*2, x1[0]+1, x1[-1]-1, linestyle="--", lw=2, color="black")
                     ax.text(TbestFitNO+0.5, locMinFitNO*2-bestNLL*2-2, r"$\Delta \chi^2 =$"+f"{locMinFitNO*2-bestNLL*2:.1f}", fontsize=16)
+                    ax.vlines(TbestFitNO, 0, locMinFitNO*2-2*bestNLL+2, linestyle=":", lw=2, color="gray")
+                    ax.text(TbestFitNO+0.5, 2, f"{TbestFitNO:.2f} ms", fontsize=16)
 
                 ax.set_xlabel(r"$\Delta t$ [ms]", fontsize=19)
                 ax.set_ylabel(r"$\chi^2$", fontsize=19)
                 ax.set_ylim(0, 15)
-                ax.legend(prop={"size":16}, frameon=True)
+                ax.legend(loc="upper center", prop={"size":16}, frameon=True, ncol=2)
                 ax.tick_params(axis="both", labelsize=18)
                 plt.tight_layout()
-                plt.savefig(f"./plots/{model}{modelNo}_data{MO}_{dist}kpc_AsimovFit.pdf")
+                plt.savefig(f"./plots/{model}{modelNo}_data{MO}_{dist}kpc_{Ethr:.2f}MeV_{binwidth:.2f}ms_AsimovFit.pdf")
                 plt.show()
 
         if not doFit:
@@ -282,9 +309,6 @@ if __name__ == "__main__":
             else:
                 sens = 2 * (nllMinNO_oneEvt - nllMinIO_oneEvt)
             print(f"{MO} Asimov data, sensitivity = {sens:.2f}")
-
-            
-
 
     if asimov == False:
 
@@ -308,13 +332,19 @@ if __name__ == "__main__":
                     Tbkg = generate_C14(C14level, glow, ghig)
                     nllNO_oneEvt = scanning_withbkg(dT_arr, channels.values(), ievt, "NO", C14level, Tbkg)
                 else:
-                    nllNO_oneEvt = scanning(dT_arr, channels.values(), ievt, "NO")          # coarse scanning
+                    if not binning:
+                        nllNO_oneEvt = scanning(dT_arr, channels.values(), ievt, "NO")          # coarse scanning
+                    else:
+                        nllNO_oneEvt = scanning_binned(dT_arr, channels.values(), ievt, "NO")
                 Tbest, locMin, _ = find_locMin(dT_arr, nllNO_oneEvt)
                 dT_arr_fine = generate_fine_dTarr(Tbest)
                 if C14bkg:
                     nllNO_oneEvt = scanning_withbkg(dT_arr_fine, channels.values(), ievt, "NO", C14level, Tbkg)
                 else:
-                    nllNO_oneEvt = scanning(dT_arr_fine, channels.values(), ievt, "NO")     # fine scanning
+                    if not binning:
+                        nllNO_oneEvt = scanning(dT_arr_fine, channels.values(), ievt, "NO")     # fine scanning
+                    else:
+                        nllNO_oneEvt = scanning_binned(dT_arr_fine, channels.values(), ievt, "NO")
                 TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllNO_oneEvt)
 
                 TbestNO[ievt-startevt] = TbestFit
@@ -326,19 +356,24 @@ if __name__ == "__main__":
                 if C14bkg:
                     nllIO_oneEvt = scanning_withbkg(dT_arr, channels.values(), ievt, "IO", C14level, Tbkg)
                 else:
-                    nllIO_oneEvt = scanning(dT_arr, channels.values(), ievt, "IO")          # coarse scanning
+                    if not binning:
+                        nllIO_oneEvt = scanning(dT_arr, channels.values(), ievt, "IO")          # coarse scanning
+                    else:
+                        nllIO_oneEvt = scanning_binned(dT_arr, channels.values(), ievt, "IO")
                 Tbest, locMin, _ = find_locMin(dT_arr, nllIO_oneEvt)
                 dT_arr_fine = generate_fine_dTarr(Tbest)
                 if C14bkg:
                     nllIO_oneEvt = scanning_withbkg(dT_arr_fine, channels.values(), ievt, "IO", C14level, Tbkg)     # fine scanning
                 else:
-                    nllIO_oneEvt = scanning(dT_arr_fine, channels.values(), ievt, "IO")     # fine scanning
+                    if not binning:
+                        nllIO_oneEvt = scanning(dT_arr_fine, channels.values(), ievt, "IO")     # fine scanning
+                    else:
+                        nllIO_oneEvt = scanning_binned(dT_arr_fine, channels.values(), ievt, "IO")     # fine scanning
                 TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllIO_oneEvt)
 
                 TbestIO[ievt-startevt] = TbestFit
                 locMinIO[ievt-startevt] = locMinFit
                 #print("IO", TbestFit, locMinFit)
-
 
             if not doFit:
                 # no time smearing
@@ -372,5 +407,17 @@ if __name__ == "__main__":
                 cha += "eES"
             if IBD:
                 cha += "IBD"
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_fileNo{fileNo:d}_new_{exp}_start{startevt}end{endevt}_doFit_binned_PoisToyData.csv")
+            
+            if binning:
+                binway = "binned"
+            else:
+                binway = "unbinned"
+
+            if not C14bkg:
+                bkgflag = "noC14bkg"
+            else:
+                bkgflag = "C14bkg" + C14level
+
+
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_start{startevt}end{endevt}_doFit_{binway}_{bkgflag}_PoisToyData.csv")
         
