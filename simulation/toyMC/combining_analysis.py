@@ -150,6 +150,40 @@ def fitDrawer(arr, tmin, tmax, pdfx, pdfy, dataMO, fitMO, evtNo, dT, C14level):
     plt.savefig(f"./plots/fitExample_data{dataMO}_fit{fitMO}_evtNo{evtNo}_C14{C14level}.pdf")
     plt.show()
 
+def fitDrawer_withbkg(arr, arrbkg, tmin, tmax, pdfx, pdfy, dataMO, fitMO, evtNo, dT, C14level, c14rate):
+    fig, ax = plt.subplots(figsize=(6, 4))
+    #ax.hist(arr, bins=tmax-tmin, range=(tmin, tmax), color='blue', label="Data")
+    conts, _ = np.histogram(arr, bins=tmax-tmin, range=(tmin, tmax))
+    cents = np.arange(tmin+0.5, tmax+0.5, 1)
+    ax.errorbar(cents[conts>0], conts[conts>0], yerr=np.sqrt(conts[conts>0]), fmt="^", ms=6, lw=2, color="blue", label="Data (signals)")
+    conts, _ = np.histogram(arrbkg, bins=tmax-tmin, range=(tmin, tmax))
+    cents = np.arange(tmin+0.5, tmax+0.5, 1)
+    ax.errorbar(cents[conts>0], conts[conts>0], yerr=np.sqrt(conts[conts>0]), fmt="v", ms=6, lw=2, color="orange", label="Data (backgrounds)")
+    allarr = []
+    for i in arr:
+        allarr.append(i)
+    for i in arrbkg:
+        allarr.append(i)
+    conts, _ = np.histogram(allarr, bins=tmax-tmin, range=(tmin, tmax))
+    cents = np.arange(tmin+0.5, tmax+0.5, 1)
+    ax.errorbar(cents[conts>0], conts[conts>0], yerr=np.sqrt(conts[conts>0]), fmt="o", ms=6, lw=2, color="green", fillstyle="none", label="Data (all)")
+    ax.plot(pdfx, pdfy, lw=2, color="black", label="Fit (all)")
+    ax.plot(pdfx, c14rate/1000.*np.ones(len(pdfx)), lw=2, linestyle="--", color="gray", label="Fit (bkg)")
+    ax.set_xlabel("t [ms]", fontsize=15)
+    ax.set_ylabel("counts/ms", fontsize=15)
+    ax.legend(prop={"size":13}, ncol=2, frameon=True)
+    ax.tick_params(axis="both", labelsize=14)
+    ax.set_title(r"$\Delta t$" + f" = {dT:.2f} ms" + f" data{dataMO}+pdf{fitMO}+evtNO{evtNo}", fontsize=15)
+    plt.tight_layout()
+    plt.savefig(f"./plots/fitExample_data{dataMO}_fit{fitMO}_evtNo{evtNo}_C14{C14level}.pdf")
+    #plt.show()
+
+
+
+
+
+
+
 if __name__ == "__main__":
 
     MO      = "NO"
@@ -164,6 +198,7 @@ if __name__ == "__main__":
     eES     = True
     IBD     = True
     pES     = True
+    CEvNS   = False
     exp     = "JUNO"
     startevt = 0
     endevt  = 0
@@ -191,6 +226,8 @@ if __name__ == "__main__":
     parser.add_argument('--no-IBD', dest='IBD', action="store_false", help="disable IBD")
     parser.add_argument('--pES', dest='pES', action="store_true", help="enable pES")
     parser.add_argument('--no-pES', dest='pES', action="store_false", help="disable pES")
+    parser.add_argument('--CEvNS', dest='CEvNS', action="store_true", help="enable CEvNS")
+    parser.add_argument('--no-CEvNS', dest='CEvNS', action="store_false", help="disable CEvNS")
     parser.add_argument("--exp", type=str, default="", help="Experiment name")
     parser.add_argument("--start", type=int, default=0, help="Start event for fit.")
     parser.add_argument("--end", type=int, default=0, help="End event for fit.")
@@ -220,6 +257,7 @@ if __name__ == "__main__":
     eES     = args.eES
     IBD     = args.IBD
     pES     = args.pES
+    CEvNS   = args.CEvNS
     dist    = args.dist
     exp     = args.exp
     startevt = args.start
@@ -251,6 +289,8 @@ if __name__ == "__main__":
         channels["IBD"] = channel("IBD", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     if eES:
         channels["eES"] = channel("eES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+    if CEvNS:
+        channels["CEvNS"] = channel("CEvNS", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     
 
     # Initialization, data loading...
@@ -261,20 +301,20 @@ if __name__ == "__main__":
                 cha.setStartEvtId(drawNo)
                 cha.setEndEvtId(drawNo+1)
                 if not binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
                     cha._load_data_ak()
                 if binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
                     cha._load_data_binned()
             else:
                 cha.setNevtPerFile(1e5)
                 cha.setStartEvtId(startevt)
                 cha.setEndEvtId(endevt)
                 if not binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
                     cha._load_data_ak()
                 if binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
                     cha._load_data_binned()
         else:
             cha.binwidth = binwidth
@@ -305,10 +345,18 @@ if __name__ == "__main__":
                 nllNO_oneEvt = scanning_binned(dT_arr_fine, channels.values(), drawNo, "NO")     # fine scanning
         TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllNO_oneEvt)
         
-        x = np.arange(fitTmin, fitTmax, 1)
-        y = channels["pES"]._pdfNO_func(x+TbestFit)
-        fitevt = channels["pES"].get_one_event(drawNo)
-        fitDrawer(fitevt, fitTmin, fitTmax, x, y, MO, "NO", drawNo, TbestFit, "No")
+        if C14bkg:
+            x = np.arange(fitTmin, fitTmax, 1)
+            y = channels["pES"]._pdfNO_func(x+TbestFit)
+            y += c14rate / 1000.
+            fitevt = channels["pES"].get_one_event(drawNo)
+            fitDrawer_withbkg(fitevt, Tbkg, fitTmin, fitTmax, x, y, MO, "NO", drawNo, TbestFit, C14level, c14rate)
+                
+        else:
+            x = np.arange(fitTmin, fitTmax, 1)
+            y = channels["pES"]._pdfNO_func(x+TbestFit)
+            fitevt = channels["pES"].get_one_event(drawNo)
+            fitDrawer(fitevt, fitTmin, fitTmax, x, y, MO, "NO", drawNo, TbestFit, "No")
         
 
         ## Fitting w/ IO PDF
@@ -330,10 +378,18 @@ if __name__ == "__main__":
                 nllIO_oneEvt = scanning_binned(dT_arr_fine, channels.values(), drawNo, "IO")     # fine scanning
         TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllIO_oneEvt)
     
-        x = np.arange(fitTmin, fitTmax, 1)
-        y = channels["pES"]._pdfIO_func(x+TbestFit)
-        fitevt = channels["pES"].get_one_event(drawNo)
-        fitDrawer(fitevt, fitTmin, fitTmax, x, y, MO, "IO", drawNo, TbestFit, "No")
+        if C14bkg:
+            x = np.arange(fitTmin, fitTmax, 1)
+            y = channels["pES"]._pdfIO_func(x+TbestFit)
+            y += c14rate / 1000.
+            fitevt = channels["pES"].get_one_event(drawNo)
+            fitDrawer_withbkg(fitevt, Tbkg, fitTmin, fitTmax, x, y, MO, "IO", drawNo, TbestFit, C14level, c14rate)
+                
+        else:
+            x = np.arange(fitTmin, fitTmax, 1)
+            y = channels["pES"]._pdfIO_func(x+TbestFit)
+            fitevt = channels["pES"].get_one_event(drawNo)
+            fitDrawer(fitevt, fitTmin, fitTmax, x, y, MO, "IO", drawNo, TbestFit, "No")
 
         sys.exit(-1)
         
@@ -497,6 +553,8 @@ if __name__ == "__main__":
                 cha += "eES"
             if IBD:
                 cha += "IBD"
+            if CEvNS:
+                cha += "CEvNS"
             
             if binning:
                 binway = "binned"
