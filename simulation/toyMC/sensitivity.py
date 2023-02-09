@@ -48,7 +48,7 @@ def calcSens():
     E = 0.10
     T = 20
     dist = 10
-    _, _, sens_dataNO, _, _, sens_dataIO = read(model, cha, E, T, dist, end="tot_doFit_unbinnedData_unbinnedNLL_noC14bkg_PosiToyData")
+    _, _, sens_dataNO, _, _, sens_dataIO = read(model, cha, E, T, dist, end="tot_doFit_binnedData_unbinnedNLL_C14bkghigh_PosiToyData")
 
     medsens_NO = np.median(sens_dataNO)
     medsens_IO = np.median(sens_dataIO)
@@ -59,14 +59,15 @@ def calcSens():
             nNOtest += 1
         if j < -medsens_NO:
             nIOtest += 1
+    print(nNOtest, nIOtest)
     nNOtest /= len(sens_dataNO)
     nIOtest /= len(sens_dataIO)
     
     nsigma_NO = np.sqrt(2) * special.erfcinv(2*nNOtest)
     nsigma_IO = np.sqrt(2) * special.erfcinv(2*nIOtest)
 
-    asimovNO_dchi2 = 7.7
-    asimovIO_dchi2 = 8.7
+    asimovNO_dchi2 = 7.3
+    asimovIO_dchi2 = 8.4
 
     table = PrettyTable(['MO','dchi square','p-value','n sigma', 'Asimov sensitivity'])
     table.add_row(['NO', f"{medsens_NO:.3f}", nNOtest, f"{nsigma_NO:.2f}", f"{np.sqrt(asimovNO_dchi2):.2f}"])

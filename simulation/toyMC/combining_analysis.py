@@ -301,7 +301,7 @@ if __name__ == "__main__":
                 cha.setStartEvtId(drawNo)
                 cha.setEndEvtId(drawNo+1)
                 if not binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
                     cha._load_data_ak()
                 if binning:
                     cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
@@ -311,7 +311,8 @@ if __name__ == "__main__":
                 cha.setStartEvtId(startevt)
                 cha.setEndEvtId(endevt)
                 if not binning:
-                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
+                    #cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
+                    cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist:.1f}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning.root")
                     cha._load_data_ak()
                 if binning:
                     cha.setDataFilePath(f"/afs/ihep.ac.cn/users/m/miaoyu/junofs/supernova/simulation/toyMC/scale1_poisson/{model}{modelNo}_{cha.name}_binneddata_{MO}_{dist}kpc_thr{Ethr:.2f}MeV_Tmin{fitTmin}msTmax{fitTmax}ms_binning_new.root")
@@ -421,11 +422,16 @@ if __name__ == "__main__":
 
 
             if 1:
+                print("Draw asimov dataset plots...")
                 fig, ax = plt.subplots(figsize=(6, 4))
                 x1 = np.arange(TbestFitNO-4, TbestFitNO+4, 0.01)
                 ax.plot(x1, 2*(aNO*x1**2+bNO*x1+cNO) - 2*bestNLL, lw=2, color="blue", label="NO")
+                #for i in x1:
+                #    print("NO", i, 2*(aNO*i**2+bNO*i+cNO)-2*bestNLL)
                 x2 = np.arange(TbestFitIO-3, TbestFitIO+3, 0.01)
                 ax.plot(x2, 2*(aIO*x2**2+bIO*x2+cIO) - 2*bestNLL, lw=2, color="red",  label="IO")
+                #for i in x2:
+                #    print("IO", i, 2*(aIO*i**2+bIO*i+cIO)-2*bestNLL)
 
                 if MO == "NO":
                     ax.hlines(locMinFitIO*2-bestNLL*2, x2[0]+1, x2[-1]-1, linestyle="--", lw=2, color="black")
@@ -567,5 +573,5 @@ if __name__ == "__main__":
                 bkgflag = "C14bkg" + C14level
 
 
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_start{startevt}end{endevt}_doFit_{binway}_{bkgflag}_PoisToyData.csv")
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_{cha}_{Ethr:.2f}MeV_fitTmax{fitTmax:d}ms_start{startevt}end{endevt}_{doFit}_{binway}_{bkgflag}_PoisToyData.csv")
         
