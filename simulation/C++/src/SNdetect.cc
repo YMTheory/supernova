@@ -13,6 +13,7 @@
 #include "SNeffectLS.hh"
 #include "SNsource.hh"
 #include "SNnumGarchingSrc.hh"
+#include "SNnumBurrowsSrc.hh"
 #include "SNdetect.hh"
 #include "SNchannelNuP.hh"
 #include "SNchannelNuE.hh"
@@ -113,8 +114,16 @@ void SNdetect::initChannel(channelName cha){
 
 void SNdetect::setSrcModel(int imode){
     if(psrc) delete psrc;
-    psrc = new SNnumGarchingSrc(imode);
-    std::cout << "numerical Garching SN neutrino model " << imode << " is being used" << std::endl;
+    
+    if (imode > 70000 && imode<100000) {
+        psrc = new SNnumGarchingSrc(imode);
+        std::cout << "numerical Garching SN neutrino model " << imode << " is being used" << std::endl;
+    }
+
+    if (imode > 6000 && imode < 7999) {
+        //psrc = new SNnumBurrowsSrc(imode);
+        std::cout << "numerical Burrows SN neutrino model " << imode << " is being used" << std::endl;
+    }
 
 }
 //-----------------------------------------------------------------------------------//
