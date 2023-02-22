@@ -36,6 +36,7 @@ class SNsource: public TObject{
         virtual double totalSNFluenceDet(double E, int MH) = 0;
         virtual double totalSNFluenceDetTimeIntegE(double time, int MH) = 0;
         virtual double oneSNFluenceDetTimeIntegE(double time, int type, int MH) = 0; 
+        virtual double snFluenceDetAtTime(double &time, double nuMass, double E, int type, int MH) = 0;
 
         virtual double totalSNFluenceDetAtTime(double time, double E, int MH) = 0;
         virtual double oneSNFluenceDetAtTime(double time, double E, int type, int MH) = 0;

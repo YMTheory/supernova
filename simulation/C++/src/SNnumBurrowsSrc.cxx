@@ -7,41 +7,28 @@
 #include "TString.h"
 
 #include "SNsource.hh"
-#include "SNnumGarchingSrc.hh"
-#include "SNGarchingIntegFcn.hh"
+#include "SNnumBurrowsSrc.hh"
+#include "SNBurrowsIntegFcn.hh"
 
-SNnumGarchingSrc::SNnumGarchingSrc() : SNsource(){
+SNnumBurrowsSrc::SNnumBurrowsSrc() : SNsource(){
     for(int it=0; it<3; it++){
         grspectrum[it] = NULL;
-        //grSpecTimeInterv[it] = NULL;
     }
-    fcnTimeInterval = NULL;
 }
-SNnumGarchingSrc::SNnumGarchingSrc(int imode) : SNsource(){
-    //timeInterval[0] = 0;
-    //timeInterval[1] = 0;
-    readSpectrum(imode);
-    pgarfcn = new SNGarchingIntegFcn(imode);
-    fcnTimeInterval = new TF1("fcnTimeInterval",pgarfcn,&SNGarchingIntegFcn::fcnfluxtime, -1,12,2,"SNGarchingIntegFcn","fcnfluxtime"); 
+SNnumBurrowsSrc::SNnumBurrowsSrc(int imode) : SNsource(){
+    //readSpectrum(imode);
+    pgarfcn = new SNBurrowsIntegFcn(imode);
+    fcnTimeInterval = new TF1("fcnTimeInterval", pgarfcn, &SNBurrowsIntegFcn::fcnfluxtime, -1, 12, 2, "SNBurrowsIntegFcn", "fcnfluxtime");
 }
 
-SNnumGarchingSrc::~SNnumGarchingSrc(){
-    if(fcnTimeInterval)delete fcnTimeInterval;
-    if(pgarfcn)delete pgarfcn;
-
+SNnumBurrowsSrc::~SNnumBurrowsSrc(){
 }
 
-void SNnumGarchingSrc::printName()
-{
-    std::cout << "Print Name TEST!!!" << std::endl;
-}
-
-void SNnumGarchingSrc::readSpectrum(int imode){
-    if (imode == 11) { imode = 82503; std::cout << "YB mode has been modified as 82503" << std::endl;}
-    TString path="/junofs/users/miaoyu/supernova/wenlj/simulation/data/Garching/energySpeFiles";
-    TFile* fin = TFile::Open(Form("%s/energySpecGarching_%d.root",path.Data(),imode));
+void SNnumBurrowsSrc::readSpectrum(int imode){
+    TString path="/junofs/users/miaoyu/supernova/wenlj/simulation/data/Burrows/energySpeFiles";
+    TFile* fin = TFile::Open(Form("%s/energySpecBurrows_%d.root",path.Data(),imode));
     if(!fin){
-        printf("%s/energySpecGarching_%d.root can't be opened!!\n",path.Data(), imode);
+        printf("%s/energySpecBurrows_%d.root can't be opened!!\n",path.Data(), imode);
         exit(-1);
     }
     for(int it=0; it<3; it++){
@@ -51,19 +38,31 @@ void SNnumGarchingSrc::readSpectrum(int imode){
 }
 
 
-double SNnumGarchingSrc::oneSNFluenceDet(double E, int type){
+double SNnumBurrowsSrc::oneSNFluenceDet(double E, int type){
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     if(type < 2){
-        //return index*grspectrum[type]->Eval(E,0,"s");
+        //return index*grspectrum[type]->Eval(E,0,"S");
         return index*grspectrum[type]->Eval(E);
     }
     if(type >= 2){
-        //return index*grspectrum[2]->Eval(E,0,"s");
+        //return index*grspectrum[2]->Eval(E,0,"S");
         return index*grspectrum[2]->Eval(E);
     }
     return 0;
 }
-double SNnumGarchingSrc::oneSNFluenceDet(double E, int type, int MH){
+
+double SNnumBurrowsSrc::totalSNFluenceDet(double E){
+    int ntype = 6;
+    double tfluence = 0;
+    for(int ii=0; ii<ntype; ii++){
+        tfluence += oneSNFluenceDet(E,ii);
+    }
+    return tfluence;
+}
+
+
+double SNnumBurrowsSrc::oneSNFluenceDet(double E, int type, int MH){
+
     double fluence = 0;
     if(MH==0)return oneSNFluenceDet(E, type);
     else{
@@ -85,17 +84,10 @@ double SNnumGarchingSrc::oneSNFluenceDet(double E, int type, int MH){
 
     return fluence;
 }
-double SNnumGarchingSrc::totalSNFluenceDet(double E){
+
+double SNnumBurrowsSrc::totalSNFluenceDet(double E, int MH){
     int ntype = 6;
     double tfluence = 0;
-    for(int ii=0; ii<ntype; ii++){
-        tfluence += oneSNFluenceDet(E,ii);
-    }
-    return tfluence;
-}
-double SNnumGarchingSrc::totalSNFluenceDet(double E, int MH){
-    int ntype = 6;
-    double tfluence=0;
     for(int ii=0; ii<ntype; ii++){
         tfluence += oneSNFluenceDet(E,ii, MH);
     }
@@ -103,7 +95,18 @@ double SNnumGarchingSrc::totalSNFluenceDet(double E, int MH){
 }
 
 
-double SNnumGarchingSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH){
+
+double SNnumBurrowsSrc::totalSNFluenceDetTimeIntegE(double time, int MH)
+{
+    int ntype = 6;
+    double num = 0;
+    for(int ii=0; ii<ntype; ii++){
+        num += oneSNFluenceDetTimeIntegE(time,ii, MH);
+    }
+    return num;
+}
+double SNnumBurrowsSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH) 
+{
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     double fluence = 0;
     if(MH == 0){
@@ -128,19 +131,46 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeIntegE(double time, int type, int MH
     }
     return fluence*index;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeIntegE(double time, int MH){
+
+double SNnumBurrowsSrc::totalSNFluenceDetAtTime(double time, double E, int MH)
+{
     int ntype = 6;
-    double num = 0;
+    double flux = 0;
     for(int ii=0; ii<ntype; ii++){
-        num += oneSNFluenceDetTimeIntegE(time,ii, MH);
+        flux += oneSNFluenceDetAtTime(time,E,ii, MH);
     }
-    return num;
+    return flux;
 }
 
-//==
-// ---- Consider non-zero neutrino mass
-// ---- Assumption: each type of neutrino as the same mass
-double SNnumGarchingSrc::snFluenceDetAtTime(double &time, double nuMass, double E, int type, int MH){
+double SNnumBurrowsSrc::oneSNFluenceDetAtTime(double time, double E, int type, int MH)
+{
+    double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
+    double fluence = 0;
+    if(MH == 0){
+        fluence = pgarfcn->getEventAtTime(time, E, type);
+    }
+    else{
+        double p=0;
+        double pbar=0;
+        if(MH==1){
+            p    = 0.022;//sin^2theta13
+            pbar = 0.687;//cos^2theta12cos^2theta13
+        }
+        if(MH==2){
+            p    = 0.291;//sin^2theta12cos^2theta13
+            pbar = 0.022;//sin^2theta13 
+        }
+        if(type == 0) fluence = p*pgarfcn->getEventAtTime(time,E, 0) + (1-p)*pgarfcn->getEventAtTime(time, E, 2);
+        if(type == 1) fluence = pbar*pgarfcn->getEventAtTime(time, E, 1) + (1-pbar)*pgarfcn->getEventAtTime(time, E, 3);
+        if(type == 2 || type == 4) fluence = 0.5*(1-p)*pgarfcn->getEventAtTime(time, E, 0) + 0.5*(1+p)*pgarfcn->getEventAtTime(time, E, 2);
+        if(type == 3 || type == 5) fluence = 0.5*(1-pbar)*pgarfcn->getEventAtTime(time, E, 1) + 0.5*(1+pbar)*pgarfcn->getEventAtTime(time, E, 3);
+
+    }
+    return fluence*index;
+}
+
+double SNnumBurrowsSrc::snFluenceDetAtTime(double& time, double nuMass, double E, int type, int MH)
+{
     double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     double fluence = 0;
     if(MH == 0){
@@ -164,52 +194,16 @@ double SNnumGarchingSrc::snFluenceDetAtTime(double &time, double nuMass, double 
     }
     // modify the neutrino arrival time
     double DeltaT = 5.14e-3 * (nuMass*nuMass) * (100.0/E/E) * (dist/10); // unit: s
-    std::cout << time << " " << time + DeltaT << " " << index << " " <<fluence << std::endl;
     time = time + DeltaT;
 
     return fluence*index;
 }
 
-//
 
-double SNnumGarchingSrc::oneSNFluenceDetAtTime(double time, double E, int type, int MH){
-    double index =1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
-    double fluence = 0;
-    if(MH == 0){
-        fluence = pgarfcn->getEventAtTime(time, E, type);
-    }
-    else{
-        double p=0;
-        double pbar=0;
-        if(MH==1){
-            p    = 0.022;//sin^2theta13
-            pbar = 0.687;//cos^2theta12cos^2theta13
-        }
-        if(MH==2){
-            p    = 0.291;//sin^2theta12cos^2theta13
-            pbar = 0.022;//sin^2theta13 
-        }
-        if(type == 0) fluence = p*pgarfcn->getEventAtTime(time,E, 0) + (1-p)*pgarfcn->getEventAtTime(time, E, 2);
-        if(type == 1) fluence = pbar*pgarfcn->getEventAtTime(time, E, 1) + (1-pbar)*pgarfcn->getEventAtTime(time, E, 3);
-        if(type == 2 || type == 4) fluence = 0.5*(1-p)*pgarfcn->getEventAtTime(time, E, 0) + 0.5*(1+p)*pgarfcn->getEventAtTime(time, E, 2);
-        if(type == 3 || type == 5) fluence = 0.5*(1-pbar)*pgarfcn->getEventAtTime(time, E, 1) + 0.5*(1+pbar)*pgarfcn->getEventAtTime(time, E, 3);
-        //std::cout << "fluence -> " << time << " " << E << " " << pbar << " " << pgarfcn->getEventAtTime(time ,E, 1) << " " << pgarfcn->getEventAtTime(time, E, 3) << " " << fluence << " " << index << std::endl;
-
-    }
-    return fluence*index;
-}
-double SNnumGarchingSrc::totalSNFluenceDetAtTime(double time, double E, int MH){
-    int ntype = 6;
-    double flux = 0;
-    for(int ii=0; ii<ntype; ii++){
-        flux += oneSNFluenceDetAtTime(time,E,ii, MH);
-    }
-    return flux;
-}
-//==
 #include "Math/WrappedTF1.h"
 #include "Math/GSLIntegrator.h"
-double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type){
+double SNnumBurrowsSrc::oneSNFluenceDetTimeInterval(double E, double tfirst,double tlast, int type)
+{
     double num = 0;
     double index = 1./(4*TMath::Pi()*TMath::Power(3.086e21,2))/(dist*dist);
     int nbin_Ev = 100;
@@ -235,16 +229,20 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, do
 
     return num*index;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast){
+double SNnumBurrowsSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int MH)
+{
     int ntype = 6;
-    double flux = 0;
-    for(int ii=0; ii<ntype; ii++){
-        flux += oneSNFluenceDetTimeInterval(E,tfirst,tlast,ii);
+    double totflu = 0;
+    for(int it=0; it<ntype; it++){
+        totflu += oneSNFluenceDetTimeInterval(E, tfirst, tlast, it, MH);
     }
-    return flux;
+
+    return totflu;
 }
 
-double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int type, int MH){
+
+double SNnumBurrowsSrc::oneSNFluenceDetTimeInterval(double E, double tfirst,double tlast, int type, int MH)
+{
     double fluence = 0;
     if(MH == 0){
         fluence = oneSNFluenceDetTimeInterval(E, tfirst, tlast, type);
@@ -268,27 +266,24 @@ double SNnumGarchingSrc::oneSNFluenceDetTimeInterval(double E, double tfirst, do
     }
     return fluence;
 }
-double SNnumGarchingSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast, int MH){
-
+double SNnumBurrowsSrc::totalSNFluenceDetTimeInterval(double E, double tfirst, double tlast)
+{
     int ntype = 6;
-    double totflu = 0;
-    for(int it=0; it<ntype; it++){
-        totflu += oneSNFluenceDetTimeInterval(E, tfirst, tlast, it, MH);
+    double flux = 0;
+    for(int ii=0; ii<ntype; ii++){
+        flux += oneSNFluenceDetTimeInterval(E,tfirst,tlast,ii);
     }
-
-    return totflu;
+    return flux;
 }
 
-double SNnumGarchingSrc::oneSNLuminosityTime(double time, int type){
-    return pgarfcn->getLumT(time, type);
-}
+double SNnumBurrowsSrc::oneSNLuminosityTime(double time, int type) {return pgarfcn->getLumT(time, type);}
+double SNnumBurrowsSrc::oneSNAverageETime(double time, int type) {return pgarfcn->getAverageET(time, type);}
 
-
-double SNnumGarchingSrc::oneSNAverageETime(double time, int type){
-    //std::cout << "numGarching" << std::endl;
-    return pgarfcn->getAverageET(time, type);
-}
-
-void SNnumGarchingSrc::getTimeRange(double& tmin, double& tmax,int type){
+void SNnumBurrowsSrc::getTimeRange(double& tmin, double& tmax, int type)
+{
     pgarfcn->getTimeLimits(tmin, tmax, type);
 }
+
+
+
+
