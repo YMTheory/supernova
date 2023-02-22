@@ -131,7 +131,7 @@ def generate_C14(level, glow, ghig):
     if nc14 <= 0:
         return []
     Tc14 = np.random.uniform(fitTmin, fitTmax, size=nc14)
-    print(f"C14-rate = {c14rate} Hz with event number in window = {nc14}.")
+    #print(f"C14-rate = {c14rate} Hz with event number in window = {nc14}.")
     return Tc14
 
 def fitDrawer(arr, tmin, tmax, pdfx, pdfy, dataMO, fitMO, evtNo, dT, C14level):

@@ -38,10 +38,22 @@ class channel :
         ##self.pdfIOfile  = f"{production_path}/PDFs/10kpc/{exp}/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF_{exp}.root"
         #self.pdfNOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfIOfile  = f"{production_path}/PDFs/10kpc/{model}/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        #self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        print(f"Current model name = {self.model}")
+        if self.model == "Garching":
+            self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+            self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        elif self.model == "Burrows":
+            if self.name == "pES":
+                self.pdfNOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+                self.pdfIOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+            else:
+                self.pdfNOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_NO_10kpc_{name}_0.20MeV_newshortPDF.root"
+                self.pdfIOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_IO_10kpc_{name}_0.20MeV_newshortPDF.root"
+
 
         ####### Datasets and PDFs
         self.data_array = None
