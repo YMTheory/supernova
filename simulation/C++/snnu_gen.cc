@@ -287,12 +287,12 @@ int main(int argc, char* argv[]) {
 
 
     if(flag2D_new) {
-    
+
         TString modelName;
         modelName = Form("Garching%d", imod);
         TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1f_scale%.3f_test2Dnew.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale);
         std::cout << "> Output 2-dimensional PDF filename : " << fn << std::endl;
-        
+
         TFile* f = new TFile(fn, "recreate");
         TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
         Double_t array[nbin_it][nbins_Evis];
@@ -300,23 +300,35 @@ int main(int argc, char* argv[]) {
         for (int ipt=0; ipt<nbin_it; ipt++) {
             std::cout << ">>> Processing time bin " << ipt << " in total " << nbin_it << " bins."<< std::endl;
             double TTmp = itmin + (ipt + 0.5) * step_t;
-            
+
             for (int iEvis=0; iEvis < nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
-                
-                double tot_fluence = 0;
-                for (int iEv=0; iEv<nbins_Ev; iEv++) {
-                    double EvTmp = Evmin + (iEv + 0.5) * step_Ev;
-                    double deltaT = 5.14e-3 * nuMass*nuMass * (100/EvTmp/EvTmp) * (dist/10.); // unit: s
 
-                    for (int f=0; f<6; f++) {
-                        double fluence  = mc->oneSNFluenceDetAtTime(TTmp-deltaT, EvTmp, f, MH);
-                        double T        = pdet->getTFromEvis(EvisTmp);
-                        double dxs      = peffLS->differentialXS(EvTmp, T, f);
-                        double dTdEvis  = (pdet->getTFromEvis(EvisTmp+0.005) - pdet->getTFromEvis(EvisTmp)) / 0.005;
-                        tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t) * dTdEvis;
+                double tot_fluence = 0;
+                if  (chaname == SNdetect::NuE or chaname == SNdetect::NuP) {
+                    for (int iEv=0; iEv<nbins_Ev; iEv++) {
+                        double EvTmp = Evmin + (iEv + 0.5) * step_Ev;
+                        double deltaT = 5.14e-3 * nuMass*nuMass * (100/EvTmp/EvTmp) * (dist/10.); // unit: s
+
+                        for (int f=0; f<6; f++) {
+                            double fluence  = mc->oneSNFluenceDetAtTime(TTmp-deltaT, EvTmp, f, MH);
+                            double T        = pdet->getTFromEvis(EvisTmp);
+                            double dxs      = peffLS->differentialXS(EvTmp, T, f);
+                            double dTdEvis  = (pdet->getTFromEvis(EvisTmp+0.005) - pdet->getTFromEvis(EvisTmp)) / 0.005;
+                            tot_fluence    += Npar * fluence * dxs  * dTdEvis;
+                        }
                     }
                 }
+
+                if (chaname == SNdetect::IBD) {
+                    double EvTmp =  EvisTmp + 1.8;
+                    double deltaT = 5.14e-3 * nuMass*nuMass * (100/EvTmp/EvTmp) * (dist / 10.);
+                    int f = 1;
+                    double fluence = mc->oneSNFluenceDetAtTime(TTmp-deltaT, EvTmp, f, MH);
+                    double xs = peffLS->totalXS(EvTmp, f);
+                    tot_fluence += Npar * fluence * xs ;
+                }
+
                 array[ipt][iEvis] = tot_fluence;
             }
         }
