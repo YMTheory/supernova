@@ -1,18 +1,20 @@
-#include <iostream>
-#include <cstdlib>
-#include <unistd.h>
-#include <fstream>
+/*************************************************************************
+ @Author: MiaoYu ---> miaoyu@ihep.ac.cn
+ @Created Time : Fri Feb 10 14:27:07 2023
+ @File Name: snnu_gen.cc
+ ************************************************************************/
 
-#include "TFile.h"
-#include "TTree.h"
 #include "TH2D.h"
 #include "TMath.h"
 #include "TString.h"
+#include "TFile.h"
 
 #include "SNdetect.hh"
 #include "SNsource.hh"
 #include "SNnumGarchingSrc.hh"
 #include "SNGarchingIntegFcn.hh"
+//#include "SNnumBurrowsSrc.hh"
+#include "SNBurrowsIntegFcn.hh"
 #include "SNeffectLS.hh"
 
 int main(int argc, char* argv[]) {
@@ -50,23 +52,29 @@ int main(int argc, char* argv[]) {
                 dist = atoi(optarg);
             case 's':
                 scale = atof(optarg);
-            case'?':
-                printf("Error: wrong command input option %s\n",optarg);
-                break;
-            case':':
-                printf("Error: Forget to add parameter after option %s\n",optarg);
-                break;
+            //case'?':
+            //    printf("Error: wrong command input option %s\n",optarg);
+            //    break;
+            //case':':
+            //    printf("Error: Forget to add parameter after option %s\n",optarg);
+            //    break;
         }
     }
 
-    std::cout << "Usage===>\n"
+    std::cout << "\n" 
+        << "************************************************** \n"
+        << "=========== Configuration: ===========>\n"
         << "-m SN burst neutrino model " << imod << "\n"
-        << "-c LS channel " << icha<< "\n"
-        << "-n neutrino mass " << nuMass<< "\n"
-        << "-o mass ordering " << MH<< "\n"
-        << "-t threshold " << Ethr << "\n"
-        << "-x tmin " << tmin << "\n"
-        << "-y tmax " << tmax << "\n"
+        << "-c LS channel (0 for pES, 1 for eES, 2 for IBD, 3 for CEvNS) " << icha<< "\n"
+        << "-n neutrino mass (unit: eV) " << nuMass<< "\n"
+        << "-o mass ordering (1 for NO, 2 for IO) " << MH<< "\n"
+        << "-t threshold (unit: MeV) " << Ethr << "\n"
+        << "-x tmin (start time for nu: s) " << tmin << "\n"
+        << "-y tmax (end time for nu: s) " << tmax << "\n"
+        << "-d distance (unit: kpc) " << dist << "\n"
+        << "-s statistics scale factor " << scale << "\n"
+        << "**************************************************"
+        << "\n"
         << std::endl;
 
     if(icha == -1){
@@ -77,8 +85,6 @@ int main(int argc, char* argv[]) {
         std::cout << "No SN neutrino model specified; -m" << std::endl;
         exit(-1);
     }
-
-    std::cout << "Neutrio Mass = " << nuMass << " eV" << std::endl;
 
     TString MO[3] = {"NONE", "NO", "IO"};
 
@@ -101,8 +107,17 @@ int main(int argc, char* argv[]) {
     pdet->getPointerEffectLS()->setThresholdE(0.);
     pdet->initFCN(); 
 
-
+    SNsource* mc = pdet->getPointerSrc();
+    
     SNeffectLS* peffLS = pdet->getPointerEffectLS();
+    double Npar = 0;
+    if (chaname == SNdetect::NuP) {
+        Npar = peffLS->getNumberOfCarbon() * 6 + peffLS->getNumberOfProton();
+    } else if (chaname == SNdetect::NuE) {
+        Npar = peffLS->getNumberOfProton();
+    } else if (chaname == SNdetect::IBD) {
+        Npar = peffLS->getNumberOfProton();
+    }
 
     if(0) {
     std::cout << "-----> fluence = " << pdet->getPointerSrc()->oneSNFluenceDetAtTime(0.02, 60, 1, 1) << "\n" 
@@ -112,19 +127,33 @@ int main(int argc, char* argv[]) {
               << std::endl;
     }
 
+    // Total time window configuration
+    Float_t itmin = -0.03;
+    Float_t itmax = 0.07;
+    if (imod < 80000) // Burrows models
+    {
+        itmin = 0.;
+        itmax = 0.10;
+    }
     // time binning
-    Double_t step_t = 0.001;
-    Int_t nbin_time = ceil((tmax - tmin)/step_t);
-    std::cout << "Time Binning: " <<  tmin << " to " << tmax << " per " << step_t << " s with total Nbins " << nbin_time << std::endl;
+    Double_t step_t         = 0.001;  // unit: s
+    Double_t step_t_fine    = step_t / 10.;
+    Int_t nbin_it           = int((itmax - itmin)/step_t);
+    Int_t nbin_t            = int((tmax - tmin)/step_t);
+    Int_t nbin_t_fine       = int((tmax - tmin)/step_t_fine);
+    std::cout << "\n " << "====== Time binning info ====== " << std::endl;
+    std::cout << "Total time binning: from " << itmin << " to " << itmax << " with total " << nbin_it << " bins." << std::endl;
+    std::cout << "Current time binning: from " << tmin << " to " << tmax << " with total " << nbin_t << " bins." << std::endl; 
+    std::cout << "Current fine time binning: from " << tmin << " to " << tmax << " with total " << nbin_t_fine << " bins." << std::endl; 
+    std::cout << "=====================================" << std::endl;
     
     // energy binning 
-
-    Double_t Evmin = 0;//pdet->getPointerSrc()->getSNminEv();
+    Double_t Evmin = 0;
     Double_t Evmax = 90; 
     Double_t step_Ev = 1;
     Int_t nbins_Ev = (Evmax-Evmin)/step_Ev;
-
-    Double_t Evismin = Ethr;//0;
+    //Double_t Evismin = Ethr;//0;
+    Double_t Evismin = 0;
     Double_t Evismax;
     Double_t step_Evis;
     if(chaname == SNdetect::NuP){
@@ -140,59 +169,115 @@ int main(int argc, char* argv[]) {
         step_Evis = 0.001;
     }
     Int_t nbins_Evis = (Evismax-Evismin)/step_Evis;
-    std::cout << "nbins_Evis " << nbins_Evis << std::endl;
+
+    std::cout << "\n " << "====== Energy binning info ====== " << std::endl;
+    std::cout << "Visible energy binning: from " << Evismin << " to " << Evismax << " with total " 
+              << nbins_Evis << " bins and step " << step_Evis << " MeV."
+              <<std::endl;
+    std::cout << "Neutrino energy binning: from " << Evmin << " to " << Evmax << " with total " 
+              << nbins_Ev << " bins and step " << step_Ev << " MeV."
+              <<std::endl;
+    std::cout << "=====================================" << std::endl;
+    
+
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
+    bool flag1D = false;
+    bool flag2D = true;
 
+    std::cout << "\n"
+              << "========= Output info ==========" << "\n"
+              << "\n";
 
-    // get the visible events time spectra above Ethr and save into histogram and root file.
-    TString modelName;
-    modelName = Form("Garching%d", imod);
-    TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_test.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
-    std::cout << "output filename : " << fn << std::endl;
-    TFile* f = new TFile(fn, "recreate");
-    TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_time, tmin*1000-0.5, tmax*1000-0.5);
+    if (flag1D) {
 
-    double factor = 1;
-    double tshift = 0;
-    for (int ipt=0; ipt<nbin_time; ipt++) {
-        double t = tmin + ipt * step_t + tshift;
-        std::cout << "Running bin " << ipt << " time " << t << std::endl;
-        double flu = 0;
-        for(int ii=0; ii<6; ii++) {
-            //std::cout << "In main: " << t << " " << ii << " " << pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) << std::endl;
-            flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor / 1000.;  // for 1 ms interval
+        //// get the visible events time spectra above Ethr and save into histogram and root file.
+        //// 1D histogram
+        TString modelName;
+        modelName = Form("Burrows%d", imod);
+        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_test.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
+        std::cout << "output filename : " << fn << std::endl;
+        TFile* f = new TFile(fn, "recreate");
+        TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_it, tmin*1000-0.5, tmax*1000-0.5);
+
+        double factor = 1;
+        double tshift = 0;
+        for (int ipt=0; ipt<nbin_it; ipt++) {
+            double t = tmin + ipt * step_t + tshift;
+            std::cout << "Running bin " << ipt << " time " << t << std::endl;
+            double flu = 0;
+            for(int ii=0; ii<6; ii++) {
+                //std::cout << "In main: " << t << " " << ii << " " << pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) << std::endl;
+                pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor / 1000.;  // for 1 ms interval
+            }
+            h1->SetBinContent(ipt+1, flu*scale);
         }
-        h1->SetBinContent(ipt+1, flu*scale);
+
+        h1->Write();
+        f->Close();
     }
+    
+    if (flag2D) {
+        TString modelName;
+        modelName = Form("Garching%d", imod);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_%.3fs-%.3fs_nuMass%.1f_scale%.3f_test2D.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist,  tmin, tmax, nuMass, scale);
+        std::cout << "> Output 2-dimensional PDF filename : " << fn << std::endl;
+        
+        TFile* f = new TFile(fn, "recreate");
+        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
+        Double_t array[nbin_it][nbins_Evis];
+        for(int i =0; i<nbin_it; i++) {
+            for (int j=0; j<nbins_Evis; j++) {
+                array[i][j] = 0;
+            }
+        }
 
-    h1->Write();
-    f->Close();
+        for (int ipt=0; ipt<nbin_t_fine; ipt++) {
+            std::cout << ">>> Processing timeBin " << ipt << std::endl;
+            double tmp_t;
+            for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
+                double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
 
+                if  (chaname == SNdetect::NuE or chaname == SNdetect::NuP) {
+                    for (int iEv=0; iEv<nbins_Ev; iEv++) {
+                        double EvTmp = Evmin + (iEv + 0.5) * step_Ev;
+                        double tot_fluence = 0;
+                        for (int ii=0; ii<6; ii++) {
+                            tmp_t           = tmin + (ipt+0.5) * step_t_fine ; // unit : s
+                            double fluence  = mc->snFluenceDetAtTime(tmp_t, nuMass, EvTmp, ii, MH) * step_Evis;
+                            double T        = pdet->getTFromEvis(EvisTmp);
+                            double dxs      = peffLS->differentialXS(EvTmp, T, ii);
+                            tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t);
+                            if(0) {
+                                std::cout << "======= Details check ======= \n" 
+                                          << "Flavour " << ii << ", shifted time = " << tmp_t << " s, "
+                                          << "Evis = " << EvisTmp << " MeV, "
+                                          << "T = " << T << " MeV, "
+                                          << "Enu = " << EvTmp << " MeV, "
+                                          << "fluence = " << fluence << ", "
+                                          << "dxs = " << dxs << " cm2, "
+                                          << "total fluence = " << tot_fluence 
+                                          << std::endl;
+                            }
+                        }
+                        int idx = (tmp_t - itmin) / step_t;
+                        //std::cout << tmp_t << " " << itmin << " " << step_t << " " << idx << std::endl;
+                        int idy = EvisTmp / step_Evis;
+                        if (idx >=0 and idx < nbin_it and tot_fluence > 0)
+                            //std::cout << "** Total fluence -> " << idx << " " << idy << " " << tot_fluence << std::endl;
+                            array[idx][idy] += tot_fluence;
+                    }
+                }
+            }
+        }
 
-    //TString modelName;
-    //modelName = Form("Garching%d", imod);
-    //TString fn = Form("%s_PDF_%s_%s_%dkpc_%.3fs-%.3fs_scale%.3f_test2D.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist,  tmin, tmax, scale);
-    //std::cout << "output filename : " << fn << std::endl;
-    //TFile* f = new TFile(fn, "recreate");
-    //TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_time, tmin*1000-0.5, tmax*1000-0.5, nbins_Evis, Evismin, Evismax);
-    //double factor = 1;
-    //double tshift = 0;
-    //for (int ipt=0; ipt<nbin_time; ipt++) {
-    //    double t = tmin + ipt * step_t + tshift;
-    //    for (int iE=0; iE<nbins_Evis; iE++) {
-    //        double Evis = Evismin + (iE + 0.5) * step_Evis;
-    //        std::cout << "Running time " << t << ", visible energy " << Evis << std::endl;
-    //        double flu = 0;
-    //        for (int ii=0; ii<6; ii++) {
-    //            flu += pdet->getEvisSpectrumAtTime(t, Evis, ii, MH) * factor / 1000;
-    //        }
-    //        std::cout << "=======> flu = " << flu << std::endl;
-    //        h1->SetBinContent(ipt+1, iE+1, flu);
-    //    }
-    //}
-
-    //h1->Write();
-    //f->Close();
-
+        for(int i =0; i<nbin_it; i++) {
+            for (int j=0; j<nbins_Evis; j++) {
+                std::cout << i << " " << j << " " << array[i][j] << std::endl;
+                h1->SetBinContent(i+1, j+1, array[i][j]);
+            }
+        }
+        h1->Write();
+        f->Close();
+    }
 }
