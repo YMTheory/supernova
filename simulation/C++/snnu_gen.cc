@@ -112,9 +112,9 @@ int main(int argc, char* argv[]) {
     SNeffectLS* peffLS = pdet->getPointerEffectLS();
     double Npar = 0;
     if (chaname == SNdetect::NuP) {
-        Npar = peffLS->getNumberOfCarbon() * 6 + peffLS->getNumberOfProton();
-    } else if (chaname == SNdetect::NuE) {
         Npar = peffLS->getNumberOfProton();
+    } else if (chaname == SNdetect::NuE) {
+        Npar = peffLS->getNumberOfCarbon() * 6 + peffLS->getNumberOfProton();
     } else if (chaname == SNdetect::IBD) {
         Npar = peffLS->getNumberOfProton();
     }
@@ -291,7 +291,7 @@ int main(int argc, char* argv[]) {
         TString modelName;
         modelName = Form("Garching%d", imod);
         TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1f_scale%.3f_test2Dnew.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale);
-        std::cout << "> Output 2-dimensional PDF filename : " << fn << std::endl;
+        std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
         TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
@@ -315,7 +315,7 @@ int main(int argc, char* argv[]) {
                             double T        = pdet->getTFromEvis(EvisTmp);
                             double dxs      = peffLS->differentialXS(EvTmp, T, f);
                             double dTdEvis  = (pdet->getTFromEvis(EvisTmp+0.005) - pdet->getTFromEvis(EvisTmp)) / 0.005;
-                            tot_fluence    += Npar * fluence * dxs  * dTdEvis;
+                            tot_fluence    += Npar * fluence * dxs * dTdEvis * step_Ev;
                         }
                     }
                 }
