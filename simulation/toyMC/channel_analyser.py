@@ -353,7 +353,7 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DNO_func(t, E) * self.scale
+            tmp_nll = self._pdf2DNO_func(t/1000., E) * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
@@ -367,7 +367,7 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DIO_func(t, E) * self.scale
+            tmp_nll = self._pdf2DIO_func(t/1000., E) * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
