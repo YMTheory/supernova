@@ -182,8 +182,9 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D = false;
-    bool flag2D = true;
+    bool flag1D     = false;
+    bool flag2D     = false;
+    bool flag2D_new = true;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -247,7 +248,10 @@ int main(int argc, char* argv[]) {
                             double fluence  = mc->snFluenceDetAtTime(tmp_t, nuMass, EvTmp, ii, MH) * step_Evis;
                             double T        = pdet->getTFromEvis(EvisTmp);
                             double dxs      = peffLS->differentialXS(EvTmp, T, ii);
-                            tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t);
+                            double dTdEvis  = (pdet->getTFromEvis(EvisTmp+0.005) - pdet->getTFromEvis(EvisTmp)) / 0.005;
+                            tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t) * dTdEvis;
+                            //double dTqdTp   = (pdet->getEvisFromT(T+0.005) - pdet->getEvisFromT(T)) / 0.005;
+                            //tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t) / dTqdTp;
                             if(0) {
                                 std::cout << "======= Details check ======= \n" 
                                           << "Flavour " << ii << ", shifted time = " << tmp_t << " s, "
@@ -273,11 +277,64 @@ int main(int argc, char* argv[]) {
 
         for(int i =0; i<nbin_it; i++) {
             for (int j=0; j<nbins_Evis; j++) {
-                std::cout << i << " " << j << " " << array[i][j] << std::endl;
+                //std::cout << i << " " << j << " " << array[i][j] << std::endl;
                 h1->SetBinContent(i+1, j+1, array[i][j]);
             }
         }
         h1->Write();
         f->Close();
     }
+
+
+    if(flag2D_new) {
+    
+        TString modelName;
+        modelName = Form("Garching%d", imod);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1f_scale%.3f_test2Dnew.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale);
+        std::cout << "> Output 2-dimensional PDF filename : " << fn << std::endl;
+        
+        TFile* f = new TFile(fn, "recreate");
+        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
+        Double_t array[nbin_it][nbins_Evis];
+
+        for (int ipt=0; ipt<nbin_it; ipt++) {
+            std::cout << ">>> Processing time bin " << ipt << " in total " << nbin_it << " bins."<< std::endl;
+            double TTmp = itmin + (ipt + 0.5) * step_t;
+            
+            for (int iEvis=0; iEvis < nbins_Evis; iEvis++) {
+                double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
+                
+                double tot_fluence = 0;
+                for (int iEv=0; iEv<nbins_Ev; iEv++) {
+                    double EvTmp = Evmin + (iEv + 0.5) * step_Ev;
+                    double deltaT = 5.14e-3 * nuMass*nuMass * (100/EvTmp/EvTmp) * (dist/10.); // unit: s
+
+                    for (int f=0; f<6; f++) {
+                        double fluence  = mc->oneSNFluenceDetAtTime(TTmp-deltaT, EvTmp, f, MH);
+                        double T        = pdet->getTFromEvis(EvisTmp);
+                        double dxs      = peffLS->differentialXS(EvTmp, T, f);
+                        double dTdEvis  = (pdet->getTFromEvis(EvisTmp+0.005) - pdet->getTFromEvis(EvisTmp)) / 0.005;
+                        tot_fluence    += Npar* fluence * dxs * (step_t_fine / step_t) * dTdEvis;
+                    }
+                }
+                array[ipt][iEvis] = tot_fluence;
+            }
+        }
+
+        for(int i =0; i<nbin_it; i++) {
+            for (int j=0; j<nbins_Evis; j++) {
+                //std::cout << i << " " << j << " " << array[i][j] << std::endl;
+                h1->SetBinContent(i+1, j+1, array[i][j]);
+            }
+        }
+        h1->Write();
+        f->Close();
+
+    }
+
+
+
+
+
+
 }
