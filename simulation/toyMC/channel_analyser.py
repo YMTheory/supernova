@@ -3,6 +3,7 @@ import os, sys
 import uproot as up
 from collections import Counter
 import scipy.integrate as integrate
+from scipy import interpolate
 from scipy.special import gamma
 #import ROOT
 import time
@@ -55,8 +56,14 @@ class channel :
                 self.pdfIOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_IO_10kpc_{name}_0.20MeV_newshortPDF.root"
 
 
+        self.data2Dfile = f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/{model}{modelNo}_{name}_unbinneddata_{MH}_{dist:.1f}kpc_thr{Ethr:.2f}MeV_Tmin-20msTmax30ms_2D.root"
+        self.pdf2DNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
+        self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
+
         ####### Datasets and PDFs
         self.data_array = None
+        self.dataT_array = None
+        self.dataE_array = None
         self.binned_data_array = None
         self.nentries   = 0
         self.startEvt   = 0
@@ -67,6 +74,14 @@ class channel :
         self.pdfNOy     = None
         self.pdfIOx     = None
         self.pdfIOy     = None
+        self.pdf2DNOT     = None
+        self.pdf2DNOE     = None
+        self.pdf2DNO     = None
+        self.f2dNO      = None
+        self.pdf2DIOT     = None
+        self.pdf2DIOE     = None
+        self.pdf2DIO     = None
+        self.f2dIO      = None
 
         self.glow       = None
         self.ghig       = None
@@ -164,6 +179,32 @@ class channel :
         self.data_array = nuTime
         self.nentries   = self.startEvt - self.endEvt
 
+    def _load_data2D(self) -> None:
+        """
+        Load ttree ak array data from root files.
+        """
+        try:
+            with up.open(self.data2Dfile) as f:
+                print("--------------------------------------------------------------")
+                print(f"Load datafile of channel {self.name} from ->")
+                print(self.data2Dfile)
+                print("--------------------------------------------------------------")
+                numEntries = f["binned"]["TbinConts"].num_entries
+                if self.endEvt == 0:
+                    self.startEvt = 0
+                    self.endEvt = numEntries # load all entries from the TBranch.
+                nuTime = f["binned"]["TbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                nuEnergy = f["binned"]["EbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
+                evtNum = self.endEvt - self.startEvt
+                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
+                self.dataT_array = nuTime
+                self.dataE_array = nuEnergy
+                self.nentries = evtNum
+        except FileExistsError:
+            print(f"The data file {self.datafile} dose not exist! :(")
+            sys.exit(-1)
+
+
     def _load_pdf(self) -> None:
         """
         Load TH1 PDFs from root files for both NO and IO cases.
@@ -200,6 +241,35 @@ class channel :
         self.pdfIOx = axis.centers()
         self.pdfIOy = tmp_h1.values()
         
+    def _load_pdf2D(self) -> None:
+        try:
+            print(self.pdf2DNOfile)
+            f = up.open(self.pdf2DNOfile)
+            tmp_h1 = f["h1"]
+        except FileNotFoundError:
+            print(f"THe pdf file {self.pdf2DNOfile} does not exist! :(")
+            sys.exit(-1)
+        xaxis = tmp_h1.axis("x")    
+        yaxis = tmp_h1.axis("y")
+        self.pdf2DNOT = xaxis.centers()
+        self.pdf2DNOE = yaxis.centers()
+        self.pdf2DNO  = tmp_h1.values()
+        self.f2dNO = interpolate.interp2d(self.pdf2DNOT, self.pdf2DNOE, self.pdf2DNO.T, kind="linear")
+             
+        try:
+            print(self.pdf2DIOfile)
+            f = up.open(self.pdf2DIOfile)
+            tmp_h1 = f["h1"]
+        except FileNotFoundError:
+            print(f"THe pdf file {self.pdf2DIOfile} does not exist! :(")
+            sys.exit(-1)
+        xaxis = tmp_h1.axis("x")    
+        yaxis = tmp_h1.axis("y")
+        self.pdf2DIOT = xaxis.centers()
+        self.pdf2DIOE = yaxis.centers()
+        self.pdf2DIO  = tmp_h1.values()
+        self.f2dIO = interpolate.interp2d(self.pdf2DIOT, self.pdf2DIOE, self.pdf2DIO.T, kind="linear")
+        
         
     def get_one_event(self, event_id:int):
         """
@@ -212,12 +282,22 @@ class channel :
         event_id = event_id - self.startEvt
         return self.binned_data_array[event_id]
     
+    def get_one_event2D(self, event_id:int):
+        event_id = event_id - self.startEvt
+        return self.dataT_array[event_id], self.dataE_array[event_id]
+    
     
     def _pdfNO_func(self, t):
         return np.interp(t, self.pdfNOx, self.pdfNOy)
     
     def _pdfIO_func(self, t):
         return np.interp(t, self.pdfIOx, self.pdfIOy)
+
+    def _pdf2DNO_func(self, t, E):
+        return self.f2dNO(t, E)
+
+    def _pdf2DIO_func(self, t, E):
+        return self.f2dIO(t, E)
 
     
     def calc_NLL_NO(self, data, dT) -> float:
@@ -267,6 +347,34 @@ class channel :
         nll -= intg 
 
         return -nll
+
+
+    def calc_NLL_NO2D(self, dataT, dataE, dT) -> float:
+        nll = 0
+        tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
+        for t, E in zip(dataT, dataE):
+            tmp_nll = self._pdf2DNO_func(t, E) * self.scale
+            if tmp_nll <= 0:
+                tmp_nll = 1e-10
+            nll += np.log(tmp_nll)
+        
+            intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
+            nll -= intg
+            return nll
+    
+    
+    def calc_NLL_IO2D(self, dataT, dataE, dT) -> float:
+        nll = 0
+        tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
+        for t, E in zip(dataT, dataE):
+            tmp_nll = self._pdf2DIO_func(t, E) * self.scale
+            if tmp_nll <= 0:
+                tmp_nll = 1e-10
+            nll += np.log(tmp_nll)
+        
+            intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0] * self.scale
+            nll -= intg
+            return nll
 
 
     def calc_binnedNLL_NO(self, data, dT) -> float:
