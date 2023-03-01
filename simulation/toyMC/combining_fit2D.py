@@ -18,7 +18,7 @@ def scanning2D(dT_arr, channels, ievt, MO):
             else:
                 val += cha.calc_NLL_IO2D(dataT, dataE, dT)
         nll[idx] = val
-        return nll
+    return nll
     
 def find_locMin(dT_arr, nll_arr):
     idx = np.argmin(nll_arr)
@@ -68,23 +68,33 @@ if __name__ == "__main__" :
     exp = "JUNO"
     startevt = 0
     endevt  = 100
+
+    parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
+    parser.add_argument('--MO', type=str, default="NO", help="Mass ordering for the dataset.")
+    parser.add_argument("--start", type=int, default=0, help="Start event for fit.")
+    parser.add_argument("--end", type=int, default=0, help="End event for fit.")
+    args = parser.parse_args()
+
+    MO = args.MO
+    startevt = args.start
+    endevt = args.end
     
     channels = {}
     channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
     channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
 
-    channels["pES"]._load_data2D()
-    channels["eES"]._load_data2D()
-    channels["IBD"]._load_data2D()
+    for cha in channels.values():
 
-    channels["pES"]._load_pdf()
-    channels["eES"]._load_pdf()
-    channels["IBD"]._load_pdf()
-    channels["pES"]._load_pdf2D()
-    channels["eES"]._load_pdf2D()
-    channels["IBD"]._load_pdf2D()
-    FITTING_EVENT_NUM =  channels["pES"].getNevtPerFile() # the sample number to run...
+        cha.setNevtPerFile(1e5)
+        cha.setStartEvtId(startevt)
+        cha.setEndEvtId(endevt)
+
+        cha._load_data2D()
+        cha._load_pdf()
+        cha._load_pdf2D()
+        
+        FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
     dT_arr  = np.arange(-10, 11, 1) # coarse scanning, the step size is the bin width of PDFs (1ms/step)
     if endevt == 0:
@@ -96,12 +106,21 @@ if __name__ == "__main__" :
     if endevt == 0:
         endevt = FITTING_EVENT_NUM
 
+
+    #print(channels["pES"].get_one_event2D(0))
+    #print(channels["eES"].get_one_event2D(0))
+    #print(channels["IBD"].get_one_event2D(0))
+
     for ievt in tqdm(range(startevt, endevt, 1)):
         nllNO_oneEvt = scanning2D(dT_arr, channels.values(), ievt, "NO")
+        #print("Rough nllNO_oneEvt ", nllNO_oneEvt)
         Tbest, locMin, _ = find_locMin(dT_arr, nllNO_oneEvt)
+        #print(Tbest, locMin)
         dT_arr_fine = generate_fine_dTarr(Tbest)
         nllNO_oneEvt = scanning2D(dT_arr_fine, channels.values(), ievt, "NO")
+        #print("Fine  nllNO_oneEvt ", nllNO_oneEvt)
         TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllNO_oneEvt)
+        #print(TbestFit, locMinFit)
     
         TbestNO[ievt-startevt] = TbestFit
         locMinNO[ievt-startevt] = locMinFit
