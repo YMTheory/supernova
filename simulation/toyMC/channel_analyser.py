@@ -13,7 +13,7 @@ class channel :
     Define a new class describing a specific detection channel in JUNO.
     """
     
-    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fileNo=0, exp="") -> None:
+    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fileNo=0, exp="", nuMass=0.0) -> None:
         self.name   = name
         self.MH     = MH
         self.model  = model
@@ -21,6 +21,7 @@ class channel :
         self.Ethr   = Ethr
         self.dist   = dist
         self.scale  = 10. * 10. / dist / dist
+        self.nuMass = nuMass
 
         self.fitTmin = fitTmin
         self.fitTmax = fitTmax
@@ -56,9 +57,9 @@ class channel :
                 self.pdfIOfile = f"/junofs/users/miaoyu/supernova/production/PDFs/10kpc/Burrows/{model}{modelNo}_PDF_IO_10kpc_{name}_0.20MeV_newshortPDF.root"
 
 
-        self.data2Dfile = f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/{model}{modelNo}_{name}_unbinneddata_{MH}_{dist:.1f}kpc_thr{Ethr:.2f}MeV_Tmin-20msTmax30ms_2D.root"
-        self.pdf2DNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
-        self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
+        self.data2Dfile = f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/{model}{modelNo}_{name}_unbinneddata_{MH}_{dist:.1f}kpc_thr{Ethr:.2f}MeV_Tmin-20msTmax{fitTmax}ms_2D.root"
+        self.pdf2DNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
+        self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -74,6 +75,7 @@ class channel :
         self.pdfNOy     = None
         self.pdfIOx     = None
         self.pdfIOy     = None
+        # for 2D MO analysis
         self.pdf2DNOT     = None
         self.pdf2DNOE     = None
         self.pdf2DNO     = None
@@ -294,10 +296,10 @@ class channel :
         return np.interp(t, self.pdfIOx, self.pdfIOy)
 
     def _pdf2DNO_func(self, t, E):
-        return self.f2dNO(t, E)
+        return self.f2dNO(t, E) /1000.
 
     def _pdf2DIO_func(self, t, E):
-        return self.f2dIO(t, E)
+        return self.f2dIO(t, E) /1000. # pdf 
 
     
     def calc_NLL_NO(self, data, dT) -> float:
@@ -353,28 +355,28 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DNO_func(t/1000., E) * self.scale
+            tmp_nll = self._pdf2DNO_func((t+dT)/1000., E)[0] * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
         
-            intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
-            nll -= intg
-            return nll
+        intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
+        nll -= intg
+        return -nll
     
     
     def calc_NLL_IO2D(self, dataT, dataE, dT) -> float:
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DIO_func(t/1000., E) * self.scale
+            tmp_nll = self._pdf2DIO_func((t+dT)/1000., E)[0]  * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
         
-            intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0] * self.scale
-            nll -= intg
-            return nll
+        intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0] * self.scale
+        nll -= intg
+        return -nll
 
 
     def calc_binnedNLL_NO(self, data, dT) -> float:
