@@ -184,7 +184,8 @@ int main(int argc, char* argv[]) {
 
     bool flag1D     = false;
     bool flag2D     = false;
-    bool flag2D_new = true;
+    bool flag2D_new = false;
+    bool flag2D_root = true;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -344,6 +345,34 @@ int main(int argc, char* argv[]) {
 
     }
 
+    if (flag2D_root) {
+        
+        TString modelName;
+        modelName = Form("Garching%d", imod);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1f_scale%.3f_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale);
+        std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
+
+        TFile* f = new TFile(fn, "recreate");
+        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
+        Double_t array[nbin_it][nbins_Evis];
+
+        for (int ipt=0; ipt<nbin_it; ipt++) {
+            double TTmp = itmin + (ipt + 0.5) * step_t;
+            std::cout << ">>> Processing time bin " << ipt << " at " << TTmp << " s." << std::endl;
+            for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
+                double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
+                array[ipt][iEvis] = pdet->getEvisSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
+            }
+        }
+        for(int i =0; i<nbin_it; i++) {
+            for (int j=0; j<nbins_Evis; j++) {
+                //std::cout << i << " " << j << " " << array[i][j] << std::endl;
+                h1->SetBinContent(i+1, j+1, array[i][j]);
+            }
+        }
+        h1->Write();
+        f->Close();
+    }
 
 
 
