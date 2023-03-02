@@ -121,7 +121,7 @@ void SNdetect::setSrcModel(int imode){
     }
 
     if (imode > 6000 && imode < 7999) {
-        //psrc = new SNnumBurrowsSrc(imode);
+        psrc = new SNnumBurrowsSrc(imode);
         std::cout << "numerical Burrows SN neutrino model " << imode << " is being used" << std::endl;
     }
 
@@ -366,6 +366,36 @@ double fcnAnaEv2TatTime(double* x, double* par){
     return totflu;
 }
 
+double fcnAnaEv2TatTimeWithMass(double* x, double* par) {
+    double Ev = x[0];
+    double time = par[0];
+    double T    = par[1];
+    int type    = int(par[2]);
+    int MH      = int(par[3]);
+    double mass = par[4];
+
+    SNdetect* pdet = SNdetect::instance();
+    int ntype = 6;
+    double totflu = 0;
+    double dist = pdet->getPointerSrc()->getSNDistance();
+    double dt = 5.14e-3 * mass * mass * (100 / Ev / Ev) * (dist / 10.);  
+    time = time - dt;
+    if (type == -1) {
+        for (int it=0; it<ntype; it++) {
+            double flu = pdet->getPointerSrc()->oneSNFluenceDetAtTime(time, Ev, it, MH);
+            double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, type);
+            totflu += flu * dxs;
+        }
+    }
+    else {
+        double flu = pdet->getPointerSrc()->oneSNFluenceDetAtTime(time, Ev, type, MH);
+        double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, type);
+        totflu = flu * dxs;
+    }
+    return totflu;
+}
+
+
 double fcnEventsVisatTime(double* x, double* par){
     double Evis = x[0];
     double time = par[0];
@@ -408,6 +438,34 @@ double SNdetect::getXSweightedEvSpectrumAtTime(double time, double Ev, int type,
         double xs  = peffLS->totalXS(Ev, type);
         //std::cout << time << " " << Ev << " " << Npar << " " << flu << " " << xs << std::endl;
         totflu = flu*xs;
+    }
+    return totflu*Npar;
+}
+
+double SNdetect::getXSweightedEvSpectrumAtTimeWithMass(double time, double Ev, int type, int MH, double nuMass) {
+    double Npar;
+    if (fchannel == NuP || fchannel == IBD) {
+        Npar = peffLS->getNumberOfProton();
+    }
+    if (fchannel == NuE) {
+        Npar = peffLS->getNumberOfProton() + 6*peffLS->getNumberOfCarbon();
+    }
+    int ntype = 6;
+    double totflu = 0;
+    double dist = pdet->getPointerSrc()->getSNDistance();
+    double dt = 5.14e-3 * nuMass * nuMass * (100 / Ev / Ev) * (dist / 10.);  
+    time = time - dt;
+    if (type == -1) {
+        for (int it=0; it<ntype; it++) {
+            double flu = psrc->oneSNFluenceDetAtTime(time, Ev, it, MH);
+            double xs = peffLS->totalXS(Ev, it);
+            totflu += flu * xs;
+        }
+    }
+    else {
+        double flu = psrc->oneSNFluenceDetAtTime(time, Ev, type, MH);
+        double xs = peffLS->totalXS(Ev, type);
+        totflu = flu * xs;
     }
     return totflu*Npar;
 }
@@ -467,6 +525,56 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
     }
     else{
         return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH);
+    }
+
+    return 0;
+}
+
+double SNdetect::getTSpectrumAtTimeWithMass(double time, double T, int type, int MH, double nuMass) {
+    double Evmin;
+    double Npar;
+    if (fchannel == NuP || fchannel == NuE) {
+        if (fchannel == NuP) {
+            double mp = 938; //MeV
+            Evmin = TMath::Sqrt(mp*T/2.);
+            Npar = peffLS->getNumberOfProton();
+        }
+        if (fchannel == NuE) {
+            double me = 0.51; //MeV
+            Evmin = 0.5 * (T + TMath::Sqrt(T*T+2*T*me));
+            Npar = peffLS->getNumberOfProton() + 6 * peffLS->getNumberOfCarbon();
+        }
+        TF1 f("anaEv2TatTimeWithMass", fcnAnaEv2TatTimeWithMass, fEvmin, fEvmax, 5);
+        f.SetParameter(0, time);
+        f.SetParameter(1, T);
+        f.SetParameter(2, type);
+        f.SetParameter(3, MH);
+        f.SetParameter(4, nuMass);
+        ROOT::Math::WrappedTF1 wf1(f);
+        ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+        ig.SetFunction(wf1);
+        ig.SetRelTolerance(1e-3);
+        double spect = Npar*ig.Integral(Evmin, fEvmax);
+        // test line
+        // std::cout << "spect: " << spect << std::endl;
+        return spect;
+    }
+    if (fchannel == IBD) {
+        return getXSweightedEvSpectrumAtTimeWithMass(time, getEvFromT(T), type, MH, nuMass);
+    }
+
+
+    return 0.;
+}
+
+double SNdetect::getEvisSpectrumAtTimeWithMass(double time, double Evis, int type, int MH, double nuMass) {
+    if(fchannel==NuP or fchannel==CEvNS){
+        double T = grquenchInv->Eval(Evis);
+        double dTqdTp = (grquench->Eval(T+0.005)-grquench->Eval(T))/0.005; 
+        return getTSpectrumAtTimeWithMass(time, getTFromEvis(Evis),type, MH, nuMass)/dTqdTp;
+    }
+    else{
+        return getTSpectrumAtTimeWithMass(time, getTFromEvis(Evis), type, MH, nuMass);
     }
 
     return 0;

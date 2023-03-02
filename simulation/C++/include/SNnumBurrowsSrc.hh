@@ -2,6 +2,7 @@
 #define _SNnumBurrowsSrc_hh
 
 
+
 class SNsource;
 class SNBurrowsIntegFcn;
 class TGraph;
@@ -40,11 +41,10 @@ class SNnumBurrowsSrc : public SNsource{
         SNBurrowsIntegFcn* pgarfcn;
         TF1* fcnTimeInterval;
 
-    public:
-        ClassDef(SNnumBurrowsSrc, 1);
+    //public:
+    //    ClassDef(SNnumBurrowsSrc, 1);
 };
 
 
 
 #endif
-
