@@ -328,6 +328,21 @@ double fcnAnaEv2T(double* x, double* par){
 }
 
 
+double fcnAnaT2EobsatTime(double* x, double* par) {
+    double T    = x[0];
+    double time = par[0];
+    double Eobs = par[1];
+    int type    = int(par[2]);
+    int MH      = int(par[3]);
+
+    SNdetect* pdet = SNdetect::instance();
+    double Evis = pdet->getEvisFromT(T);
+    double prob = pdet->getPointerEffectLS()->getProbResGauss(Eobs, Evis);
+    double flu  = pdet->getTSpectrumAtTime(time,T,type,MH);
+
+    return prob * flu;
+}
+
 
 
 
@@ -359,7 +374,7 @@ double fcnAnaEv2TatTime(double* x, double* par){
         double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, type);
         totflu = flu*dxs;
         // test line
-        //std::cout << "fcnAnaEv2TatTime flu, dxs: " << flu << ", " << dxs << std::endl;
+        // std::cout << "fcnAnaEv2TatTime flu, dxs: " << flu << ", " << dxs << std::endl;
         //
     }
 
@@ -383,11 +398,11 @@ double fcnAnaEv2TatTimeWithMass(double* x, double* par) {
     if (type == -1) {
         for (int it=0; it<ntype; it++) {
             double flu = pdet->getPointerSrc()->oneSNFluenceDetAtTime(time, Ev, it, MH);
-            double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, type);
+            double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, it);
+            //std::cout << it << " " << time << " " << Ev << " " << T << " "  << flu << " " << dxs << std::endl;
             totflu += flu * dxs;
         }
-    }
-    else {
+    } else {
         double flu = pdet->getPointerSrc()->oneSNFluenceDetAtTime(time, Ev, type, MH);
         double dxs = pdet->getPointerEffectLS()->differentialXS(Ev, T, type);
         totflu = flu * dxs;
@@ -403,7 +418,7 @@ double fcnEventsVisatTime(double* x, double* par){
     int    MH   = int(par[2]);
 
     SNdetect* pdet = SNdetect::instance();
-    //std::cout << "NumEvis " << pdet->getEvisSpectrumAtTime(time, Evis, type, MH) << std::endl;
+    // std::cout << "NumEvis " << pdet->getEvisSpectrumAtTime(time, Evis, type, MH) << std::endl;
     return pdet->getEvisSpectrumAtTime(time, Evis, type, MH);
 }
 
@@ -494,7 +509,7 @@ double SNdetect::getTSpectrumAtTime(double time, double T, int type, int MH){
         }
 
         // test line
-        //std::cout << "---> Evmin, fEvmax, Npar: " << Evmin << ", " << fEvmax << ", " << Npar << std::endl;
+        // std::cout << "---> T, Evmin, fEvmax, Npar: " << T << ", " <<Evmin << ", " << fEvmax << ", " << Npar << std::endl;
         //
 
         TF1 f("anaEv2TatTime",fcnAnaEv2TatTime, fEvmin, fEvmax, 4);
@@ -530,6 +545,23 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
     return 0;
 }
 
+double SNdetect::getEobsSpectrumAtTime(double time, double Eobs, int type, int MH)
+{
+    TF1 f("anaEvisEobsatTime", fcnAnaT2EobsatTime, fTmin, fTmax, 4);
+    f.SetParameter(0, time);
+    f.SetParameter(1, Eobs);
+    f.SetParameter(2, type);
+    f.SetParameter(3, MH);
+
+    ROOT::Math::WrappedTF1 wf1(f);
+    ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+    ig.SetFunction(wf1);
+    ig.SetRelTolerance(1e-3);
+    double integ = ig.Integral(fTmin,fTmax);
+
+    return integ;
+}
+
 double SNdetect::getTSpectrumAtTimeWithMass(double time, double T, int type, int MH, double nuMass) {
     double Evmin;
     double Npar;
@@ -556,7 +588,7 @@ double SNdetect::getTSpectrumAtTimeWithMass(double time, double T, int type, int
         ig.SetRelTolerance(1e-3);
         double spect = Npar*ig.Integral(Evmin, fEvmax);
         // test line
-        // std::cout << "spect: " << spect << std::endl;
+        // std::cout << "Time: " << time << " kinetic energy: " << T <<  "spect: " << spect << std::endl;
         return spect;
     }
     if (fchannel == IBD) {
