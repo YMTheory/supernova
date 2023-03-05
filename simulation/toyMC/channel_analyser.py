@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+# -*- coding=utf8 -*-
+"""
+# Author: MiaoYu ---> miaoyu@ihep.ac.cn
+# Created Time : Fri Mar  3 15:23:13 2023
+# File Name: channel_analyser.py
+"""
+
+import uproot as up
 import numpy as np
 import os, sys
 import uproot as up
@@ -99,6 +108,21 @@ class channel :
     
     def setDataFilePath(self, datafile) -> None:
         self.datafile = datafile
+
+    def setData2DFilePath(self, datafile) -> None:
+        self.data2Dfile = datafile
+
+    def setNOPdfFilePath(self, pdffile) -> None:
+        self.pdfNOfile = pdffile
+
+    def setIOPdfFilePath(self, pdffile) -> None:
+        self.pdfIOfile = pdffile
+
+    def setNOPdf2DFilePath(self, pdffile) -> None:
+        self.pdf2DNOfile = pdffile
+
+    def setIOPdf2DFilePath(self, pdffile) -> None:
+        self.pdf2DIOfile = pdffile
 
     def setStartEvtId(self, idd):
         self.startEvt = idd
@@ -290,16 +314,16 @@ class channel :
     
     
     def _pdfNO_func(self, t):
-        return np.interp(t, self.pdfNOx, self.pdfNOy)
+        return np.interp(t, self.pdfNOx, self.pdfNOy) 
     
     def _pdfIO_func(self, t):
         return np.interp(t, self.pdfIOx, self.pdfIOy)
 
     def _pdf2DNO_func(self, t, E):
-        return self.f2dNO(t, E) /1000.
+        return self.f2dNO(t, E)
 
     def _pdf2DIO_func(self, t, E):
-        return self.f2dIO(t, E) /1000. # pdf 
+        return self.f2dIO(t, E) 
 
     
     def calc_NLL_NO(self, data, dT) -> float:
@@ -351,11 +375,11 @@ class channel :
         return -nll
 
 
-    def calc_NLL_NO2D(self, dataT, dataE, dT) -> float:
+    def calc_NLL_NO2D(self, dataT, dataE, dT) -> float: ## input data time unit: ms
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DNO_func((t+dT)/1000., E)[0] * self.scale
+            tmp_nll = self._pdf2DNO_func((t+dT), E)[0] * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
@@ -369,7 +393,7 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DIO_func((t+dT)/1000., E)[0]  * self.scale
+            tmp_nll = self._pdf2DIO_func((t+dT), E)[0]  * self.scale
             if tmp_nll <= 0:
                 tmp_nll = 1e-10
             nll += np.log(tmp_nll)
