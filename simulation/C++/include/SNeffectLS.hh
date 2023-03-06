@@ -9,6 +9,8 @@
 
 #include <iostream>
 #include "TObject.h"
+#include "TGraph.h"
+
 
 class SNeffectLS : public TObject{
     public:
@@ -42,6 +44,12 @@ class SNeffectLS : public TObject{
         double getThresholdE()      { return fEthr; }
         double getProbResGauss(double Eobs, double Evis);
         double getEres(double Evis);
+        double getElecNonl(double E);
+        double getElecTfromEvis(double T);
+        double getElecRes(double Eobs, double Evis);
+        double getPosiNonl(double E);
+        double getPosiRes(double Eobs, double Evis);
+        double getPosiTfromEvis(double T);
 
     protected:
         double fEres;// relative energy resolution
@@ -49,6 +57,13 @@ class SNeffectLS : public TObject{
         double fNumC;//number of free protons in LS
         double fEthr;//threshold energy 
         double fNumO;//number of free oxygen in LS
+
+        TGraph* gElecNonl;
+        TGraph* gElecNonlInv;
+        TGraph* gElecRes;
+        TGraph* gPosiNonl;
+        TGraph* gPosiRes;
+        TGraph* gPosiNonlInv;
 
     //public:
     //    ClassDef(SNeffectLS,1);

@@ -538,6 +538,9 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
         double dTqdTp = (grquench->Eval(T+0.005)-grquench->Eval(T))/0.005; 
         return getTSpectrumAtTime(time, getTFromEvis(Evis),type, MH)/dTqdTp;
     }
+    else if (fchannel == NuE) {
+        SNdetect* pdet = SNdetect::instance();
+    }
     else{
         return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH);
     }

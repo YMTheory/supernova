@@ -1,5 +1,6 @@
 #include "SNeffectLS.hh"
 #include "TMath.h"
+#include "TFile.h"
 
 SNeffectLS::SNeffectLS():
     // JUNO Configurations:
@@ -43,6 +44,15 @@ SNeffectLS::SNeffectLS():
     //fNumC = mLS*1e9*fracC*fracLAB*Na/molarC;
     //fNumO = mLS*1e9*fracH2O*fracO*Na/molarO;
     //fEthr = 0.60;//MeV
+
+
+    TFile* f = new TFile("/junofs/users/miaoyu/supernova/simulation/C++/detector/energy_response_beta.root", "read");
+    gElecNonl = (TGraph*)f->Get("nonle1");
+    gElecNonlInv = (TGraph*)f->Get("nonle1inv");
+    gElecRes  = (TGraph*)f->Get("rese1");
+    gPosiNonl = (TGraph*)f->Get("nonle2");
+    gPosiNonlInv = (TGraph*)f->Get("nonle2inv");
+    gPosiRes  = (TGraph*)f->Get("rese2");
 }
 SNeffectLS::~SNeffectLS(){
 
@@ -57,3 +67,32 @@ double SNeffectLS::getProbResGauss(double Eobs,double Evis){
 
     return prob;
 }
+
+double SNeffectLS::getElecNonl(double E) {
+    return gElecNonl->Eval(E);
+}
+
+double SNeffectLS::getElecRes(double Eobs, double Evis) {
+    double sigma = Evis * gElecRes->Eval(Evis) ;
+    double prob = TMath::Gaus(Eobs, Evis, sigma, 1);
+    return prob;
+}
+
+double SNeffectLS::getPosiNonl(double E) {
+    return gPosiNonl->Eval(E);
+}
+
+double SNeffectLS::getPosiRes(double Eobs, double Evis) {
+    double sigma = Evis * gPosiRes->Eval(Evis) ;
+    double prob = TMath::Gaus(Eobs, Evis, sigma, 1);
+    return prob;
+}
+
+double SNeffectLS::getElecTfromEvis(double Evis) {
+    return gElecNonlInv->Eval(Evis);
+}
+
+double SNeffectLS::getPosiTfromEvis(double Evis) {
+    return gPosiNonlInv->Eval(Evis);
+}
+
