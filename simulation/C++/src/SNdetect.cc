@@ -344,6 +344,26 @@ double fcnAnaT2EobsatTime(double* x, double* par) {
 }
 
 
+double fcnAnaT2EobsatTimeNew(double* x, double* par) {
+    double T    = x[0];
+    double time = par[0];
+    double Eobs = par[1];
+    int type    = int(par[2]);
+    int MH      = int(par[3]);
+    int cha     = int(par[4]);
+
+    SNdetect* pdet = SNdetect::instance();
+    double Evis = pdet->getEvisFromT(T);
+    double prob;
+    if (cha == 1)
+        prob = pdet->getPointerEffectLS()->getElecRes(Eobs, Evis);
+    else if (cha == 2)
+        prob = pdet->getPointerEffectLS()->getPosiRes(Eobs, Evis);
+    else
+        prob = pdet->getPointerEffectLS()->getProbResGauss(Eobs, Evis);
+    double flu = pdet->getTSpectrumAtTime(time, T, type, MH);
+    return prob * flu;
+}
 
 
 
@@ -540,6 +560,15 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
     }
     else if (fchannel == NuE) {
         SNdetect* pdet = SNdetect::instance();
+        double T = pdet->getPointerEffectLS()->getElecTfromEvis(Evis);
+        double dTqdTp = (pdet->getPointerEffectLS()->getElecNonl(T+0.005)*(T+0.005)-pdet->getPointerEffectLS()->getElecNonl(T)*T) / 0.005;
+        return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH) / dTqdTp;
+    }
+    else if (fchannel == IBD) {
+        SNdetect* pdet = SNdetect::instance();
+        double T = pdet->getPointerEffectLS()->getPosiTfromEvis(Evis);
+        double dTqdTp = (pdet->getPointerEffectLS()->getPosiNonl(T+0.005)*(T+0.005)-pdet->getPointerEffectLS()->getPosiNonl(T)*T) / 0.005;
+        return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH) / dTqdTp;
     }
     else{
         return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH);
@@ -550,11 +579,31 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
 
 double SNdetect::getEobsSpectrumAtTime(double time, double Eobs, int type, int MH)
 {
-    TF1 f("anaEvisEobsatTime", fcnAnaT2EobsatTime, fTmin, fTmax, 4);
+    // v1
+    //TF1 f("anaEvisEobsatTime", fcnAnaT2EobsatTime, fTmin, fTmax, 4);
+    //f.SetParameter(0, time);
+    //f.SetParameter(1, Eobs);
+    //f.SetParameter(2, type);
+    //f.SetParameter(3, MH);
+
+    //ROOT::Math::WrappedTF1 wf1(f);
+    //ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+    //ig.SetFunction(wf1);
+    //ig.SetRelTolerance(1e-3);
+    //double integ = ig.Integral(fTmin,fTmax);
+
+    // v2
+    TF1 f("anaEvisEobsatTimeNew", fcnAnaT2EobsatTimeNew, fTmin, fTmax, 5);
     f.SetParameter(0, time);
     f.SetParameter(1, Eobs);
     f.SetParameter(2, type);
     f.SetParameter(3, MH);
+    if (fchannel == IBD)
+        f.SetParameter(4, 2);
+    else if (fchannel == NuE)
+        f.SetParameter(4, 1);
+    else
+        f.SetParameter(4, 0);
 
     ROOT::Math::WrappedTF1 wf1(f);
     ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);

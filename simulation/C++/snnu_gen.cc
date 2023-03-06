@@ -182,10 +182,10 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = false;
+    bool flag1D     = true;
     bool flag2D     = false;
     bool flag2D_new = false;
-    bool flag2D_root = true;
+    bool flag2D_root = false;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -196,22 +196,23 @@ int main(int argc, char* argv[]) {
         //// get the visible events time spectra above Ethr and save into histogram and root file.
         //// 1D histogram
         TString modelName;
-        modelName = Form("Burrows%d", imod);
-        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_test.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
+        modelName = Form("Garchings%d", imod);
+        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_testnew.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
         std::cout << "output filename : " << fn << std::endl;
         TFile* f = new TFile(fn, "recreate");
-        TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_it, tmin*1000-0.5, tmax*1000-0.5);
+        TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_t, tmin, tmax);
 
         double factor = 1;
         double tshift = 0;
-        for (int ipt=0; ipt<nbin_it; ipt++) {
-            double t = tmin + ipt * step_t + tshift;
+        for (int ipt=0; ipt<nbin_t; ipt++) {
+            double t = tmin + (0.5 + ipt) * step_t + tshift;
             std::cout << "Running bin " << ipt << " time " << t << std::endl;
             double flu = 0;
             for(int ii=0; ii<6; ii++) {
-                //std::cout << "In main: " << t << " " << ii << " " << pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) << std::endl;
-                pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor / 1000.;  // for 1 ms interval
+                flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
+                std::cout << "In main: " << t << " " << ii << " " << flu << std::endl;
             }
+            std::cout << "Filling histogram: " << ipt+1 << " " << flu * scale << std::endl;
             h1->SetBinContent(ipt+1, flu*scale);
         }
 
@@ -349,7 +350,7 @@ int main(int argc, char* argv[]) {
         
         TString modelName;
         modelName = Form("Garching%d", imod);
-        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1f_scale%.3f_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale);
         std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
@@ -361,12 +362,14 @@ int main(int argc, char* argv[]) {
             std::cout << ">>> Processing time bin " << ipt << " at " << TTmp << " s." << std::endl;
             for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
-                array[ipt][iEvis] = pdet->getEvisSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
+                array[ipt][iEvis] = pdet->getEobsSpectrumAtTime(TTmp, EvisTmp, -1, MH);
+                //array[ipt][iEvis] = pdet->getEvisSpectrumAtTime(TTmp, EvisTmp, -1, MH);
+                // array[ipt][iEvis] = pdet->getEvisSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
+                // std::cout << TTmp << " " << EvisTmp << " " << array[ipt][iEvis] << std::endl;
             }
         }
         for(int i =0; i<nbin_it; i++) {
             for (int j=0; j<nbins_Evis; j++) {
-                //std::cout << i << " " << j << " " << array[i][j] << std::endl;
                 h1->SetBinContent(i+1, j+1, array[i][j]);
             }
         }
