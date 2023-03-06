@@ -182,10 +182,10 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = true;
+    bool flag1D     = false;
     bool flag2D     = false;
     bool flag2D_new = false;
-    bool flag2D_root = false;
+    bool flag2D_root = true;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -350,7 +350,7 @@ int main(int argc, char* argv[]) {
         
         TString modelName;
         modelName = Form("Garching%d", imod);
-        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale);
         std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
