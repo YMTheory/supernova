@@ -369,7 +369,7 @@ int main(int argc, char* argv[]) {
                 // std::cout << TTmp << " " << EvisTmp << " " << array[ipt][iEvis] << std::endl;
             }
         }
-        for(int i =0; i<nbin_it; i++) {
+        for(int i =0; i<nbin_t; i++) {
             for (int j=0; j<nbins_Evis; j++) {
                 h1->SetBinContent(i+1, j+1, array[i][j]);
             }
