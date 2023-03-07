@@ -350,18 +350,19 @@ int main(int argc, char* argv[]) {
         
         TString modelName;
         modelName = Form("Garching%d", imod);
-        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_tmin%.3fstmax%.3fs_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale, tmin, tmax);
         std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
-        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
-        Double_t array[nbin_it][nbins_Evis];
+        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_t, tmin, tmax, nbins_Evis, Evismin, Evismax);
+        Double_t array[nbin_t][nbins_Evis];
 
-        for (int ipt=0; ipt<nbin_it; ipt++) {
-            double TTmp = itmin + (ipt + 0.5) * step_t;
+        for (int ipt=0; ipt<nbin_t; ipt++) {
+            double TTmp = tmin + (ipt + 0.5) * step_t;
             std::cout << ">>> Processing time bin " << ipt << " at " << TTmp << " s." << std::endl;
             for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
+                std::cout << ">>>>>> Processing Eobs bin " << iEvis << " at " << EvisTmp << " MeV." << std::endl;
                 array[ipt][iEvis] = pdet->getEobsSpectrumAtTime(TTmp, EvisTmp, -1, MH);
                 //array[ipt][iEvis] = pdet->getEvisSpectrumAtTime(TTmp, EvisTmp, -1, MH);
                 // array[ipt][iEvis] = pdet->getEvisSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);

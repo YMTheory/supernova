@@ -47,12 +47,21 @@ SNeffectLS::SNeffectLS():
 
 
     TFile* f = new TFile("/junofs/users/miaoyu/supernova/simulation/C++/detector/energy_response_beta.root", "read");
+    std::cout << "+++++> Load energy nonlinearity and energy resolution for electrons and positrons here !" << std::endl;
     gElecNonl = (TGraph*)f->Get("nonle1");
     gElecNonlInv = (TGraph*)f->Get("nonle1inv");
     gElecRes  = (TGraph*)f->Get("rese1");
     gPosiNonl = (TGraph*)f->Get("nonle2");
     gPosiNonlInv = (TGraph*)f->Get("nonle2inv");
     gPosiRes  = (TGraph*)f->Get("rese2");
+    // test line:
+    /// std::cout << "Electron energy nonlinearity test " << "\n"
+    ///           << " Edep = " << 1 << " MeV, Evis/Edep = " << gElecNonl->Eval(1) << "\n"
+    ///           << "Electron inverse nonlinearity test " << "\n"
+    ///           << "Evis = " << 1 << " MeV, Edep = " << gElecNonlInv->Eval(1) << " MeV \n"
+    ///           << "Electron energy resoltuion test " << "\n"
+    ///           << " Evis = " << 1 << " MeV, sigma/Evis = " << gElecRes->Eval(1) 
+    ///           << std::endl;
 }
 SNeffectLS::~SNeffectLS(){
 
