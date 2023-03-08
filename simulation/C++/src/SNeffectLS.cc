@@ -94,6 +94,14 @@ double SNeffectLS::getPosiNonl(double E) {
 double SNeffectLS::getPosiRes(double Eobs, double Evis) {
     double sigma = Evis * gPosiRes->Eval(Evis) ;
     double prob = TMath::Gaus(Eobs, Evis, sigma, 1);
+    if (prob < 0) {
+        std::cout << "Here the probability<0???"
+                  << ", Evis=" << Evis 
+                  << ", Eobs=" << Eobs
+                  << ", sigma=" << sigma
+                  << ", probability=" << prob
+                  << std::endl;
+    }
     return prob;
 }
 

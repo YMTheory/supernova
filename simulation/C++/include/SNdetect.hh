@@ -52,6 +52,7 @@ class SNdetect : public TObject{
        double getEvisSpectrumAtTime(double time, double Evis, int type, int MH);
        double getEobsSpectrumAtTime(double time, double Eobs, int type, int MH);
        double getEventAboveEthrVisAtTime(double time,double Ethr, int type, int MH);//number of events in LS w/o energy resolution at a specific time
+       double getEventAboveEthrObsAtTime(double time,double Ethr, int type, int MH);//number of events in LS w/  energy resolution at a specific time
 
        // for nuMass analysis:
        double getXSweightedEvSpectrumAtTimeWithMass(double time, double Ev, int type, int MH, double nuMass);

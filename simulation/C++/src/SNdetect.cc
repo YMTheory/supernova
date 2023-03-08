@@ -451,7 +451,18 @@ double fcnEventsVisatTime(double* x, double* par){
     return pdet->getEvisSpectrumAtTime(time, Evis, type, MH);
 }
 
-double fcnEventsObsatTime(double* x, double* par) {
+double fcnEventsObsatTime(double* x, double* par)
+{
+    double Eobs = x[0];
+    double time = par[0];
+    double type = int(par[1]);
+    double MH = int(par[2]);
+
+    SNdetect* pdet = SNdetect::instance();
+    return pdet->getEobsSpectrumAtTime(time, Eobs, type, MH);
+}
+
+double fcnEventVis2ObsatTime(double* x, double* par) {
     double Evis     = x[0];
     double Eobs     = par[0];
     double time     = par[1];
@@ -463,12 +474,13 @@ double fcnEventsObsatTime(double* x, double* par) {
     double evisspec = pdet->getEvisSpectrumAtTime(time, Evis, type, MH);
     double prob = 1;
     if (cha == 1) {
-        prob = pdet->getPointerEffectLS()->getElecRes(Eobs, Evis);
+        prob = pdet->getPointerEffectLS()->getProbResGauss(Eobs, Evis);
     } else if (cha == 2) {
-        prob = pdet->getPointerEffectLS()->getPosiRes(Eobs, Evis);
+        prob = pdet->getPointerEffectLS()->getProbResGauss(Eobs, Evis);
     } else {
         prob = pdet->getPointerEffectLS()->getProbResGauss(Eobs, Evis);
     }
+
     if(0) {
         std::cout << "time  = " << time 
                   << ", Evis = " << Evis
@@ -668,7 +680,7 @@ double SNdetect::getEobsSpectrumAtTime(double time, double Eobs, int type, int M
             }
     }
 
-    TF1 f("anaEventsObcatTime", fcnEventsObsatTime, 0, fEvismax, 5);
+    TF1 f("anaEventsObcatTime", fcnEventVis2ObsatTime, 0, fEvismax, 5);
     f.SetParameter(0, Eobs);
     f.SetParameter(1, time);
     f.SetParameter(2, type);
@@ -680,13 +692,13 @@ double SNdetect::getEobsSpectrumAtTime(double time, double Eobs, int type, int M
         chaNum = 1;
     f.SetParameter(4, chaNum);
 
-    double Evis_min = Eobs - 5 * Eobs * 0.03 / TMath::Sqrt(Eobs);
+    double Evis_min = Eobs - 10 * Eobs * 0.03 / TMath::Sqrt(Eobs);
     if (Evis_min < 0)
         Evis_min = 0;
-    double Evis_max = Eobs + 5 * Eobs * 0.03 / TMath::Sqrt(Eobs);
+    double Evis_max = Eobs + 10 * Eobs * 0.03 / TMath::Sqrt(Eobs);
     if (Evis_max > fEvismax)
         Evis_max = fEvismax;
-    // std::cout << "Evis max limit = " << fEvismax << " for channel " << chaNum << ", and integral limit = [" << Evis_min << ", " << Evis_max << "]." << std::endl;
+     //std::cout << "Evis max limit = " << fEvismax << " for channel " << chaNum << ", and integral limit = [" << Evis_min << ", " << Evis_max << "]." << std::endl;
 
     ROOT::Math::WrappedTF1 wf1(f);
     ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
@@ -802,15 +814,80 @@ double SNdetect::getEventAboveEthrVisAtTime(double time, double Ethr, int type, 
 }
 
 
+double SNdetect::getEventAboveEthrObsAtTime(double time, double Ethr, int type, int MH){
+    double fEvismax;
+    switch(fchannel){
+        case NuP:
+            {
+                double mp = 938.;
+                //fEvismax = grquench->Eval(2.*fEvmax*fEvmax/mp);
+                double m_Tmax = 2 * fEvmax * fEvmax / mp;
+                fEvismax = grquench->Eval(m_Tmax);
+                break;
+            }
+        case NuE:
+            {
+                double me = 0.51;
+                fEvismax = fEvmax/(1+me/(2.*fEvmax));
+                break;
+            }
+        case IBD:
+            {
+                fEvismax = fEvmax-0.8;
+                break;
+            }
+        case CEvNS:
+            {
+                double mC12 = 11179.01;
+                double m_Tmax = 2 * fEvmax * fEvmax / mC12;
+                fEvismax = grquench->Eval(m_Tmax);
+                break;
+            }
+    }
+
+    TF1 f("eveObsatTime", fcnEventsObsatTime, 0, fEvismax, 3);
+    f.SetParameter(0, time);
+    f.SetParameter(1, type);
+    f.SetParameter(2, MH);
+    
+    ROOT::Math::WrappedTF1 wf1(f);
+    ROOT::Math::GSLIntegrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVE,ROOT::Math::Integration::kGAUSS61);
+    ig.SetFunction(wf1);
+    ig.SetRelTolerance(1e-3);
+    double integ = ig.Integral(Ethr, fEvismax);
+
+    //int np = 500;
+    //double *x = new double[np];
+    //double *w = new double[np];
+    //f.CalcGaussLegendreSamplingPoints(np,x,w,1e-10);
+    //double integ = f.IntegralFast(np,x,w,Ethr,fEvismax);
+    //delete[] x;
+    //delete[] w;
+    return integ;
+    return 0;
+}
+
+
+
 
 double SNdetect::getEvisFromT(double T){
     switch(fchannel){
         case(NuP):
             return grquench->Eval(T);
         case(NuE):
-            return T;
+            {
+                // return T;
+                SNdetect* pdet = SNdetect::instance();
+                double Evis = pdet->getPointerEffectLS()->getElecNonl(T) * T;
+                return Evis;
+            }
         case(IBD):
-            return T+0.51;
+            {
+                // return T+0.51;
+                SNdetect* pdet = SNdetect::instance();
+                double Evis = pdet->getPointerEffectLS()->getPosiNonl(T) * (T+0.511*2);
+                return Evis;
+            }
         case(CEvNS):
             return grquench->Eval(T);
     }
@@ -822,9 +899,19 @@ double SNdetect::getTFromEvis(double Evis){
         case(NuP):
             return grquenchInv->Eval(Evis);
         case(NuE):
-            return Evis;
+            {
+                // return Evis; -> no nonlinearity
+                SNdetect* pdet = SNdetect::instance();
+                double T = pdet->getPointerEffectLS()->getElecTfromEvis(Evis);
+                return T;
+            }
         case(IBD):
-            return Evis-0.51;
+            {
+                // return Evis-0.51;
+                SNdetect* pdet = SNdetect::instance();
+                double T = pdet->getPointerEffectLS()->getPosiTfromEvis(Evis) - 0.511*2;
+                return T;
+            }
         case(CEvNS):
             return grquenchInv->Eval(Evis);
     }
