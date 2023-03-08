@@ -12,6 +12,19 @@ from channel_analyser import channel
 ##### 2DPDF / 1DPDF_v2: s
 ##### 2D data: ms
 
+def scanning1D(dT_arr, channels, ievt, MO):
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            dataT = cha.get_one_event(ievt)
+            if MO == "NO":
+                val += cha.calc_NLL_NO(dataT, dT)
+            else:
+                val += cha.calc_NLL_IO(dataT, dT)
+        nll[idx] = val
+    return nll
+
 
 def scanning2D(dT_arr, channels, ievt, MO):
     nll = np.zeros(len(dT_arr))
@@ -75,6 +88,7 @@ if __name__ == "__main__" :
     startevt = 0
     endevt  = 100
     doFit = True
+    fitDim = 2
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--MO',         type=str, default="NO", help="Mass ordering for the dataset.")
@@ -83,13 +97,15 @@ if __name__ == "__main__" :
     parser.add_argument("--fileNo",     type=int, default=0, help="File No.")
     parser.add_argument("--doFit",      dest="fit", action="store_true", help="enable fitting.")
     parser.add_argument("--no-doFit",   dest="fit", action="store_false", help="disable fitting.")
+    parser.add_argument("--fitDim",      type=int, default=2, help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
     args = parser.parse_args()
 
-    MO = args.MO
-    startevt = args.start
-    endevt = args.end
-    doFit = args.fit
-    fileNo = args.fileNo
+    MO          = args.MO
+    startevt    = args.start
+    endevt      = args.end
+    doFit       = args.fit
+    fileNo      = args.fileNo
+    fitDim      = args.fitDim
     
     channels = {}
     channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
@@ -109,17 +125,22 @@ if __name__ == "__main__" :
         cha.setIOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_PDF_{cha.name}_IO_10kpc_nuMass0.0_scale1.000_2Droot.root")
 
         # Set Data Files
-        cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_new2D.root")
+        cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
         cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_new2D.root")
 
 
-        cha._load_data2D()
         cha._load_pdf()
-        cha._load_pdf2D()
-        
+        cha._load_data2D()
+        if fitDim == 2:
+            cha._load_pdf2D()
+        #elif fitDim == 1:
+        #    cha._load_data_ak()
+
+
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
     if doFit:
+        ## Do fitting
         dT_arr = np.arange(-0.01, 0.011, 0.001)  # corase scanning, 1 ms scanning step
         if endevt == 0:
             SUB_EVENT_NUM = FITTING_EVENT_NUM
@@ -136,12 +157,18 @@ if __name__ == "__main__" :
         #print(channels["IBD"].get_one_event2D(0))
 
         for ievt in tqdm(range(startevt, endevt, 1)):
-            nllNO_oneEvt = scanning2D(dT_arr, channels.values(), ievt, "NO")
+            if fitDim == 2:
+                nllNO_oneEvt = scanning2D(dT_arr, channels.values(), ievt, "NO")
+            elif fitDim == 1:
+                nllNO_oneEvt = scanning1D(dT_arr, channels.values(), ievt, "NO")
             ## print("Rough nllNO_oneEvt ", nllNO_oneEvt)
             Tbest, locMin, _ = find_locMin(dT_arr, nllNO_oneEvt)
             ## print(Tbest, locMin)
             dT_arr_fine = generate_fine_dTarr(Tbest)
-            nllNO_oneEvt = scanning2D(dT_arr_fine, channels.values(), ievt, "NO")
+            if fitDim == 2:
+                nllNO_oneEvt = scanning2D(dT_arr_fine, channels.values(), ievt, "NO")
+            elif fitDim == 1:
+                nllNO_oneEvt = scanning1D(dT_arr_fine, channels.values(), ievt, "NO")
             ## print("Fine  nllNO_oneEvt ", nllNO_oneEvt)
             TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllNO_oneEvt)
             ## print(TbestFit, locMinFit)
@@ -150,10 +177,16 @@ if __name__ == "__main__" :
             locMinNO[ievt-startevt] = locMinFit
         
         for ievt in tqdm(range(startevt, endevt, 1)):
-            nllIO_oneEvt = scanning2D(dT_arr, channels.values(), ievt, "IO")
+            if fitDim == 2:
+                nllIO_oneEvt = scanning2D(dT_arr, channels.values(), ievt, "IO")
+            elif fitDim == 1:
+                nllIO_oneEvt = scanning1D(dT_arr, channels.values(), ievt, "IO")
             Tbest, locMin, _ = find_locMin(dT_arr, nllIO_oneEvt)
             dT_arr_fine = generate_fine_dTarr(Tbest)
-            nllIO_oneEvt = scanning2D(dT_arr_fine, channels.values(), ievt, "IO")
+            if fitDim == 2:
+                nllIO_oneEvt = scanning2D(dT_arr_fine, channels.values(), ievt, "IO")
+            elif fitDim == 1:
+                nllIO_oneEvt = scanning1D(dT_arr_fine, channels.values(), ievt, "IO")
             TbestFit, locMinFit = parabola_fit(dT_arr_fine, nllIO_oneEvt)
         
             TbestIO[ievt-startevt] = TbestFit
@@ -173,4 +206,4 @@ if __name__ == "__main__" :
             "TbestIO" : TbestIO,
         })
 
-        df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_start{startevt}end{endevt}_PoisToyData2D.csv")
+        df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_start{startevt}end{endevt}_PoisToyData{fitDim:d}D.csv")

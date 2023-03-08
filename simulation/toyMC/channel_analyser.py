@@ -307,6 +307,10 @@ class channel :
     def get_one_binned_event(self, event_id:int):
         event_id = event_id - self.startEvt
         return self.binned_data_array[event_id]
+
+    def get_one_event1D(self, event_id:int):
+        event_id = event_id - self.startEvt
+        return self.dataT_array[event_id]
     
     def get_one_event2D(self, event_id:int):
         event_id = event_id - self.startEvt
