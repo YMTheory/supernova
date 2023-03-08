@@ -58,6 +58,7 @@ class SNdetect : public TObject{
        double getXSweightedEvSpectrumAtTimeWithMass(double time, double Ev, int type, int MH, double nuMass);
        double getTSpectrumAtTimeWithMass(double time, double T, int type, int MH, double nuMass);
        double getEvisSpectrumAtTimeWithMass(double time, double Evis, int type, int MH, double nuMass);
+       double getEobsSpectrumAtTimeWithMass(double time, double Eobs, int type, int MH, double nuMass);
       
     private:
        static SNdetect* pdet ;

@@ -182,10 +182,10 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = false;
+    bool flag1D     = true;
     bool flag2D     = false;
     bool flag2D_new = false;
-    bool flag2D_root = true;
+    bool flag2D_root = false;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -209,7 +209,8 @@ int main(int argc, char* argv[]) {
             std::cout << "Running bin " << ipt << " time " << t << std::endl;
             double flu = 0;
             for(int ii=0; ii<6; ii++) {
-                flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
+                flu += pdet->getEventAboveEthrObsAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
+                //flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
                 std::cout << "In main: " << t << " " << ii << " " << flu << std::endl;
             }
             std::cout << "Filling histogram: " << ipt+1 << " " << flu * scale << std::endl;
@@ -350,35 +351,51 @@ int main(int argc, char* argv[]) {
         
         TString modelName;
         modelName = Form("Garching%d", imod);
-        TString fn = Form("%s_PDF_%s_%s_%dkpc_noMass_scale%.3f_tmin%.3fstmax%.3fs_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, scale, tmin, tmax);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1feV_scale%.3f_tmin%.3fstmax%.3fs_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale, tmin, tmax);
         std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
-        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_t, tmin, tmax, nbins_Evis, Evismin, Evismax);
-        Double_t array[nbin_t][nbins_Evis];
+        TH2D* h1 = new TH2D("h1", "time-visible energy 2D hist", nbin_it, itmin, itmax, nbins_Evis, Evismin, Evismax);
+        Double_t array[nbin_it][nbins_Evis];
 
-        for (int ipt=0; ipt<nbin_t; ipt++) {
-            double TTmp = tmin + (ipt + 0.5) * step_t;
+        // Initialisation
+        for (int ipt=0; ipt<nbin_it; ipt++) {
+            for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
+                array[ipt][iEvis] = 0;
+            }
+        }
+    
+        for (int ipt=0; ipt<nbin_it; ipt++) {
+            double TTmp = itmin + (ipt + 0.5) * step_t;
+            if (TTmp < tmin or TTmp >= tmax)
+                continue;
             std::cout << ">>> Processing time bin " << ipt << " at " << TTmp << " s." << std::endl;
             for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
                 std::cout << ">>>>>> Processing Eobs bin " << iEvis << " at " << EvisTmp << " MeV." << std::endl;
                 array[ipt][iEvis] = pdet->getEobsSpectrumAtTime(TTmp, EvisTmp, -1, MH);
-                //array[ipt][iEvis] = pdet->getEvisSpectrumAtTime(TTmp, EvisTmp, -1, MH);
-                // array[ipt][iEvis] = pdet->getEvisSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
-                // std::cout << TTmp << " " << EvisTmp << " " << array[ipt][iEvis] << std::endl;
             }
         }
-        for(int i =0; i<nbin_t; i++) {
+        for(int i =0; i<nbin_it; i++) {
             for (int j=0; j<nbins_Evis; j++) {
                 h1->SetBinContent(i+1, j+1, array[i][j]);
+                if(0) {
+                    std::cout << "Bin content of (" << i+1 << ", " <<  j+1 << ") bin = " << array[i][j] << std::endl;
+                }
             }
         }
         h1->Write();
         f->Close();
     }
 
-
+    
+    // test line
+    // double Nvis = pdet->getEventAboveEthrVisAtTime(0.0205, 0.0, 1, 2) / 1000.;
+    // double Nobs = pdet->getEventAboveEthrObsAtTime(0.0205, 0.0, 1, 2) / 1000.;
+    // std::cout << "In normal ordering case: \n" 
+    //           << "getEventAboveEthrVisAtTime 0.0205 s w/o energy threshold = " << Nvis << "\n"
+    //           << "getEventAboveEthrObsAtTime 0.0205 s w/o energy threshold = " << Nobs << "\n"
+    //           << std::endl;
 
 
 
