@@ -17,7 +17,7 @@ def scanning1D(dT_arr, channels, ievt, MO):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            dataT = cha.get_one_event(ievt)
+            dataT = cha.get_one_event1D(ievt)
             if MO == "NO":
                 val += cha.calc_NLL_NO(dataT, dT)
             else:
