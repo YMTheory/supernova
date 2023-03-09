@@ -16,13 +16,14 @@ from scipy import interpolate
 from scipy.special import gamma
 #import ROOT
 import time
+from tqdm import tqdm
 
 class channel :
     """
     Define a new class describing a specific detection channel in JUNO.
     """
     
-    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fileNo=0, exp="", nuMass=0.0) -> None:
+    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fitEmax=80, fileNo=0, exp="", nuMass=0.0) -> None:
         self.name   = name
         self.MH     = MH
         self.model  = model
@@ -34,6 +35,7 @@ class channel :
 
         self.fitTmin = fitTmin
         self.fitTmax = fitTmax
+        self.fitEmax = fitEmax
 
         self.fileNo  = fileNo
         self.NevtPerFile = 1000
@@ -98,7 +100,10 @@ class channel :
         self.ghig       = None
         self.c14rate    = 0
 
-        self.binwidth   = 0.01
+        self.Tbinwidth   = 0.00001
+        self.Ebinwidth  = 0.2
+        if self.name == "pES":
+            self.Ebinwidth = 0.05
 
     def setNevtPerFile(self, N) -> None:
         self.NevtPerFile = N
@@ -450,7 +455,7 @@ class channel :
     def calc_Asimov_NLL_NO(self, dT) -> float:
         nll = 0
 
-        stepT = self.binwidth
+        stepT = self.Tbinwidth
         binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
@@ -475,10 +480,43 @@ class channel :
 
         return nll
 
+    def calc_Asimov_NLL_NO2D(self, dT) -> float:
+        nll = 0
+        stepT = self.Tbinwidth
+        stepE = self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+
+                if self.MH == "NO":
+                    n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                else:
+                    n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+
+                t_pdf = t_data + dT
+                s = self._pdf2DNO_func(t_pdf, E_data) * stepT * stepE
+
+                n = n * self.scale
+                s = s * self.scale
+
+                if s != 0 and n!=0:
+                    #tmp_nll = s - n + n * np.log(n/s)
+                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+
+        return nll
+            
+
     def calc_Asimov_NLL_IO(self, dT) -> float:
         nll = 0
 
-        stepT = self.binwidth
+        stepT = self.Tbinwidth
         binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
@@ -502,6 +540,43 @@ class channel :
                 nll += tmp_nll
 
         return nll
+
+
+    def calc_Asimov_NLL_IO2D(self, dT) -> float:
+        nll = 0
+        stepT = self.Tbinwidth
+        stepE = self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmax / stepT), int(self.fitTmin / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+
+                if self.MH == "NO":
+                    n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                else:
+                    n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+
+                t_pdf = t_data + dT
+                s = self._pdf2DIO_func(t_pdf, E_data) * stepT * stepE
+
+                n = n * self.scale
+                s = s * self.scale
+
+                if s != 0 and n!=0:
+                    #tmp_nll = s - n + n * np.log(n/s)
+                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+
+        return nll
+            
+
+
+
 
 
     def calc_NLL_NO_withbkg(self, data, dT, Tbkg) -> float:
