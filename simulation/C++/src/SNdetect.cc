@@ -806,7 +806,7 @@ double SNdetect::getEobsSpectrumAtTimeWithMass(double time, double Eobs, int typ
             }
     }
 
-    TF1 f("anaEventsObcatTime", fcnEventVis2ObsatTime, 0, fEvismax, 6);
+    TF1 f("anaEventsObcatTimeWithMass", fcnEventVis2ObsatTimeWithMass, 0, fEvismax, 6);
     f.SetParameter(0, Eobs);
     f.SetParameter(1, time);
     f.SetParameter(2, type);

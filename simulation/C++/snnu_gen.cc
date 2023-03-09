@@ -182,10 +182,10 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = true;
+    bool flag1D     = false;
     bool flag2D     = false;
     bool flag2D_new = false;
-    bool flag2D_root = false;
+    bool flag2D_root = true;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -372,8 +372,8 @@ int main(int argc, char* argv[]) {
             std::cout << ">>> Processing time bin " << ipt << " at " << TTmp << " s." << std::endl;
             for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
-                std::cout << ">>>>>> Processing Eobs bin " << iEvis << " at " << EvisTmp << " MeV." << std::endl;
-                array[ipt][iEvis] = pdet->getEobsSpectrumAtTime(TTmp, EvisTmp, -1, MH);
+                //std::cout << ">>>>>> Processing Eobs bin " << iEvis << " at " << EvisTmp << " MeV." << std::endl;
+                array[ipt][iEvis] = pdet->getEobsSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
             }
         }
         for(int i =0; i<nbin_it; i++) {
@@ -390,11 +390,25 @@ int main(int argc, char* argv[]) {
 
     
     // test line
-    // double Nvis = pdet->getEventAboveEthrVisAtTime(0.0205, 0.0, 1, 2) / 1000.;
-    // double Nobs = pdet->getEventAboveEthrObsAtTime(0.0205, 0.0, 1, 2) / 1000.;
+    // double Evis = 10;
+    // double Eobs = 10;
+    // double tt   = 0.02;
+    // double Nvis0 = pdet->getEvisSpectrumAtTime(tt, Evis, -1, 1);
+    // double Nvis1 = pdet->getEvisSpectrumAtTimeWithMass(tt, Evis, -1, 1, 0.0);
+    // double Nvis2 = pdet->getEvisSpectrumAtTimeWithMass(tt, Evis, -1, 1, 1.0);
+    // double Nobs0 = pdet->getEobsSpectrumAtTime(tt, Eobs, -1, 1);
+    // double Nobs1 = pdet->getEobsSpectrumAtTimeWithMass(tt, Eobs, -1, 1, 0.0);
+    // double Nobs2 = pdet->getEobsSpectrumAtTimeWithMass(tt, Eobs, -1, 1, 1.0);
+    // 
     // std::cout << "In normal ordering case: \n" 
-    //           << "getEventAboveEthrVisAtTime 0.0205 s w/o energy threshold = " << Nvis << "\n"
-    //           << "getEventAboveEthrObsAtTime 0.0205 s w/o energy threshold = " << Nobs << "\n"
+    //           << "====> w/o energy response: " << "\n"
+    //           << "noMass Vis -> " << Nvis0 << "\n"
+    //           << "nuMass=0.0 -> " << Nvis1 << "\n"
+    //           << "noMass=1.0 -> " << Nvis2 << "\n"
+    //           << "====> w/ energy response: " << "\n"
+    //           << "noMass Vis -> " << Nobs0 << "\n"
+    //           << "nuMass=0.0 -> " << Nobs1 << "\n"
+    //           << "noMass=1.0 -> " << Nobs2 << "\n"
     //           << std::endl;
 
 
