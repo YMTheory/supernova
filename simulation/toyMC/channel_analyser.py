@@ -56,6 +56,10 @@ class channel :
         #self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         print(f"Current model name = {self.model}")
+        
+        self.pdfNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+
         if self.model == "Garching":
             self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
             self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
@@ -71,6 +75,8 @@ class channel :
         self.data2Dfile = f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/{model}{modelNo}_{name}_unbinneddata_{MH}_{dist:.1f}kpc_thr{Ethr:.2f}MeV_Tmin-20msTmax{fitTmax}ms_2D.root"
         self.pdf2DNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
         self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
+        self.pdf2DNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
+        self.pdf2DIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -86,6 +92,11 @@ class channel :
         self.pdfNOy     = None
         self.pdfIOx     = None
         self.pdfIOy     = None
+        # for 1D absolute mass analysis
+        self.pdfNOx0    = None
+        self.pdfNOy0    = None
+        self.pdfIOx0    = None
+        self.pdfIOy0    = None
         # for 2D MO analysis
         self.pdf2DNOT     = None
         self.pdf2DNOE     = None
@@ -95,6 +106,15 @@ class channel :
         self.pdf2DIOE     = None
         self.pdf2DIO     = None
         self.f2dIO      = None
+        # for 2D absolute mass analysis
+        self.pdf2DNOT0    = None
+        self.pdf2DNOE0    = None
+        self.pdf2DNO0    = None
+        self.f2dNO0     = None
+        self.pdf2DIOT0    = None
+        self.pdf2DIOE0    = None
+        self.pdf2DIO0    = None
+        self.f2dIO0     = None
 
         self.glow       = None
         self.ghig       = None
@@ -123,11 +143,23 @@ class channel :
     def setIOPdfFilePath(self, pdffile) -> None:
         self.pdfIOfile = pdffile
 
+    def setNOPdfFile0Path(self, pdffile) -> None:
+        self.pdfNOfile0 = pdffile
+
+    def setIOPdfFile0Path(self, pdffile) -> None:
+        self.pdfIOfile0 = pdffile
+
     def setNOPdf2DFilePath(self, pdffile) -> None:
         self.pdf2DNOfile = pdffile
 
     def setIOPdf2DFilePath(self, pdffile) -> None:
         self.pdf2DIOfile = pdffile
+
+    def setNOPdf2DFile0Path(self, pdffile) -> None:
+        self.pdf2DNOfile0 = pdffile
+
+    def setIOPdf2DFile0Path(self, pdffile) -> None:
+        self.pdf2DIOfile0 = pdffile
 
     def setStartEvtId(self, idd):
         self.startEvt = idd
@@ -227,7 +259,13 @@ class channel :
                 nuTime = f["binned"]["TbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
                 nuEnergy = f["binned"]["EbinConts"].array(entry_start=self.startEvt, entry_stop=self.endEvt)
                 evtNum = self.endEvt - self.startEvt
-                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
+                Nsubarr = []
+                for subarr in nuTime:
+                    Nsubarr.append(len(subarr))
+                Nsubarr = np.array(Nsubarr)
+                Nave = np.mean(Nsubarr)
+                Nsigma = np.std(Nsubarr)
+                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt} in channel {self.name}, where the average signal number in one event is {Nave} and sigma is {Nsigma}.")
                 self.dataT_array = nuTime
                 self.dataE_array = nuEnergy
                 self.nentries = evtNum
@@ -272,6 +310,45 @@ class channel :
         self.pdfIOx = axis.centers()
         self.pdfIOy = tmp_h1.values()
         
+
+    def _load_pdf0(self) -> None:
+        """
+        Load TH1 PDFs from root files for both NO and IO cases.
+        """
+        try:
+            print(self.pdfNOfile0)
+            f = up.open(self.pdfNOfile0)
+            tmp_h1 = f["h1"] 
+        except FileNotFoundError:
+            print(f"The pdf file {self.pdfNOfile0} dose not exist! :(")
+            sys.exit(-1)
+            
+        # implement a new ROOT TH1D as pdfs
+        axis = tmp_h1.axis()    
+        #self.pdfNO = ROOT.TH1D(f"{self.name}pdfNO", "NO time pdf", len(axis.centers()), axis.low, axis.high)
+        #for j, cont in enumerate(tmp_h1.values()):
+        #    self.pdfNO.SetBinContent(j+1, cont)
+        self.pdfNOx0 = axis.centers()
+        self.pdfNOy0 = tmp_h1.values()
+        
+        try:
+            print(self.pdfIOfile0)
+            f = up.open(self.pdfIOfile0)
+            tmp_h1 = f["h1"] 
+        except FileNotFoundError:
+            print(f"The pdf file {self.pdfIOfile0} dose not exist! :(")
+            sys.exit(-1)
+            
+        # implement a new ROOT TH1D as pdfs
+        axis = tmp_h1.axis()    
+        #self.pdfIO = ROOT.TH1D(f"{self.name}pdfIO", "IO time pdf", len(axis.centers()), axis.low, axis.high)
+        #for j, cont in enumerate(tmp_h1.values()):
+        #    self.pdfIO.SetBinContent(j+1, cont)
+        self.pdfIOx0 = axis.centers()
+        self.pdfIOy0 = tmp_h1.values()
+        
+
+
     def _load_pdf2D(self) -> None:
         try:
             print(self.pdf2DNOfile)
@@ -301,6 +378,38 @@ class channel :
         self.pdf2DIO  = tmp_h1.values()
         self.f2dIO = interpolate.interp2d(self.pdf2DIOT, self.pdf2DIOE, self.pdf2DIO.T, kind="linear")
         
+    
+    def _load_pdf2D0(self) -> None:
+        try:
+            print(self.pdf2DNOfile0)
+            f = up.open(self.pdf2DNOfile0)
+            tmp_h1 = f["h1"]
+        except FileNotFoundError:
+            print(f"THe pdf file {self.pdf2DNOfile} does not exist! :(")
+            sys.exit(-1)
+        xaxis = tmp_h1.axis("x")    
+        yaxis = tmp_h1.axis("y")
+        self.pdf2DNOT0 = xaxis.centers()
+        self.pdf2DNOE0 = yaxis.centers()
+        self.pdf2DNO0  = tmp_h1.values()
+        self.f2dNO0 = interpolate.interp2d(self.pdf2DNOT0, self.pdf2DNOE0, self.pdf2DNO0.T, kind="linear")
+             
+        try:
+            print(self.pdf2DIOfile0)
+            f = up.open(self.pdf2DIOfile0)
+            tmp_h1 = f["h1"]
+        except FileNotFoundError:
+            print(f"THe pdf file {self.pdf2DIOfile} does not exist! :(")
+            sys.exit(-1)
+        xaxis = tmp_h1.axis("x")    
+        yaxis = tmp_h1.axis("y")
+        self.pdf2DIOT0 = xaxis.centers()
+        self.pdf2DIOE0 = yaxis.centers()
+        self.pdf2DIO0  = tmp_h1.values()
+        self.f2dIO0 = interpolate.interp2d(self.pdf2DIOT0, self.pdf2DIOE0, self.pdf2DIO0.T, kind="linear")
+
+
+
         
     def get_one_event(self, event_id:int):
         """
@@ -321,6 +430,12 @@ class channel :
         event_id = event_id - self.startEvt
         return self.dataT_array[event_id], self.dataE_array[event_id]
     
+    def _pdfNO_func0(self, t):
+        return np.interp(t, self.pdfNOx0, self.pdfNOy0) 
+    
+    def _pdfIO_func0(self, t):
+        return np.interp(t, self.pdfIOx0, self.pdfIOy0)
+
     
     def _pdfNO_func(self, t):
         return np.interp(t, self.pdfNOx, self.pdfNOy) 
@@ -333,6 +448,16 @@ class channel :
 
     def _pdf2DIO_func(self, t, E):
         return self.f2dIO(t, E) 
+
+    def _pdf2DNO_func0(self, t, E):
+        return self.f2dNO0(t, E)
+
+    def _pdf2DIO_func0(self, t, E):
+        return self.f2dIO0(t, E) 
+
+    def getNsigCurrentEvent(self, evtid:int) -> int:
+        evtid = evtid - self.startEvt
+        return len(self.dataT_array[evtid])
 
     
     def calc_NLL_NO(self, data, dT) -> float:
@@ -452,7 +577,7 @@ class channel :
         return nll
 
 
-    def calc_Asimov_NLL_NO(self, dT) -> float:
+    def calc_Asimov_NLL_NO(self, dT, ty) -> float:
         nll = 0
 
         stepT = self.Tbinwidth
@@ -460,9 +585,15 @@ class channel :
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
             if self.MH == "NO":
-                n = self._pdfNO_func(t_data) * stepT
+                if ty == "MO":
+                    n = self._pdfNO_func(t_data) * stepT
+                elif ty == "Mass":
+                    n = self._pdfNO_func0(t_data) * stepT
             else:
-                n = self._pdfIO_func(t_data) * stepT
+                if ty == "MO":
+                    n = self._pdfIO_func(t_data) * stepT
+                elif ty == "Mass":
+                    n = self._pdfIO_func0(t_data) * stepT
 
             t_pdf = t_data + dT
             s = self._pdfNO_func(t_pdf) * stepT
@@ -480,7 +611,7 @@ class channel :
 
         return nll
 
-    def calc_Asimov_NLL_NO2D(self, dT) -> float:
+    def calc_Asimov_NLL_NO2D(self, dT, ty) -> float:
         nll = 0
         stepT = self.Tbinwidth
         stepE = self.Ebinwidth
@@ -492,9 +623,16 @@ class channel :
                 E_data = stepE * (iE + 0.5)
 
                 if self.MH == "NO":
-                    n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                    if ty == "MO":
+                        n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                    elif ty == "Mass":
+                        n = self._pdf2DNO_func0(t_data, E_data) * stepT * stepE
                 else:
-                    n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+                    if ty == "MO":
+                        n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+                    elif ty == "Mass":
+                        n = self._pdf2DIO_func0(t_data, E_data) * stepT * stepE
+
 
                 t_pdf = t_data + dT
                 s = self._pdf2DNO_func(t_pdf, E_data) * stepT * stepE
@@ -513,7 +651,7 @@ class channel :
         return nll
             
 
-    def calc_Asimov_NLL_IO(self, dT) -> float:
+    def calc_Asimov_NLL_IO(self, dT, ty) -> float:
         nll = 0
 
         stepT = self.Tbinwidth
@@ -521,9 +659,15 @@ class channel :
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * ibin
             if self.MH == "NO":
-                n = self._pdfNO_func(t_data) * stepT
+                if ty == "MO":
+                    n = self._pdfNO_func(t_data) * stepT
+                elif ty == "Mass":
+                    n = self._pdfNO_func0(t_data) * stepT
             else:
-                n = self._pdfIO_func(t_data) * stepT
+                if ty == "MO":
+                    n = self._pdfIO_func(t_data) * stepT
+                elif ty == "Mass":
+                    n = self._pdfIO_func0(t_data) * stepT
 
             t_pdf = t_data + dT
             s = self._pdfIO_func(t_pdf) * stepT
@@ -542,11 +686,11 @@ class channel :
         return nll
 
 
-    def calc_Asimov_NLL_IO2D(self, dT) -> float:
+    def calc_Asimov_NLL_IO2D(self, dT, ty) -> float:
         nll = 0
         stepT = self.Tbinwidth
         stepE = self.Ebinwidth
-        Tbinlow, Tbinhig = int(self.fitTmax / stepT), int(self.fitTmin / stepT)
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
         for it in tqdm(range(Tbinlow, Tbinhig, 1)):
             for iE in range(Ebinlow, Ebinhig, 1):
@@ -554,9 +698,15 @@ class channel :
                 E_data = stepE * (iE + 0.5)
 
                 if self.MH == "NO":
-                    n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                    if ty == "MO":
+                        n = self._pdf2DNO_func(t_data, E_data) * stepT * stepE
+                    elif ty == "Mass":
+                        n = self._pdf2DNO_func0(t_data, E_data) * stepT * stepE
                 else:
-                    n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+                    if ty == "MO":
+                        n = self._pdf2DIO_func(t_data, E_data) * stepT * stepE
+                    elif ty == "Mass":
+                        n = self._pdf2DIO_func0(t_data, E_data) * stepT * stepE
 
                 t_pdf = t_data + dT
                 s = self._pdf2DIO_func(t_pdf, E_data) * stepT * stepE
