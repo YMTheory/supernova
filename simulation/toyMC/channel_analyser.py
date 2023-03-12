@@ -55,10 +55,9 @@ class channel :
         #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_NO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
         #self.pdfIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs/1D/{model}{modelNo}_PDF_IO_{dist}kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        print(f"Current model name = {self.model}")
         
-        self.pdfNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
-        self.pdfIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
+        self.pdfNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF_v2.root"
+        self.pdfIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF_v2.root"
 
         if self.model == "Garching":
             self.pdfNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{name}_{Ethr:.2f}MeV_newshortPDF.root"
@@ -278,6 +277,7 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
+        print(f"\n ========= Load {self.name} 1D PDF ========= \n")
         try:
             print(self.pdfNOfile)
             f = up.open(self.pdfNOfile)
@@ -315,6 +315,7 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
+        print(f"\n ========= Load {self.name} 1D PDF0 ========= \n")
         try:
             print(self.pdfNOfile0)
             f = up.open(self.pdfNOfile0)
@@ -350,6 +351,7 @@ class channel :
 
 
     def _load_pdf2D(self) -> None:
+        print(f"\n ========= Load {self.name} 2D PDF ========= \n")
         try:
             print(self.pdf2DNOfile)
             f = up.open(self.pdf2DNOfile)
@@ -380,6 +382,7 @@ class channel :
         
     
     def _load_pdf2D0(self) -> None:
+        print(f"\n ========= Load {self.name} 2D PDF0 ========= \n")
         try:
             print(self.pdf2DNOfile0)
             f = up.open(self.pdf2DNOfile0)
@@ -457,7 +460,7 @@ class channel :
 
     def getNsigCurrentEvent(self, evtid:int) -> int:
         evtid = evtid - self.startEvt
-        return len(self.dataT_array[evtid])
+        return len(self.data_array[evtid])
 
     
     def calc_NLL_NO(self, data, dT) -> float:
@@ -581,17 +584,21 @@ class channel :
         nll = 0
 
         stepT = self.Tbinwidth
-        binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        binlow, binhig = int(self.fitTmin / stepT)-1, int(self.fitTmax / stepT)+1
+        print(f"Asimov fit range -> from {self.fitTmin} [{binlow}] to {self.fitTmax} [{binhig}]")
+        Ntot = 0
         for ibin in range(binlow, binhig, 1):
-            t_data = stepT * ibin
+            t_data = stepT * (ibin + 0.5)
             if self.MH == "NO":
                 if ty == "MO":
                     n = self._pdfNO_func(t_data) * stepT
+                    Ntot += n
                 elif ty == "Mass":
                     n = self._pdfNO_func0(t_data) * stepT
             else:
                 if ty == "MO":
                     n = self._pdfIO_func(t_data) * stepT
+                    Ntot += n
                 elif ty == "Mass":
                     n = self._pdfIO_func0(t_data) * stepT
 
@@ -602,13 +609,14 @@ class channel :
             s = s * self.scale
 
             if s != 0 and n!=0:
-                #tmp_nll = s - n + n * np.log(n/s)
-                tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                tmp_nll = s - n + n * np.log(n/s)
+                #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                 nll += tmp_nll
             if s != 0 and n == 0:
                 tmp_nll = s
                 nll += tmp_nll
 
+        print(f"Total expected number {Ntot} from asimov test of channel {self.name}.")
         return nll
 
     def calc_Asimov_NLL_NO2D(self, dT, ty) -> float:
@@ -648,7 +656,7 @@ class channel :
                     tmp_nll = s
                     nll += tmp_nll
 
-        return nll
+        return -nll
             
 
     def calc_Asimov_NLL_IO(self, dT, ty) -> float:
@@ -676,8 +684,8 @@ class channel :
             s = s * self.scale
 
             if s != 0 and n!=0:
-                #tmp_nll = s - n + n * np.log(n/s)
-                tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                tmp_nll = s - n + n * np.log(n/s)
+                #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                 nll += tmp_nll
             if s != 0 and n == 0:
                 tmp_nll = s
@@ -722,7 +730,7 @@ class channel :
                     tmp_nll = s
                     nll += tmp_nll
 
-        return nll
+        return -nll
             
 
 

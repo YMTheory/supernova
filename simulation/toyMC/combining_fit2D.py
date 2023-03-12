@@ -3,6 +3,8 @@ import pandas as pd
 import argparse
 from tqdm import tqdm
 import ROOT
+import warnings
+warnings.filterwarnings("ignore")
 
 from channel_analyser import channel
 
@@ -17,7 +19,8 @@ def scanning1D(dT_arr, channels, ievt, MO):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            dataT = cha.get_one_event1D(ievt)
+            #dataT = cha.get_one_event1D(ievt)
+            dataT = cha.get_one_event(ievt)
             if MO == "NO":
                 val += cha.calc_NLL_NO(dataT, dT)
             else:
@@ -163,6 +166,26 @@ if __name__ == "__main__" :
     if not useMass :
         nuMass = 0.0
 
+    if not useMass:
+        fitMode = "mass ordering"
+    else:
+        fitMode = "absolute mass"
+
+    ##### Information Output for Check #####
+    print("\n========== Configuration of Fitter ==========\n")
+    print(f"=== This is {fitDim}-dimensional fitting for {fitMode} ===\n")
+    print(f"=== Supernova model: Garching 82703 \n")
+    print(f"=== Mass Ordering of dataset: {MO} \n")
+    if useMass:
+        print(f"=== Fitting neutrino mass: {nuMass:.1f} eV \n")
+    if asimov:
+        print(f"=== This is a Asimov dataset fit \n")
+    print(f"=== Channel: eES={eES}, IBD={IBD}, pES={pES}\n")
+    print("\n=============================================\n")
+    ########################################
+
+
+
     
     channels = {}
     if pES:
@@ -178,43 +201,42 @@ if __name__ == "__main__" :
         cha.setStartEvtId(startevt)
         cha.setEndEvtId(endevt)
 
-        if useMass:
-            if fitDim == 1:
-                cha.setNOPdfFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0_Tobs1D.root")
-                cha.setIOPdfFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0_Tobs1D.root")
-            elif fitDim == 2:
-                cha.setNOPdf2DFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_v2.root")
-                cha.setIOPdf2DFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_v2.root")
-
-
-        # Set Pdf Files: no mass considered
-        if not useMass:
-            cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{Ethr:.2f}MeV_newshortPDF_v2.root")
-            cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{Ethr:.2f}MeV_newshortPDF_v2.root")
-        else: 
-            # consider neutrino mass
+        if useMass: # absolute mass fitting
+            cha.setNOPdfFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0_Tobs1D.root")  # -> only eES and IBD avaiable now
+            cha.setIOPdfFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0_Tobs1D.root")
+            cha._load_pdf0()
             cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass{nuMass:.1f}_Tobs1D.root")
             cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass{nuMass:.1f}_Tobs1D.root")
-        
-        cha.setNOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
-        cha.setIOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+            cha._load_pdf()
+            if fitDim == 2:
+                cha.setNOPdf2DFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_v2.root")
+                cha.setIOPdf2DFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_v2.root")
+                cha._load_pdf2D0()
+                cha.setNOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+                cha.setIOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+                cha._load_data2D()
+            
+        else:   # MO fitting
+            cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+            cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+            cha._load_pdf()
+            if fitDim == 2:
+                cha.setNOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+                cha.setIOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+                cha._load_pdf2D()
 
-        # Set Data Files
-        cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
-        #cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_new2D.root")
-        cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_Tobs2D.root")
+            # Set Data Files
+            #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
+            #cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_new2D.root")
+            #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
+            cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D.root")
+            cha._load_data_ak()
+            cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_Tobs2D.root")
+            #cha._load_data2D()    # could get 1D or 2D dataset from the fitting requirement.
+            #elif fitDim == 1:
+            #    cha._load_data_ak()
 
-        cha._load_pdf0()
-        cha._load_pdf()
-        cha._load_data2D()
-        if fitDim == 2:
-            cha._load_pdf2D0()
-            cha._load_pdf2D()
-        #elif fitDim == 1:
-        #    cha._load_data_ak()
-
-
-        FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
+            FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
     if asimov:
         # asimov dataset test
@@ -225,7 +247,7 @@ if __name__ == "__main__" :
                 nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
             elif fitDim == 1:
                 nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO")
-            print(nllNO_coarse)
+                print(nllNO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllNO_coarse)
             dT_arr_fine = generate_fine_dTarr(Tbest)
             if fitDim == 2:
@@ -233,7 +255,7 @@ if __name__ == "__main__" :
             elif fitDim == 1:
                 nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO")     # fine scanning
             TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dT_arr_fine, nllNO_fine, param=True)
-            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO}ms, {locMinFitNO}")
+            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO} s, {locMinFitNO}")
 
             if fitDim == 2:
                 nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
@@ -247,7 +269,7 @@ if __name__ == "__main__" :
             elif fitDim == 1:
                 nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO")     # fine scanning
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
-            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO}ms, {locMinFitIO}")
+            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO} s, {locMinFitIO}")
 
             if MO == "NO":
                 bestNLL = locMinFitNO
@@ -271,7 +293,7 @@ if __name__ == "__main__" :
             elif fitDim == 1:
                 nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), MO, "Mass")     # fine scanning
             TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dT_arr_fine, nllNO_fine, param=True)
-            print(f"Absolute mass fit {MO} Asimov data -> {TbestFitNO}ms, {locMinFitNO}")
+            print(f"Absolute mass fit {MO} Asimov data -> {TbestFitNO} s, {locMinFitNO}")
             outfn = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/Garching82703_10kpc_{MO}_eESonly_asimovFit{fitDim}D_nuMass{nuMass:.1f}eV.txt"
             with open(outfn, "w") as fo:
                 fo.write(f"{TbestFitNO} {locMinFitNO}")
@@ -355,4 +377,4 @@ if __name__ == "__main__" :
                 "NIBD"    : NIBD,
             })
 
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D.csv")
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_data1D_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D.csv")
