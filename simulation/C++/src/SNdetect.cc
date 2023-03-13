@@ -586,8 +586,8 @@ double SNdetect::getTSpectrumAtTime(double time, double T, int type, int MH){
         if(fchannel == NuE){
             double me = 0.51;//MeV
             Evmin = 0.5*(T+TMath::Sqrt(T*T+2*T*me));
-            Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon();
-            //Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon() + 8*peffLS->getNumberOfOxygen() ;
+            //Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon();
+            Npar = peffLS->getNumberOfProton()+6*peffLS->getNumberOfCarbon() + 8*peffLS->getNumberOfOxygen() ;
         }
         if(fchannel == CEvNS) {
             double mC12 = 11179.01;

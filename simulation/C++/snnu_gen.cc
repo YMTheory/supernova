@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
         //// 1D histogram
         TString modelName;
         modelName = Form("Garchings%d", imod);
-        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
+        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_THEIA100.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
         std::cout << "output filename : " << fn << std::endl;
         TFile* f = new TFile(fn, "recreate");
         TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_t, tmin, tmax);
