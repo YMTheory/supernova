@@ -182,10 +182,10 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = false;
+    bool flag1D     = true;
     bool flag2D     = false;
     bool flag2D_new = false;
-    bool flag2D_root = true;
+    bool flag2D_root = false;
 
     std::cout << "\n"
               << "========= Output info ==========" << "\n"
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
         //// 1D histogram
         TString modelName;
         modelName = Form("Garchings%d", imod);
-        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_testnew.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
+        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
         std::cout << "output filename : " << fn << std::endl;
         TFile* f = new TFile(fn, "recreate");
         TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_t, tmin, tmax);
@@ -209,11 +209,11 @@ int main(int argc, char* argv[]) {
             std::cout << "Running bin " << ipt << " time " << t << std::endl;
             double flu = 0;
             for(int ii=0; ii<6; ii++) {
-                flu += pdet->getEventAboveEthrObsAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
-                //flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
-                std::cout << "In main: " << t << " " << ii << " " << flu << std::endl;
+                //flu += pdet->getEventAboveEthrObsAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
+                flu += pdet->getEventAboveEthrVisAtTime(t, Ethr, ii, MH) * factor;  // for 1 ms interval
+                //std::cout << "In main: " << t << " " << ii << " " << flu << std::endl;
             }
-            std::cout << "Filling histogram: " << ipt+1 << " " << flu * scale << std::endl;
+            //std::cout << "Filling histogram: " << ipt+1 << " " << flu * scale << std::endl;
             h1->SetBinContent(ipt+1, flu*scale);
         }
 
