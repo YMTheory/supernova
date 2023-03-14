@@ -17,6 +17,7 @@ from scipy.special import gamma
 #import ROOT
 import time
 from tqdm import tqdm
+import logging
 
 class channel :
     """
@@ -31,6 +32,7 @@ class channel :
         self.Ethr   = Ethr
         self.dist   = dist
         self.scale  = 10. * 10. / dist / dist
+        self.bkgscale = 1.
         self.nuMass = nuMass
 
         self.fitTmin = fitTmin
@@ -126,6 +128,13 @@ class channel :
 
         self.glow = None
         self.ghig = None
+
+
+    def setBkgScale(self, s):
+        self.bkgscale = s
+
+    def setScale(self, s):
+        self.scale = s
 
     def setC14rate(self, rate):
         self.c14rate = rate
@@ -596,20 +605,17 @@ class channel :
             t_data = stepT * (ibin + 0.5)
             if self.MH == "NO":
                 if ty == "MO":
-                    n = self._pdfNO_func(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfNO_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
                 elif ty == "Mass":
-                    n = self._pdfNO_func0(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfNO_func0(t_data) * stepT * self.scale  + self.c14rate * stepT * self.bkgscale
             else:
                 if ty == "MO":
-                    n = self._pdfIO_func(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfIO_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
                 elif ty == "Mass":
-                    n = self._pdfIO_func0(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfIO_func0(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
             t_pdf = t_data + dT
-            s = self._pdfNO_func(t_pdf) * stepT + self.c14rate * stepT
+            s = self._pdfNO_func(t_pdf) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
             
-            n = n * self.scale
-            s = s * self.scale
-
             if s != 0 and n!=0:
                 tmp_nll = s - n + n * np.log(n/s)
                 #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
@@ -671,20 +677,17 @@ class channel :
             t_data = stepT * (ibin + 0.5)
             if self.MH == "NO":
                 if ty == "MO":
-                    n = self._pdfNO_func(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfNO_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
                 elif ty == "Mass":
-                    n = self._pdfNO_func0(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfNO_func0(t_data) * stepT * self.scale  + self.c14rate * stepT * self.bkgscale
             else:
                 if ty == "MO":
-                    n = self._pdfIO_func(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfIO_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
                 elif ty == "Mass":
-                    n = self._pdfIO_func0(t_data) * stepT + self.c14rate * stepT
+                    n = self._pdfIO_func0(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
             t_pdf = t_data + dT
-            s = self._pdfIO_func(t_pdf) * stepT + self.c14rate * stepT
+            s = self._pdfIO_func(t_pdf) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
             
-            n = n * self.scale
-            s = s * self.scale
-
             if s != 0 and n!=0:
                 tmp_nll = s - n + n * np.log(n/s)
                 #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))

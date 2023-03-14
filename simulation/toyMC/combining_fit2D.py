@@ -5,6 +5,7 @@ from tqdm import tqdm
 import ROOT
 import warnings
 warnings.filterwarnings("ignore")
+import logging
 
 from channel_analyser import channel
 
@@ -119,6 +120,8 @@ def load_C14():
 
 if __name__ == "__main__" :
 
+    logging.basicConfig(filename='example.log',level=logging.DEBUG)
+
     MO      = "NO"
     model   = "Garching"
     modelNo = 82703
@@ -127,7 +130,8 @@ if __name__ == "__main__" :
     fitTmax = 0.02
     nuMass  = 0.0
     fileNo  = 0
-    dist    = 10
+    dist    = 10.
+    target  = 1.
     exp     = "JUNO"
     startevt= 0
     endevt  = 100
@@ -166,6 +170,8 @@ if __name__ == "__main__" :
     parser.add_argument('--no-IBD',     dest='IBD',     action="store_false",   help="disable IBD")
     parser.add_argument('--pES',        dest='pES',     action="store_true",    help="enable pES")
     parser.add_argument('--no-pES',     dest='pES',     action="store_false",   help="disable pES")
+    parser.add_argument('--dist',       type=float,     default=10.,            help="distance of CCSNe.")
+    parser.add_argument('--target',     type=float,     default=1.,             help="normalized target mass, JUNO 20kton scaled as 1.")
     args = parser.parse_args()
 
     MO          = args.MO
@@ -185,6 +191,11 @@ if __name__ == "__main__" :
     fitTmax     = args.fitTmax
     C14         = args.C14
     C14level    = args.C14level
+    dist        = args.dist
+    target      = args.target
+
+    scale = target * 10.0 * 10.0 / (dist * dist)  ## due to the PDFs are generated based on 10 kpc CCSNe and 20kton LS...
+    bkg = target
 
     if not useMass :
         nuMass = 0.0
@@ -195,17 +206,21 @@ if __name__ == "__main__" :
         fitMode = "absolute mass"
 
     ##### Information Output for Check #####
-    print("\n========== Configuration of Fitter ==========\n")
-    print(f"=== This is {fitDim}-dimensional fitting for {fitMode} ===\n")
-    print(f"=== Supernova model: Garching 82703 \n")
-    print(f"=== Mass Ordering of dataset: {MO} \n")
+    logging.debug("\n========== Configuration of Fitter ==========\n")
+    logging.debug(f"=== This is {fitDim}-dimensional fitting for {fitMode} ===\n")
+    logging.debug(f"=== Supernova model: Garching 82703 \n")
+    logging.debug(f"=== Supernova distance: {dist} kpc\n")
+    logging.debug(f"=== Mass Ordering of dataset: {MO} \n")
     if useMass:
-        print(f"=== Fitting neutrino mass: {nuMass:.1f} eV \n")
+        logging.debug(f"=== Fitting neutrino mass: {nuMass:.1f} eV \n")
     if asimov:
-        print(f"=== This is a Asimov dataset fit \n")
-    print(f"=== Channel: eES={eES}, IBD={IBD}, pES={pES}\n")
-    print("\n=============================================\n")
+        logging.debug(f"=== This is a Asimov dataset fit \n")
+    logging.debug(f"=== Channel: eES={eES}, IBD={IBD}, pES={pES}\n")
+    logging.debug(f"=== Detector target mass: {target * 20} kton\n")
+    logging.debug("\n=============================================\n")
     ########################################
+
+    print(f"***** Current statistical scale factor is {scale}.\n")
 
     glow, ghig = load_C14()
     c14rate = 0
@@ -232,6 +247,9 @@ if __name__ == "__main__" :
         cha.setNevtPerFile(1e5)
         cha.setStartEvtId(startevt)
         cha.setEndEvtId(endevt)
+
+        cha.setScale(scale)
+        cha.setBkgScale(bkgscale)
 
         if useMass: # absolute mass fitting
             cha.setNOPdfFile0Path(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0_Tobs1D.root")  # -> only eES and IBD avaiable now
@@ -277,14 +295,14 @@ if __name__ == "__main__" :
     
     if asimov:
         # asimov dataset test
-        print("\n ========= FITTING ASIMOV DATASET ========= \n")
+        logging.debug("\n ========= FITTING ASIMOV DATASET ========= \n")
         if not useMass:
             dT_arr = np.arange(-0.01, 0.011, 0.001)  # corase scanning, 1 ms scanning step
             if fitDim == 2:
                 nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
             elif fitDim == 1:
                 nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO", C14, "low")
-                print(nllNO_coarse)
+                #print(nllNO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllNO_coarse)
             dT_arr_fine = generate_fine_dTarr(Tbest)
             if fitDim == 2:
@@ -292,13 +310,13 @@ if __name__ == "__main__" :
             elif fitDim == 1:
                 nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO", C14, "low")     # fine scanning
             TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dT_arr_fine, nllNO_fine, param=True)
-            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO*1000} ms, {locMinFitNO}")
+            #print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO*1000} ms, {locMinFitNO}")
 
             if fitDim == 2:
                 nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
             elif fitDim == 1:
                 nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO", C14, "low")
-            print(nllIO_coarse)
+            #print(nllIO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllIO_coarse)
             dT_arr_fine = generate_fine_dTarr(Tbest)
             if fitDim == 2:
@@ -306,14 +324,16 @@ if __name__ == "__main__" :
             elif fitDim == 1:
                 nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO", C14, "low")     # fine scanning
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
-            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
+            #print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
+
+            print(f"Output {Ethr} {scale} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO} {locMinFitIO}")
 
             if MO == "NO":
                 bestNLL = locMinFitNO
-                print(f"Asimov dataset sensitivity of NO data = {2*(locMinFitIO - bestNLL)}")
+                #print(f"Asimov dataset sensitivity of NO data = {2*(locMinFitIO - bestNLL)}")
             else:
                 bestNLL = locMinFitIO
-                print(f"Asimov dataset sensitivity of IO data = {2*(locMinFitNO - bestNLL)}")
+                #print(f"Asimov dataset sensitivity of IO data = {2*(locMinFitNO - bestNLL)}")
 
         else:
             print(f"Fit {MO} Asimov dataset with different neutrino mass pdfs inputs.")
@@ -414,4 +434,4 @@ if __name__ == "__main__" :
                 "NIBD"    : NIBD,
             })
 
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_data1D_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_THEIA100.csv")
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_data1D_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv")
