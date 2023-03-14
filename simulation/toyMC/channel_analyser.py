@@ -124,6 +124,12 @@ class channel :
         if self.name == "pES":
             self.Ebinwidth = 0.05
 
+        self.glow = None
+        self.ghig = None
+
+    def setC14rate(self, rate):
+        self.c14rate = rate
+
     def setNevtPerFile(self, N) -> None:
         self.NevtPerFile = N
 
@@ -474,7 +480,8 @@ class channel :
             #tmp_nll = self.pdfNO.Interpolate(i + dT)
             tmp_nll = np.interp(i+dT, self.pdfNOx, self.pdfNOy) * self.scale
             if tmp_nll <= 0:
-                tmp_nll = 1e-10
+                continue
+                #tmp_nll = 1e-10
             nll += np.log(tmp_nll)
         
         #bin1 = self.pdfNO.GetXaxis().FindBin(tmin)
@@ -498,7 +505,8 @@ class channel :
             #tmp_nll = self.pdfIO.Interpolate(i + dT)
             tmp_nll = np.interp(i+dT, self.pdfIOx, self.pdfIOy) * self.scale
             if tmp_nll <= 0:
-                tmp_nll = 1e-10
+                #tmp_nll = 1e-10
+                continue
             nll += np.log(tmp_nll)
         
         #bin1 = self.pdfIO.GetXaxis().FindBin(tmin)
@@ -579,32 +587,26 @@ class channel :
         nll = tmp_nll
         return nll
 
-
     def calc_Asimov_NLL_NO(self, dT, ty) -> float:
         nll = 0
 
         stepT = self.Tbinwidth
-        binlow, binhig = int(self.fitTmin / stepT)-1, int(self.fitTmax / stepT)+1
-        print(f"Asimov fit range -> from {self.fitTmin} [{binlow}] to {self.fitTmax} [{binhig}]")
-        Ntot = 0
+        binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * (ibin + 0.5)
             if self.MH == "NO":
                 if ty == "MO":
-                    n = self._pdfNO_func(t_data) * stepT
-                    Ntot += n
+                    n = self._pdfNO_func(t_data) * stepT + self.c14rate * stepT
                 elif ty == "Mass":
-                    n = self._pdfNO_func0(t_data) * stepT
+                    n = self._pdfNO_func0(t_data) * stepT + self.c14rate * stepT
             else:
                 if ty == "MO":
-                    n = self._pdfIO_func(t_data) * stepT
-                    Ntot += n
+                    n = self._pdfIO_func(t_data) * stepT + self.c14rate * stepT
                 elif ty == "Mass":
-                    n = self._pdfIO_func0(t_data) * stepT
-
+                    n = self._pdfIO_func0(t_data) * stepT + self.c14rate * stepT
             t_pdf = t_data + dT
-            s = self._pdfNO_func(t_pdf) * stepT
-
+            s = self._pdfNO_func(t_pdf) * stepT + self.c14rate * stepT
+            
             n = n * self.scale
             s = s * self.scale
 
@@ -616,8 +618,9 @@ class channel :
                 tmp_nll = s
                 nll += tmp_nll
 
-        print(f"Total expected number {Ntot} from asimov test of channel {self.name}.")
         return nll
+
+
 
     def calc_Asimov_NLL_NO2D(self, dT, ty) -> float:
         nll = 0
@@ -663,23 +666,22 @@ class channel :
         nll = 0
 
         stepT = self.Tbinwidth
-        binlow, binhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
         for ibin in range(binlow, binhig, 1):
-            t_data = stepT * ibin
+            t_data = stepT * (ibin + 0.5)
             if self.MH == "NO":
                 if ty == "MO":
-                    n = self._pdfNO_func(t_data) * stepT
+                    n = self._pdfNO_func(t_data) * stepT + self.c14rate * stepT
                 elif ty == "Mass":
-                    n = self._pdfNO_func0(t_data) * stepT
+                    n = self._pdfNO_func0(t_data) * stepT + self.c14rate * stepT
             else:
                 if ty == "MO":
-                    n = self._pdfIO_func(t_data) * stepT
+                    n = self._pdfIO_func(t_data) * stepT + self.c14rate * stepT
                 elif ty == "Mass":
-                    n = self._pdfIO_func0(t_data) * stepT
-
+                    n = self._pdfIO_func0(t_data) * stepT + self.c14rate * stepT
             t_pdf = t_data + dT
-            s = self._pdfIO_func(t_pdf) * stepT
-
+            s = self._pdfIO_func(t_pdf) * stepT + self.c14rate * stepT
+            
             n = n * self.scale
             s = s * self.scale
 

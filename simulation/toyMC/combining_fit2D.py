@@ -43,7 +43,7 @@ def scanning2D(dT_arr, channels, ievt, MO):
     return nll
 
 
-def scanning_asimov1D(dT_arr, channels, MO, ty):
+def scanning_asimov1D(dT_arr, channels, MO, ty, useC14, level):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
         val = 0
@@ -108,6 +108,15 @@ def parabola_fit(dT_arr, nll_arr, param=False):
             return Tbest, locMin, a, b, c
 
 
+def load_C14():
+    f = ROOT.TFile("/junofs/users/miaoyu/supernova/production/PDFs/backgrounds/C14/C14_rate.root", "read")
+    glow = f.Get("c14_low")
+    ghig = f.Get("c14_high")
+
+    return glow, ghig
+
+
+
 if __name__ == "__main__" :
 
     MO      = "NO"
@@ -129,26 +138,34 @@ if __name__ == "__main__" :
     IBD     = True
     pES     = True
     useMass = False
+    C14     = False
+    C14level="low"
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
-    parser.add_argument('--MO',         type=str,   default="NO", help="Mass ordering for the dataset.")
-    parser.add_argument("--start",      type=int,   default=0, help="Start event for fit.")
-    parser.add_argument("--end",        type=int,   default=0, help="End event for fit.")
-    parser.add_argument("--fileNo",     type=int,   default=0, help="File No.")
-    parser.add_argument("--doFit",      dest="fit", action="store_true", help="enable fitting.")
-    parser.add_argument("--no-doFit",   dest="fit", action="store_false", help="disable fitting.")
-    parser.add_argument("--useMass",      dest="useMass", action="store_true", help="enable mass effect.")
-    parser.add_argument("--no-useMass",   dest="useMass", action="store_false", help="disable mass effect.")
-    parser.add_argument("--Asimov",     dest="asimov", action="store_true", help="enable asimov dataset.")
-    parser.add_argument("--no-Asimov",  dest="asimov", action="store_false", help="disable asimov dataset.")
-    parser.add_argument("--fitDim",     type=int,  default=2, help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
-    parser.add_argument("--nuMass",     type=float,   default=0.0, help="Neutrino mass in fit PDFs.")
-    parser.add_argument('--eES', dest='eES', action="store_true", help="enable eES")
-    parser.add_argument('--no-eES', dest='eES', action="store_false", help="disable eES")
-    parser.add_argument('--IBD', dest='IBD', action="store_true", help="enable IBD")
-    parser.add_argument('--no-IBD', dest='IBD', action="store_false", help="disable IBD")
-    parser.add_argument('--pES', dest='pES', action="store_true", help="enable pES")
-    parser.add_argument('--no-pES', dest='pES', action="store_false", help="disable pES")
+    parser.add_argument('--MO',         type=str,       default="NO",           help="Mass ordering for the dataset.")
+    parser.add_argument("--start",      type=int,       default=0,              help="Start event for fit.")
+    parser.add_argument("--end",        type=int,       default=0,              help="End event for fit.")
+    parser.add_argument("--fileNo",     type=int,       default=0,              help="File No.")
+    parser.add_argument("--doFit",      dest="fit",     action="store_true",    help="enable fitting.")
+    parser.add_argument("--no-doFit",   dest="fit",     action="store_false",   help="disable fitting.")
+    parser.add_argument("--useMass",    dest="useMass", action="store_true",    help="enable mass effect.")
+    parser.add_argument("--no-useMass", dest="useMass", action="store_false",   help="disable mass effect.")
+    parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
+    parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
+    parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
+    parser.add_argument("--no-C14",     dest="C14",     action="store_false",   help="disable C14 background.")
+    parser.add_argument("--fitDim",     type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
+    parser.add_argument("--C14level",   type=str,       default="low",          help="C14 concentration level (low or high).")
+    parser.add_argument("--Ethr",       type=float,     default=0.1,            help="Detection threshold MeV. ")
+    parser.add_argument("--nuMass",     type=float,     default=0.0,            help="Neutrino mass in fit PDFs.")
+    parser.add_argument("--fitTmin",    type=float,     default=-0.02,          help="Minimum fit time [s].")
+    parser.add_argument("--fitTmax",    type=float,     default=0.02,           help="Maximum fit time [s].")
+    parser.add_argument('--eES',        dest='eES',     action="store_true",    help="enable eES")
+    parser.add_argument('--no-eES',     dest='eES',     action="store_false",   help="disable eES")
+    parser.add_argument('--IBD',        dest='IBD',     action="store_true",    help="enable IBD")
+    parser.add_argument('--no-IBD',     dest='IBD',     action="store_false",   help="disable IBD")
+    parser.add_argument('--pES',        dest='pES',     action="store_true",    help="enable pES")
+    parser.add_argument('--no-pES',     dest='pES',     action="store_false",   help="disable pES")
     args = parser.parse_args()
 
     MO          = args.MO
@@ -162,7 +179,13 @@ if __name__ == "__main__" :
     eES         = args.eES
     IBD         = args.IBD
     pES         = args.pES
+    Ethr        = args.Ethr
     useMass     = args.useMass
+    fitTmin     = args.fitTmin
+    fitTmax     = args.fitTmax
+    C14         = args.C14
+    C14level    = args.C14level
+
     if not useMass :
         nuMass = 0.0
 
@@ -184,16 +207,25 @@ if __name__ == "__main__" :
     print("\n=============================================\n")
     ########################################
 
+    glow, ghig = load_C14()
+    c14rate = 0
+    if C14:
+        if C14level == "low":
+            c14rate = glow.Eval(Ethr)
+        else:
+            c14rate = ghig.Eval(Ethr)
+        print(f"***** Carbon-14 rate with detection threshold {Ethr:.2f} MeV = {c14rate} /s.\n") 
 
-
-    
     channels = {}
     if pES:
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fitEmax=5, fileNo=fileNo, dist=dist, exp=exp)
+        channels["pES"].setC14rate(c14rate)
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+        channels["IBD"].setC14rate(0)
     if eES:
         channels["eES"] = channel("eES", MO, model, modelNo, 0.20, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
+        channels["eES"].setC14rate(0)
 
     for cha in channels.values():
 
@@ -219,6 +251,10 @@ if __name__ == "__main__" :
         else:   # MO fitting
             cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
             cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+            #cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_THEIA100.root")
+            #cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_THEIA100.root")
+            #cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_HyperK.root")
+            #cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_HyperK.root")
             cha._load_pdf()
             if fitDim == 2:
                 cha.setNOPdf2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
@@ -229,8 +265,9 @@ if __name__ == "__main__" :
             #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
             #cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_new2D.root")
             #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_binning_newv2.root")
-            cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D.root")
-            cha._load_data_ak()
+            #cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D.root")
+            cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D_THEIA100.root")
+            #cha._load_data_ak()
             cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_Tobs2D.root")
             #cha._load_data2D()    # could get 1D or 2D dataset from the fitting requirement.
             #elif fitDim == 1:
@@ -246,30 +283,30 @@ if __name__ == "__main__" :
             if fitDim == 2:
                 nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
             elif fitDim == 1:
-                nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO")
+                nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO", C14, "low")
                 print(nllNO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllNO_coarse)
             dT_arr_fine = generate_fine_dTarr(Tbest)
             if fitDim == 2:
                 nllNO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "NO", "MO")     # fine scanning
             elif fitDim == 1:
-                nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO")     # fine scanning
+                nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO", C14, "low")     # fine scanning
             TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dT_arr_fine, nllNO_fine, param=True)
-            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO} s, {locMinFitNO}")
+            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO*1000} ms, {locMinFitNO}")
 
             if fitDim == 2:
                 nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
             elif fitDim == 1:
-                nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO")
+                nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO", C14, "low")
             print(nllIO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllIO_coarse)
             dT_arr_fine = generate_fine_dTarr(Tbest)
             if fitDim == 2:
                 nllIO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "IO", "MO")     # fine scanning
             elif fitDim == 1:
-                nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO")     # fine scanning
+                nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO", C14, "low")     # fine scanning
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
-            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO} s, {locMinFitIO}")
+            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
 
             if MO == "NO":
                 bestNLL = locMinFitNO
@@ -377,4 +414,4 @@ if __name__ == "__main__" :
                 "NIBD"    : NIBD,
             })
 
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_data1D_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D.csv")
+            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_data1D_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_THEIA100.csv")
