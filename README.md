@@ -18,6 +18,15 @@ The production/nuFlux/snewpy_models.py can generate nuFlux data from SNEWPY webs
 
 Then the script ./wenlj/simulation/example/etSpec2dVis_nuMass can generate TH1D in ROOT files as the visible event spectra PDFs.
 
+#### New C++ generator:  
+path: /junofs/users/miaoyu/supernova/simulation/C++    
+
+Usage: generator for both 1D time PDF and 2D energy-time PDF.
+
+Notes: 
+- for Garching models, use 81123... so on to specify the model No;
+- for Burrows models, use 6500 + mass to specify the model No.
+
 ### 2. Python Code Tools
 path -> ./simulation
 scipy intergation dbquad (2D integration) for visible event time spectra calculation
