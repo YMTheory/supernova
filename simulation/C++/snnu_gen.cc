@@ -204,7 +204,10 @@ int main(int argc, char* argv[]) {
 
         double factor = 1;
         double tshift = 0;
-        if(imod > 6000 and imod < 7000) { factor = 1e50; }
+        if(imod > 6000 and imod < 7000) { 
+            factor = 1e50; 
+            tshift = 0.03;
+        }
         for (int ipt=0; ipt<nbin_t; ipt++) {
             double t = tmin + (0.5 + ipt) * step_t + tshift;
             std::cout << "Running bin " << ipt << " time " << t << std::endl;
