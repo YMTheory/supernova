@@ -680,6 +680,41 @@ class channel :
         return nll
 
 
+    def calc_Asimov_NLL_NO2D_withBkg(self, dT) -> float:
+        nll = 0
+        stepT = self.Tbinwidth
+        stepE = self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+
+                if self.MH == "NO":
+                    n = self._pdf2DNOwithBkg_func(t_data, E_data) * stepT * stepE
+                else:
+                    n = self._pdf2DIOwithBkg_func(t_data, E_data) * stepT * stepE
+
+
+                t_pdf = t_data + dT
+                s = self._pdf2DNOwithBkg_func(t_pdf, E_data) * stepT * stepE
+
+                n = n * self.scale
+                s = s * self.scale
+
+                if s != 0 and n!=0:
+                    #tmp_nll = s - n + n * np.log(n/s)
+                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+
+        return -nll
+            
+
+
 
     def calc_Asimov_NLL_NO2D(self, dT, ty) -> float:
         nll = 0
@@ -750,6 +785,41 @@ class channel :
                 nll += tmp_nll
 
         return nll
+
+
+    def calc_Asimov_NLL_IO2D_withBkg(self, dT) -> float:
+        nll = 0
+        stepT = self.Tbinwidth
+        stepE = self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+
+                if self.MH == "NO":
+                    n = self._pdf2DNOwithBkg_func(t_data, E_data) * stepT * stepE
+                else:
+                    n = self._pdf2DIOwithBkg_func(t_data, E_data) * stepT * stepE
+
+
+                t_pdf = t_data + dT
+                s = self._pdf2DIOwithBkg_func(t_pdf, E_data) * stepT * stepE
+
+                n = n * self.scale
+                s = s * self.scale
+
+                if s != 0 and n!=0:
+                    #tmp_nll = s - n + n * np.log(n/s)
+                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+
+        return -nll
+            
 
 
     def calc_Asimov_NLL_IO2D(self, dT, ty) -> float:
