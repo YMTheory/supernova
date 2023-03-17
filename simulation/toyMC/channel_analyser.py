@@ -518,7 +518,7 @@ class channel :
         return self.f2dNOwithBkg(t, E)
 
     def _pdf2DIOwithBkg_func(self, t, E):
-        return self.f2dIOwithBkg
+        return self.f2dIOwithBkg(t, E)
 
     def _pdf2DNO_func0(self, t, E):
         return self.f2dNO0(t, E)
@@ -704,14 +704,14 @@ class channel :
                 s = s * self.scale
 
                 if s != 0 and n!=0:
-                    #tmp_nll = s - n + n * np.log(n/s)
-                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                     nll += tmp_nll
                 if s != 0 and n == 0:
                     tmp_nll = s
                     nll += tmp_nll
 
-        return -nll
+        return nll
             
 
 
@@ -811,14 +811,14 @@ class channel :
                 s = s * self.scale
 
                 if s != 0 and n!=0:
-                    #tmp_nll = s - n + n * np.log(n/s)
-                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                     nll += tmp_nll
                 if s != 0 and n == 0:
                     tmp_nll = s
                     nll += tmp_nll
 
-        return -nll
+        return nll
             
 
 
