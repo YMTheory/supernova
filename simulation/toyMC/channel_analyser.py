@@ -78,8 +78,8 @@ class channel :
         self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
         self.pdf2DNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
         self.pdf2DIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
-        self.pdf2DwithBkgNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_v2_c14low.root"
-        self.pdf2DwithBkgIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_v2_c14low.root"
+        self.pdf2DwithBkgNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14low.root"
+        self.pdf2DwithBkgIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14low.root"
 
         ####### Datasets and PDFs
         self.data_array = None
