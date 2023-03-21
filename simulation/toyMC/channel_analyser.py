@@ -135,7 +135,7 @@ class channel :
         self.Tbinwidth   = 0.00001
         self.Ebinwidth  = 0.2
         if self.name == "pES":
-            self.Ebinwidth = 0.05
+            self.Ebinwidth = 0.5
 
         self.glow = None
         self.ghig = None
@@ -509,22 +509,22 @@ class channel :
         return np.interp(t, self.pdfIOx, self.pdfIOy)
 
     def _pdf2DNO_func(self, t, E):
-        return self.f2dNO(t, E)
+        return self.f2dNO(t, E)[0]
 
     def _pdf2DIO_func(self, t, E):
-        return self.f2dIO(t, E) 
+        return self.f2dIO(t, E)[0] 
 
     def _pdf2DNOwithBkg_func(self, t, E):
-        return self.f2dNOwithBkg(t, E)
+        return self.f2dNOwithBkg(t, E)[0]
 
     def _pdf2DIOwithBkg_func(self, t, E):
-        return self.f2dIOwithBkg(t, E)
+        return self.f2dIOwithBkg(t, E)[0]
 
     def _pdf2DNO_func0(self, t, E):
-        return self.f2dNO0(t, E)
+        return self.f2dNO0(t, E)[0]
 
     def _pdf2DIO_func0(self, t, E):
-        return self.f2dIO0(t, E) 
+        return self.f2dIO0(t, E)[0] 
 
     def getNsigCurrentEvent(self, evtid:int) -> int:
         evtid = evtid - self.startEvt
@@ -753,7 +753,7 @@ class channel :
                     tmp_nll = s
                     nll += tmp_nll
 
-        return -nll
+        return nll
             
 
     def calc_Asimov_NLL_IO(self, dT, ty) -> float:
@@ -858,12 +858,8 @@ class channel :
                     tmp_nll = s
                     nll += tmp_nll
 
-        return -nll
+        return nll
             
-
-
-
-
 
     def calc_NLL_NO_withbkg(self, data, dT, Tbkg) -> float:
         """

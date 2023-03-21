@@ -65,16 +65,24 @@ def scanning_asimov2D_withBkg(dT_arr, channels, MO, ty):
         for cha in channels:
             if MO == "NO":
                 if cha.name == "pES":
-                    val += cha.calc_Asimov_NLL_NO2D_withBkg(dT)
+                    tmpval = cha.calc_Asimov_NLL_NO2D_withBkg(dT)
+                    val += tmpval
+                    print("NO", cha.name, dT, tmpval)
                 else:
-                    val += cha.calc_Asimov_NLL_NO(dT, ty)
+                    tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
+                    print("NO", cha.name, dT, tmpval)
+                    val += tmpval
             else:
                 if cha.name == "pES":
-                    val += cha.calc_Asimov_NLL_IO2D_withBkg(dT)
+                    tmpval = cha.calc_Asimov_NLL_IO2D_withBkg(dT)
+                    print("IO", cha.name, dT, tmpval)
+                    val += tmpval
                 else:
-                    val += cha.calc_Asimov_NLL_IO(dT, ty)
+                    tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
+                    print("IO", cha.name, dT, tmpval)
+                    val += tmpval
 
-
+        print(idx, dT, val)
         nll[idx] = val
     return nll
 
@@ -86,9 +94,23 @@ def scanning_asimov2D(dT_arr, channels, MO, ty):
         for cha in channels:
             if MO == "NO":
                 if cha.name == "pES":
-                    val += cha.calc_Asimov_NLL_NO2D(dT, ty)
-            else:
-                val += cha.calc_Asimov_NLL_IO2D(dT, ty)
+                    tmpval = cha.calc_Asimov_NLL_NO2D(dT, ty)
+                    val += tmpval
+                    print(MO, cha.name, dT, tmpval)
+                else:
+                    tmpval = cha.calc_Asimov_NLL_NO(dT, ty)
+                    val += tmpval
+                    print(MO, cha.name, dT, tmpval)
+
+            if MO == "IO":
+                if cha.name == "pES":
+                    tmpval = cha.calc_Asimov_NLL_IO2D(dT, ty)
+                    val += tmpval
+                    print(MO, cha.name, dT, tmpval)
+                else:
+                    tmpval = cha.calc_Asimov_NLL_IO(dT, ty)
+                    val += tmpval
+                    print(MO, cha.name, dT, tmpval)
 
         nll[idx] = val
 
@@ -267,7 +289,7 @@ if __name__ == "__main__" :
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fitEmax=5, fileNo=fileNo, dist=dist, exp=exp)
         channels["pES"].setC14rate(c14rate)
         if C14:
-            pES._load_pdf2DwithBkg()
+            channels["pES"]._load_pdf2DwithBkg()
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, Eibd, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
         channels["IBD"].setC14rate(0)
