@@ -67,22 +67,22 @@ def scanning_asimov2D_withBkg(dT_arr, channels, MO, ty):
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_NO2D_withBkg(dT)
                     val += tmpval
-                    print("NO", cha.name, dT, tmpval)
+                    #print("NO", cha.name, dT, tmpval)
                 else:
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
-                    print("NO", cha.name, dT, tmpval)
+                    #print("NO", cha.name, dT, tmpval)
                     val += tmpval
             else:
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_IO2D_withBkg(dT)
-                    print("IO", cha.name, dT, tmpval)
+                    #print("IO", cha.name, dT, tmpval)
                     val += tmpval
                 else:
                     tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
-                    print("IO", cha.name, dT, tmpval)
+                    #print("IO", cha.name, dT, tmpval)
                     val += tmpval
 
-        print(idx, dT, val)
+        #print(idx, dT, val)
         nll[idx] = val
     return nll
 
@@ -96,21 +96,21 @@ def scanning_asimov2D(dT_arr, channels, MO, ty):
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_NO2D(dT, ty)
                     val += tmpval
-                    print(MO, cha.name, dT, tmpval)
+                    #print(MO, cha.name, dT, tmpval)
                 else:
                     tmpval = cha.calc_Asimov_NLL_NO(dT, ty)
                     val += tmpval
-                    print(MO, cha.name, dT, tmpval)
+                    #print(MO, cha.name, dT, tmpval)
 
             if MO == "IO":
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_IO2D(dT, ty)
                     val += tmpval
-                    print(MO, cha.name, dT, tmpval)
+                    #print(MO, cha.name, dT, tmpval)
                 else:
                     tmpval = cha.calc_Asimov_NLL_IO(dT, ty)
                     val += tmpval
-                    print(MO, cha.name, dT, tmpval)
+                    #print(MO, cha.name, dT, tmpval)
 
         nll[idx] = val
 
@@ -399,7 +399,7 @@ if __name__ == "__main__" :
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
             #print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
 
-            print(f"Output {modelNo} {fitTmax} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO} {locMinFitIO}")
+            print(f"Output {Ethr} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO} {locMinFitIO}")
 
             if MO == "NO":
                 bestNLL = locMinFitNO

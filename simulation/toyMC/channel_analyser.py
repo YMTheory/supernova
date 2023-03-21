@@ -135,11 +135,10 @@ class channel :
         self.Tbinwidth   = 0.00001
         self.Ebinwidth  = 0.2
         if self.name == "pES":
-            self.Ebinwidth = 0.5
+            self.Ebinwidth = 0.01
 
         self.glow = None
         self.ghig = None
-
 
     def setBkgScale(self, s):
         self.bkgscale = s
@@ -686,6 +685,8 @@ class channel :
         stepE = self.Ebinwidth
         Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        print(self.fitTmin, self.fitTmax, Tbinlow, Tbinhig)
+        print(self.Ethr, self.fitEmax, Ebinlow, Ebinhig)
         for it in tqdm(range(Tbinlow, Tbinhig, 1)):
             for iE in range(Ebinlow, Ebinhig, 1):
                 t_data = stepT * (it + 0.5)
