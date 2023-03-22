@@ -67,22 +67,22 @@ def scanning_asimov2D_withBkg(dT_arr, channels, MO, ty):
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_NO2D_withBkg(dT)
                     val += tmpval
-                    #print("NO", cha.name, dT, tmpval)
+                    print("NO", cha.name, dT, tmpval)
                 else:
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
-                    #print("NO", cha.name, dT, tmpval)
+                    print("NO", cha.name, dT, tmpval)
                     val += tmpval
             else:
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_IO2D_withBkg(dT)
-                    #print("IO", cha.name, dT, tmpval)
+                    print("IO", cha.name, dT, tmpval)
                     val += tmpval
                 else:
                     tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
-                    #print("IO", cha.name, dT, tmpval)
+                    print("IO", cha.name, dT, tmpval)
                     val += tmpval
 
-        #print(idx, dT, val)
+        print(idx, dT, val)
         nll[idx] = val
     return nll
 
@@ -363,41 +363,49 @@ if __name__ == "__main__" :
                     nllNO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "NO", "MO")
                 else:
                     nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
+                print("nllNO_coarse", nllNO_coarse)
 
             elif fitDim == 1:
                 nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO", C14, "low")
                 #print(nllNO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllNO_coarse)
+            print("Rough scanning Tbest ", Tbest, "locMin ", locMin)
             dT_arr_fine = generate_fine_dTarr(Tbest)
+            print(dT_arr_fine)
             if fitDim == 2:
                 if C14:
-                    nllNO_fine = scanning_asimov2D_withBkg(dT_arr, channels.values(), "NO", "MO")
+                    nllNO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "NO", "MO")
                 else:
-                    nllNO_fine = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
+                    nllNO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "NO", "MO")
+                print("nllNO_fine", nllNO_fine)
             elif fitDim == 1:
                 nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO", C14, "low")     # fine scanning
             TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dT_arr_fine, nllNO_fine, param=True)
-            #print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO*1000} ms, {locMinFitNO}")
+            print(f"NO pdf fit {MO} Asimov data -> {TbestFitNO*1000} ms, {locMinFitNO}")
 
             if fitDim == 2:
                 if C14:
                     nllIO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "IO", "MO")
                 else:
                     nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
+                print("nllIO_coarse", nllIO_coarse)
             elif fitDim == 1:
                 nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO", C14, "low")
             #print(nllIO_coarse)
             Tbest, locMin, _ = find_locMin(dT_arr, nllIO_coarse)
+            print("Rough scanning Tbest ", Tbest, "locMin ", locMin)
             dT_arr_fine = generate_fine_dTarr(Tbest)
+            print(dT_arr_fine)
             if fitDim == 2:
                 if C14:
-                    nllIO_fine = scanning_asimov2D_withBkg(dT_arr, channels.values(), "IO", "MO")
+                    nllIO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "IO", "MO")
                 else:
-                    nllIO_fine = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
+                    nllIO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "IO", "MO")
+                print("nllIO_fine", nllIO_fine)
             elif fitDim == 1:
                 nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO", C14, "low")     # fine scanning
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
-            #print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
+            print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
 
             print(f"Output {Ethr} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO} {locMinFitIO}")
 

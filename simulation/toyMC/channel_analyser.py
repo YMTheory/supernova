@@ -685,8 +685,6 @@ class channel :
         stepE = self.Ebinwidth
         Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
         Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
-        print(self.fitTmin, self.fitTmax, Tbinlow, Tbinhig)
-        print(self.Ethr, self.fitEmax, Ebinlow, Ebinhig)
         for it in tqdm(range(Tbinlow, Tbinhig, 1)):
             for iE in range(Ebinlow, Ebinhig, 1):
                 t_data = stepT * (it + 0.5)
