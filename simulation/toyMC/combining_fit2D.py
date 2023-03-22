@@ -7,6 +7,10 @@ import warnings
 warnings.filterwarnings("ignore")
 import logging
 
+import multiprocessing
+from multiprocessing import cpu_count
+import time
+
 from channel_analyser import channel
 
 
@@ -67,23 +71,89 @@ def scanning_asimov2D_withBkg(dT_arr, channels, MO, ty):
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_NO2D_withBkg(dT)
                     val += tmpval
-                    print("NO", cha.name, dT, tmpval)
+                    #print("NO", cha.name, dT, tmpval)
                 else:
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
-                    print("NO", cha.name, dT, tmpval)
+                    #print("NO", cha.name, dT, tmpval)
                     val += tmpval
             else:
                 if cha.name == "pES":
                     tmpval = cha.calc_Asimov_NLL_IO2D_withBkg(dT)
-                    print("IO", cha.name, dT, tmpval)
+                    #print("IO", cha.name, dT, tmpval)
                     val += tmpval
                 else:
                     tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
-                    print("IO", cha.name, dT, tmpval)
+                    #print("IO", cha.name, dT, tmpval)
                     val += tmpval
 
-        print(idx, dT, val)
+        #print(idx, dT, val)
         nll[idx] = val
+    return nll
+
+
+def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
+    start_time = time.time()
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            if cha.name == "eES" or cha.name == "IBD":
+                if MO == "NO":
+                    tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
+                else:
+                    tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
+
+                val += tmpval
+        nll[idx] = val
+
+    for cha in channels:
+        if cha.name == "pES":
+            if MO == "NO":
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nllpES = pool.map(cha.calc_Asimov_NLL_NO2D_withBkg, dT_arr)
+            else:
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nllpES = pool.map(cha.calc_Asimov_NLL_IO2D_withBkg, dT_arr)
+
+
+    for i in range(len(dT_arr)):
+        nll[i] = nll[i] + nllpES[i]
+
+    stop_time = time.time()
+    print(f"Time collapsed fot scanning_asimov2D_withBkg_MP is {stop_time - start_time}.")
+    return nll
+
+
+def scanning_asimov2D_MP(dT_arr, channels, MO, ty):
+    start_time = time.time()
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            if cha.name == "eES" or cha.name == "IBD":
+                if MO == "NO":
+                    tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
+                else:
+                    tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
+
+                val += tmpval
+        nll[idx] = val
+
+    for cha in channels:
+        if cha.name == "pES":
+            if MO == "NO":
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nllpES = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
+            else:
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nllpES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+
+
+    for i in range(len(dT_arr)):
+        nll[i] = nll[i] + nllpES[i]
+    stop_time = time.time()
+    print(f"Time collapsed fot scanning_asimov2D_MP is {stop_time - start_time}.")
+
     return nll
 
 
@@ -94,7 +164,7 @@ def scanning_asimov2D(dT_arr, channels, MO, ty):
         for cha in channels:
             if MO == "NO":
                 if cha.name == "pES":
-                    tmpval = cha.calc_Asimov_NLL_NO2D(dT, ty)
+                    tmpval = cha.calc_Asimov_NLL_NO2D(dT, ty=ty)
                     val += tmpval
                     #print(MO, cha.name, dT, tmpval)
                 else:
@@ -104,7 +174,7 @@ def scanning_asimov2D(dT_arr, channels, MO, ty):
 
             if MO == "IO":
                 if cha.name == "pES":
-                    tmpval = cha.calc_Asimov_NLL_IO2D(dT, ty)
+                    tmpval = cha.calc_Asimov_NLL_IO2D(dT, ty=ty)
                     val += tmpval
                     #print(MO, cha.name, dT, tmpval)
                 else:
@@ -164,6 +234,10 @@ def load_C14():
 if __name__ == "__main__" :
 
     logging.basicConfig(filename='example.log',level=logging.DEBUG)
+
+    print("==================================\n")
+    print(f"Total CPU number is {cpu_count()}")
+    print("==================================\n")
 
     MO      = "NO"
     model   = "Garching"
@@ -358,11 +432,14 @@ if __name__ == "__main__" :
         logging.debug("\n ========= FITTING ASIMOV DATASET ========= \n")
         if not useMass:
             dT_arr = np.arange(-0.01, 0.011, 0.001)  # corase scanning, 1 ms scanning step
+            #dT_arr = np.arange(-0.001, 0.001, 0.001)  # corase scanning, 1 ms scanning step
             if fitDim == 2:
                 if C14:
-                    nllNO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "NO", "MO")
+                    nllNO_coarse = scanning_asimov2D_withBkg_MP(dT_arr, channels.values(), "NO", "MO")
+                    #nllNO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "NO", "MO")
                 else:
-                    nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
+                    nllNO_coarse = scanning_asimov2D_MP(dT_arr, channels.values(), "NO", "MO")
+                    #nllNO_coarse = scanning_asimov2D(dT_arr, channels.values(), "NO", "MO")
                 print("nllNO_coarse", nllNO_coarse)
 
             elif fitDim == 1:
@@ -374,9 +451,11 @@ if __name__ == "__main__" :
             print(dT_arr_fine)
             if fitDim == 2:
                 if C14:
-                    nllNO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "NO", "MO")
+                    nllNO_fine = scanning_asimov2D_withBkg_MP(dT_arr_fine, channels.values(), "NO", "MO")
+                    #nllNO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "NO", "MO")
                 else:
-                    nllNO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "NO", "MO")
+                    nllNO_fine = scanning_asimov2D_MP(dT_arr_fine, channels.values(), "NO", "MO")
+                    #nllNO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "NO", "MO")
                 print("nllNO_fine", nllNO_fine)
             elif fitDim == 1:
                 nllNO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "NO", "MO", C14, "low")     # fine scanning
@@ -385,9 +464,11 @@ if __name__ == "__main__" :
 
             if fitDim == 2:
                 if C14:
-                    nllIO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "IO", "MO")
+                    nllIO_coarse = scanning_asimov2D_withBkg_MP(dT_arr, channels.values(), "IO", "MO")
+                    #nllIO_coarse = scanning_asimov2D_withBkg(dT_arr, channels.values(), "IO", "MO")
                 else:
-                    nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
+                    nllIO_coarse = scanning_asimov2D_MP(dT_arr, channels.values(), "IO", "MO")
+                    #nllIO_coarse = scanning_asimov2D(dT_arr, channels.values(), "IO", "MO")
                 print("nllIO_coarse", nllIO_coarse)
             elif fitDim == 1:
                 nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO", C14, "low")
@@ -398,16 +479,18 @@ if __name__ == "__main__" :
             print(dT_arr_fine)
             if fitDim == 2:
                 if C14:
-                    nllIO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "IO", "MO")
+                    nllIO_fine = scanning_asimov2D_withBkg_MP(dT_arr_fine, channels.values(), "IO", "MO")
+                    #nllIO_fine = scanning_asimov2D_withBkg(dT_arr_fine, channels.values(), "IO", "MO")
                 else:
-                    nllIO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "IO", "MO")
+                    nllIO_fine = scanning_asimov2D_MP(dT_arr_fine, channels.values(), "IO", "MO")
+                    #nllIO_fine = scanning_asimov2D(dT_arr_fine, channels.values(), "IO", "MO")
                 print("nllIO_fine", nllIO_fine)
             elif fitDim == 1:
                 nllIO_fine = scanning_asimov1D(dT_arr_fine, channels.values(), "IO", "MO", C14, "low")     # fine scanning
             TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dT_arr_fine, nllIO_fine, param=True)
             print(f"IO pdf fit {MO} Asimov data -> {TbestFitIO*1000} ms, {locMinFitIO}")
 
-            print(f"Output {Ethr} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO} {locMinFitIO}")
+            print(f"Output {Ethr} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO*1000} {locMinFitIO}")
 
             if MO == "NO":
                 bestNLL = locMinFitNO

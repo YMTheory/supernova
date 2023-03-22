@@ -715,7 +715,7 @@ class channel :
 
 
 
-    def calc_Asimov_NLL_NO2D(self, dT, ty) -> float:
+    def calc_Asimov_NLL_NO2D(self, dT, ty="MO") -> float:
         nll = 0
         stepT = self.Tbinwidth
         stepE = self.Ebinwidth
@@ -821,7 +821,7 @@ class channel :
             
 
 
-    def calc_Asimov_NLL_IO2D(self, dT, ty) -> float:
+    def calc_Asimov_NLL_IO2D(self, dT, ty="MO") -> float:
         nll = 0
         stepT = self.Tbinwidth
         stepE = self.Ebinwidth
