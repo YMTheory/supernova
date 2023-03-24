@@ -629,16 +629,12 @@ double SNdetect::getEvisSpectrumAtTime(double time, double Evis, int type, int M
         SNdetect* pdet = SNdetect::instance();
         double T = pdet->getPointerEffectLS()->getElecTfromEvis(Evis);
         double dTqdTp = (pdet->getPointerEffectLS()->getElecNonl(T+0.005)*(T+0.005)-pdet->getPointerEffectLS()->getElecNonl(T)*T) / 0.005;
-        //std::cout << "Evis=" << Evis
-        //          << ", T=" << T
-        //          << ", dTqdTp=" << dTqdTp
-        //          << std::endl;
         return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH) / dTqdTp;
     }
     else if (fchannel == IBD) {
         SNdetect* pdet = SNdetect::instance();
         double T = pdet->getPointerEffectLS()->getPosiTfromEvis(Evis);
-        double dTqdTp = (pdet->getPointerEffectLS()->getPosiNonl(T+0.005)*(T+0.005)-pdet->getPointerEffectLS()->getPosiNonl(T)*T) / 0.005;
+        double dTqdTp = (pdet->getPointerEffectLS()->getPosiNonl(T+0.005)*(T+1.022+0.005)-pdet->getPointerEffectLS()->getPosiNonl(T)*(T+1.022)) / 0.005;
         return getTSpectrumAtTime(time, getTFromEvis(Evis), type, MH) / dTqdTp;
     }
     else{
@@ -986,7 +982,7 @@ double SNdetect::getTFromEvis(double Evis){
             {
                 // return Evis-0.51;
                 SNdetect* pdet = SNdetect::instance();
-                double T = pdet->getPointerEffectLS()->getPosiTfromEvis(Evis) - 0.511*2;
+                double T = pdet->getPointerEffectLS()->getPosiTfromEvis(Evis);
                 return T;
             }
         case(CEvNS):

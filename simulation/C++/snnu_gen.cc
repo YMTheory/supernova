@@ -157,8 +157,10 @@ int main(int argc, char* argv[]) {
     Double_t Evismax;
     Double_t step_Evis;
     if(chaname == SNdetect::NuP){
-        Evismax = 5.;
-        step_Evis = 0.05;
+        //Evismax = 5.;
+        //step_Evis = 0.05;
+        Evismax = 1.;
+        step_Evis = 0.01;
     }
     if(chaname == SNdetect::NuE || chaname == SNdetect::IBD){
         Evismax = 80.;
@@ -182,7 +184,8 @@ int main(int argc, char* argv[]) {
 
     TString chaName[4] = {"pES","eES","IBD", "CEvNS"};
 
-    bool flag1D     = true;
+    bool flagNu     = false;
+    bool flag1D     = false;
     bool flag2D     = false;
     bool flag2D_new = false;
     bool flag2D_root = false;
@@ -191,13 +194,52 @@ int main(int argc, char* argv[]) {
               << "========= Output info ==========" << "\n"
               << "\n";
 
+
+    if (flagNu) {
+        std::cout << ">>> Calculating the initial neutrino flux <<< \n" << std::endl;
+        TString modelName;
+        modelName = Form("Garchings%d", imod);
+        TString fn = Form("%s_nuFluxPDF_%s_%dkpc_%.3fs-%.3fs_scale%.3f.root",  modelName.Data(), MO[MH].Data(), dist, tmin, tmax, scale);
+        std::cout << "output filename : " << fn << std::endl;
+        TFile* f = new TFile(fn, "recreate");
+        TH1D* h0 = new TH1D("h0", "nue neutrino flux arrived at Earth", nbin_t, tmin, tmax);
+        TH1D* h1 = new TH1D("h1", "nuebar neutrino flux arrived at Earth", nbin_t, tmin, tmax);
+        TH1D* h2 = new TH1D("h2", "nux neutrino flux arrived at Earth", nbin_t, tmin, tmax);
+        TH1D* h3 = new TH1D("h3", "nuxbar neutrino flux arrived at Earth", nbin_t, tmin, tmax);
+        for (int it=0; it<nbin_t; it++) {
+            double timeTmp = tmin + (it + 0.5) * step_t;
+            double flux0 = 0;
+            double flux1 = 0;
+            double flux2 = 0;
+            double flux3 = 0;
+            for (int iE=0; iE<nbins_Ev; iE++) {
+                double EvTmp = (iE + 0.5) * step_Ev;
+                flux0 += pdet->getPointerSrc()->oneSNFluenceDetAtTime(timeTmp, EvTmp, 0, MH) * step_Ev;
+                flux1 += pdet->getPointerSrc()->oneSNFluenceDetAtTime(timeTmp, EvTmp, 1, MH) * step_Ev;
+                flux2 += pdet->getPointerSrc()->oneSNFluenceDetAtTime(timeTmp, EvTmp, 2, MH) * step_Ev;
+                flux3 += pdet->getPointerSrc()->oneSNFluenceDetAtTime(timeTmp, EvTmp, 3, MH) * step_Ev;
+            }
+            h0->SetBinContent(it+1, flux0);
+            h1->SetBinContent(it+1, flux1);
+            h2->SetBinContent(it+1, flux2);
+            h3->SetBinContent(it+1, flux3);
+        } 
+        h0->Write();
+        h1->Write();
+        h2->Write();
+        h3->Write();
+        f->Close();
+    }
+
+
+
     if (flag1D) {
 
         //// get the visible events time spectra above Ethr and save into histogram and root file.
         //// 1D histogram
         TString modelName;
         modelName = Form("Garchings%d", imod);
-        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_v2.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
+        TString fn = Form("%s_PDF_%s_%dkpc_%s_%.2fMeV_%.3fs-%.3fs_scale%.3f_v3.root",  modelName.Data(), MO[MH].Data(), dist, chaName[icha].Data(), Ethr, tmin, tmax, scale);
         std::cout << "output filename : " << fn << std::endl;
         TFile* f = new TFile(fn, "recreate");
         TH1D* h1 = new TH1D("h1", "visible energy spectrum rate", nbin_t, tmin, tmax);
@@ -355,7 +397,7 @@ int main(int argc, char* argv[]) {
         
         TString modelName;
         modelName = Form("Garching%d", imod);
-        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1feV_scale%.3f_tmin%.3fstmax%.3fs_response_2Droot.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale, tmin, tmax);
+        TString fn = Form("%s_PDF_%s_%s_%dkpc_nuMass%.1feV_scale%.3f_tmin%.3fstmax%.3fs_response_EvisT2D.root",  modelName.Data(), chaName[icha].Data(), MO[MH].Data(), dist, nuMass, scale, tmin, tmax);
         std::cout << "> Output 2-dimensional PDF filename from new alg: " << fn << std::endl;
 
         TFile* f = new TFile(fn, "recreate");
@@ -377,7 +419,8 @@ int main(int argc, char* argv[]) {
             for (int iEvis=0; iEvis<nbins_Evis; iEvis++) {
                 double EvisTmp = Evismin + (iEvis + 0.5) * step_Evis;
                 //std::cout << ">>>>>> Processing Eobs bin " << iEvis << " at " << EvisTmp << " MeV." << std::endl;
-                array[ipt][iEvis] = pdet->getEobsSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
+                //array[ipt][iEvis] = pdet->getEobsSpectrumAtTimeWithMass(TTmp, EvisTmp, -1, MH, nuMass);
+                array[ipt][iEvis] = pdet->getEvisSpectrumAtTime(TTmp, EvisTmp, -1, MH);
             }
         }
         for(int i =0; i<nbin_it; i++) {
