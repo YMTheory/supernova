@@ -78,8 +78,8 @@ class channel :
         self.pdf2DIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass{nuMass:.1f}_scale1.000_test2Dnew.root"
         self.pdf2DNOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_NO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
         self.pdf2DIOfile0 = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/{model}{modelNo}_PDF_{name}_IO_{dist}kpc_nuMass0.0_scale1.000_test2Dnew.root"
-        self.pdf2DwithBkgNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14low.root"
-        self.pdf2DwithBkgIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14low.root"
+        self.pdf2DwithBkgNOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14high.root"
+        self.pdf2DwithBkgIOfile = f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14high.root"
 
         ####### Datasets and PDFs
         self.data_array = None
@@ -745,8 +745,8 @@ class channel :
                 s = s * self.scale
 
                 if s != 0 and n!=0:
-                    #tmp_nll = s - n + n * np.log(n/s)
-                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                     nll += tmp_nll
                 if s != 0 and n == 0:
                     tmp_nll = s
@@ -850,8 +850,8 @@ class channel :
                 s = s * self.scale
 
                 if s != 0 and n!=0:
-                    #tmp_nll = s - n + n * np.log(n/s)
-                    tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
                     nll += tmp_nll
                 if s != 0 and n == 0:
                     tmp_nll = s

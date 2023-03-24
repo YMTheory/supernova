@@ -97,7 +97,7 @@ def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            if cha.name == "eES" or cha.name == "IBD":
+            if cha.name == "IBD":
                 if MO == "NO":
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
                 else:
@@ -115,12 +115,20 @@ def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
                     nllpES = pool.map(cha.calc_Asimov_NLL_IO2D_withBkg, dT_arr)
 
-
+    for cha in channels:
+        if cha.name == "eES":
+            if MO == "NO":
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nlleES = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
+            else:
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nlleES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+            
     for i in range(len(dT_arr)):
-        nll[i] = nll[i] + nllpES[i]
+        nll[i] = nll[i] + nlleES[i]
 
     stop_time = time.time()
-    print(f"Time collapsed fot scanning_asimov2D_withBkg_MP is {stop_time - start_time}.")
+    print(f"Time collapsed for scanning_asimov2D_withBkg_MP is {stop_time - start_time}.")
     return nll
 
 
