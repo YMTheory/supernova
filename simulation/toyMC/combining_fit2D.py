@@ -102,7 +102,7 @@ def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
                 else:
                     tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
-
+                print("IBD", dT, tmpval)
                 val += tmpval
         nll[idx] = val
 
@@ -114,6 +114,11 @@ def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
             else:
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
                     nllpES = pool.map(cha.calc_Asimov_NLL_IO2D_withBkg, dT_arr)
+            print("pES", nllpES)
+
+            for i in range(len(dT_arr)):
+                nll[i] = nll[i] + nllpES[i]
+    
 
     for cha in channels:
         if cha.name == "eES":
@@ -123,9 +128,10 @@ def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
             else:
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
                     nlleES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+            print("eES", nlleES)
             
-    for i in range(len(dT_arr)):
-        nll[i] = nll[i] + nlleES[i]
+            for i in range(len(dT_arr)):
+                nll[i] = nll[i] + nlleES[i]
 
     stop_time = time.time()
     print(f"Time collapsed for scanning_asimov2D_withBkg_MP is {stop_time - start_time}.")
@@ -138,7 +144,7 @@ def scanning_asimov2D_MP(dT_arr, channels, MO, ty):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            if cha.name == "eES" or cha.name == "IBD":
+            if cha.name == "IBD":
                 if MO == "NO":
                     tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
                 else:
@@ -155,10 +161,21 @@ def scanning_asimov2D_MP(dT_arr, channels, MO, ty):
             else:
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
                     nllpES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+    for i in range(len(dT_arr)):
+        nll[i] = nll[i] + nllpES[i]
+
+    for cha in channels:
+        if cha.name == "eES":
+            if MO == "NO":
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nlleES = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
+            else:
+                with multiprocessing.Pool(processes=cpu_count()) as pool:
+                    nlleES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
 
 
     for i in range(len(dT_arr)):
-        nll[i] = nll[i] + nllpES[i]
+        nll[i] = nll[i] + nlleES[i]
     stop_time = time.time()
     print(f"Time collapsed fot scanning_asimov2D_MP is {stop_time - start_time}.")
 
@@ -263,6 +280,7 @@ if __name__ == "__main__" :
     doFit   = True
     fitDim  = 2
     asimov  = False
+    test    = True
     eES     = True
     IBD     = True
     pES     = True
@@ -283,6 +301,8 @@ if __name__ == "__main__" :
     parser.add_argument("--no-useMass", dest="useMass", action="store_false",   help="disable mass effect.")
     parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
     parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
+    parser.add_argument("--test",       dest="test",    action="store_true",    help="enable asimov test.")
+    parser.add_argument("--no-test",    dest="test",    action="store_false",   help="disable asimov test.")
     parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
     parser.add_argument("--no-C14",     dest="C14",     action="store_false",   help="disable C14 background.")
     parser.add_argument("--fitDim",     type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
@@ -311,6 +331,7 @@ if __name__ == "__main__" :
     fitDim      = args.fitDim
     nuMass      = args.nuMass
     asimov      = args.asimov
+    test        = args.test
     eES         = args.eES
     IBD         = args.IBD
     pES         = args.pES
@@ -371,6 +392,8 @@ if __name__ == "__main__" :
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fitEmax=5, fileNo=fileNo, dist=dist, exp=exp)
         channels["pES"].setC14rate(c14rate)
         if C14:
+            channels["pES"].setNOPdfwithBkgFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14{C14level}.root")
+            channels["pES"].setIOPdfwithBkgFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14{C14level}.root")
             channels["pES"]._load_pdf2DwithBkg()
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, Eibd, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
@@ -435,7 +458,21 @@ if __name__ == "__main__" :
 
             FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
-    if asimov:
+    if test:
+        logging.debug("\n ===== Run Asimov Test ===== \n")
+        dT_arr = [0.0019999]
+        if fitDim == 2:
+            nllNO_coarse = scanning_asimov2D_withBkg_MP(dT_arr, channels.values(), "NO", "MO")
+            nllIO_coarse = scanning_asimov2D_withBkg_MP(dT_arr, channels.values(), "IO", "MO")
+        elif fitDim == 1:
+            nllNO_coarse = scanning_asimov1D(dT_arr, channels.values(), "NO", "MO", C14, "low")
+            nllIO_coarse = scanning_asimov1D(dT_arr, channels.values(), "IO", "MO", C14, "low")
+
+        print(nllNO_coarse)
+        print(nllIO_coarse)
+
+    
+    if (not test) and asimov:
         # asimov dataset test
         logging.debug("\n ========= FITTING ASIMOV DATASET ========= \n")
         if not useMass:
