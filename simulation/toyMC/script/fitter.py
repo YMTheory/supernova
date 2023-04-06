@@ -4,7 +4,7 @@ from multiprocessing import cpu_count
 from channel_analyser import channel
 
 
-def scanning_asimov1D_separate(dt_arr, channels, MO, tmin=-0.02, tmax=0.02, stept=0.00001):
+def scanning_asimov1D_separate(dt_arr, channels, MO):
     """
     1D NLL scanning: no C14 -> if C14, should use 2D fitting by default.
     :param dt_arr:
@@ -13,13 +13,12 @@ def scanning_asimov1D_separate(dt_arr, channels, MO, tmin=-0.02, tmax=0.02, step
     :return:
     """
     nll = np.zeros_like(dt_arr)
-    obs_t = np.arange(tmin, tmax, stept)
     for idx, dT in enumerate(dt_arr):
         val = 0
         for cha in channels:
             if MO == "NO":
                 val += cha.calc_Asimov_NLL_IO(dT, "MO")
-            else:
+            elif MO == "IO":
                 val += cha.calc_Asimov_NLL_NO(dT, "MO")
         nll[idx] = val
     dchi2 = 2 * nll
@@ -92,6 +91,14 @@ def scanning_asimov1D_combined(dt_arr, channels, MO, scaleIBD=1.0, tmin=-0.02, t
 
     return dchi2
 
+def scanning_asimov1D_partlysep(dt_arr, channels, MO, tagIBD=1.0, tmin=-0.02, tmax=0.02, stept=0.00001):
+    dchi2_combined = scanning_asimov1D_combined(dt_arr, channels, MO, scaleIBD=1-tagIBD)
+    for cha in channels:
+        if cha.name == "IBD":
+            dchi2_partIBD = scanning_asimov1D_separate(dt_arr, [cha], MO) * tagIBD
+    dchi2 = dchi2_combined + dchi2_partIBD
+    return dchi2
+
 
 def find_locMin(dt_arr, dchi2_arr):
     idx = np.argmin(dchi2_arr)
@@ -123,17 +130,21 @@ def parabola_fit(dt_arr, dchi2_arr):
         return Tbest, locMin, a, b, c
 
 
-def scanning_chain(mode, dt_arr, channels, MO):
+def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.02, stept=0.00001):
     if mode == "1D_sep":
         dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO)
     elif mode == "1D_comb":
-        dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO)
+        dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO, tmin=tmin, tmax=tmax, stept=stept)
+    elif mode == "1D_part":
+        dchi2_arr = scanning_asimov1D_partlysep(dt_arr, channels, MO, tagIBD=tag_eff, tmin=tmin, tmax=tmax, stept=stept)
     Tbest, _, _ = find_locMin(dt_arr, dchi2_arr)
     dt_arr = generate_fine_dtarr(Tbest)
     if mode == "1D_sep":
         dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO)
-    elif mode == "1D-comb":
-        dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO)
+    elif mode == "1D_comb":
+        dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO, tmin=tmin, tmax=tmax, stept=stept)
+    elif mode == "1D_part":
+        dchi2_arr = scanning_asimov1D_partlysep(dt_arr, channels, MO, tagIBD=tag_eff, tmin=tmin, tmax=tmax, stept=stept)
     Tbest, locMin, a, b, c = parabola_fit(dt_arr, dchi2_arr)
 
     return dt_arr, dchi2_arr, Tbest, locMin, a, b, c

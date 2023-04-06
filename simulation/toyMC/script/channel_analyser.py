@@ -146,6 +146,9 @@ class channel :
     def setScale(self, s):
         self.scale = s
 
+    def setMO(self, MO):
+        self.MH = MO
+
     def setC14rate(self, rate):
         self.c14rate = rate
 
