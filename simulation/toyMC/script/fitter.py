@@ -4,7 +4,7 @@ from multiprocessing import cpu_count
 from channel_analyser import channel
 
 
-def scanning_asimov1D_separate(dt_arr, channels, MO):
+def scanning_asimov1D_separate(dt_arr, channels, MO, reverse=False):
     """
     1D NLL scanning: no C14 -> if C14, should use 2D fitting by default.
     :param dt_arr:
@@ -17,9 +17,15 @@ def scanning_asimov1D_separate(dt_arr, channels, MO):
         val = 0
         for cha in channels:
             if MO == "NO":
-                val += cha.calc_Asimov_NLL_IO(dT, "MO")
+                if not reverse:
+                    val += cha.calc_Asimov_NLL_IO(dT, "MO")
+                else:
+                    val += cha.calc_Asimov_NLL_NO(dT, "MO")
             elif MO == "IO":
-                val += cha.calc_Asimov_NLL_NO(dT, "MO")
+                if not reverse:
+                    val += cha.calc_Asimov_NLL_NO(dT, "MO")
+                else:
+                    val += cha.calc_Asimov_NLL_IO(dT, "MO")
         nll[idx] = val
     dchi2 = 2 * nll
     return dchi2
@@ -130,9 +136,9 @@ def parabola_fit(dt_arr, dchi2_arr):
         return Tbest, locMin, a, b, c
 
 
-def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.02, stept=0.00001):
+def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.02, stept=0.00001, reverse=False):
     if mode == "1D_sep":
-        dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO)
+        dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO, reverse=reverse)
     elif mode == "1D_comb":
         dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO, tmin=tmin, tmax=tmax, stept=stept)
     elif mode == "1D_part":
@@ -140,7 +146,7 @@ def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.0
     Tbest, _, _ = find_locMin(dt_arr, dchi2_arr)
     dt_arr = generate_fine_dtarr(Tbest)
     if mode == "1D_sep":
-        dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO)
+        dchi2_arr = scanning_asimov1D_separate(dt_arr, channels, MO, reverse=reverse)
     elif mode == "1D_comb":
         dchi2_arr = scanning_asimov1D_combined(dt_arr, channels, MO, tmin=tmin, tmax=tmax, stept=stept)
     elif mode == "1D_part":
@@ -149,3 +155,6 @@ def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.0
 
     return dt_arr, dchi2_arr, Tbest, locMin, a, b, c
 
+
+def scanning_toyMC1D_oneEvt(dt_arr, channels, evtNO, dataMO, pdfMO):
+    pass

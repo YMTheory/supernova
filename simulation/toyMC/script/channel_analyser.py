@@ -128,6 +128,10 @@ class channel :
         self.pdf2DwithBkgIO     = None
         self.f2dIOwithBkg      = None
 
+        self.loadData_flag = False
+        self.load1DPDF_flag = False
+        self.load2DPDF_flag = False
+
         self.glow       = None
         self.ghig       = None
         self.c14rate    = 0
@@ -219,6 +223,7 @@ class channel :
                 print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt}.")
                 self.data_array = nuTime
                 self.nentries = evtNum
+                self.loadData_flag = True
         except FileExistsError:
             print(f"The data file {self.datafile} dose not exist! :(")
             sys.exit(-1)
@@ -315,7 +320,7 @@ class channel :
         try:
             print(self.pdfNOfile)
             f = up.open(self.pdfNOfile)
-            tmp_h1 = f["h1"] 
+            tmp_h1 = f["h1"]
         except FileNotFoundError:
             print(f"The pdf file {self.pdfNOfile} dose not exist! :(")
             sys.exit(-1)
@@ -343,7 +348,8 @@ class channel :
         #    self.pdfIO.SetBinContent(j+1, cont)
         self.pdfIOx = axis.centers()
         self.pdfIOy = tmp_h1.values()
-        
+        self.load1DPDF_flag = True
+
 
     def _load_pdf0(self) -> None:
         """
@@ -413,7 +419,8 @@ class channel :
         self.pdf2DIOE = yaxis.centers()
         self.pdf2DIO  = tmp_h1.values()
         self.f2dIO = interpolate.interp2d(self.pdf2DIOT, self.pdf2DIOE, self.pdf2DIO.T, kind="linear")
-        
+
+        self.load2DPDF_flag = True
     
     def _load_pdf2D0(self) -> None:
         print(f"\n ========= Load {self.name} 2D PDF0 ========= \n")
@@ -482,10 +489,14 @@ class channel :
         """
         get a single event with ID == event_id.
         """
+        if not self.loadData_flag:
+            self._load_data_ak()
         event_id = event_id - self.startEvt
         return self.data_array[event_id]
     
     def get_one_binned_event(self, event_id:int):
+        if not self.loadData_flag:
+            self._load_data_ak()
         event_id = event_id - self.startEvt
         return self.binned_data_array[event_id]
 
