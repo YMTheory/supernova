@@ -2,8 +2,22 @@ import numpy as np
 import multiprocessing
 from multiprocessing import cpu_count
 from channel_analyser import channel
+from tqdm import tqdm
+import uproot as up
 
+def scanning_asimov1D_randomModel(dt_arr, channels, MO):
+    nll = np.zeros_like(dt_arr)
+    for i, dT in enumerate(dt_arr):
+        val = 0
+        for cha in channels:
+            if MO == "NO":
+                val += cha.calc_Asimov_NLL_NO(dT, "MO")
+            else:
+                val += cha.calc_Asimov_NLL_IO(dT, "MO")
+        nll[i] = val
+        dchi2 = 2 * nll
 
+    return dchi2
 def scanning_asimov1D_separate(dt_arr, channels, MO, reverse=False):
     """
     1D NLL scanning: no C14 -> if C14, should use 2D fitting by default.
@@ -105,7 +119,6 @@ def scanning_asimov1D_partlysep(dt_arr, channels, MO, tagIBD=1.0, tmin=-0.02, tm
     dchi2 = dchi2_combined + dchi2_partIBD
     return dchi2
 
-
 def find_locMin(dt_arr, dchi2_arr):
     idx = np.argmin(dchi2_arr)
     Tbest = dt_arr[idx]
@@ -155,6 +168,90 @@ def scanning_chain(mode, dt_arr, channels, MO, tag_eff=0.5, tmin=-0.02, tmax=0.0
 
     return dt_arr, dchi2_arr, Tbest, locMin, a, b, c
 
+def scanning_toyMC_chain(dt_arr, channels, MO, startid, endid):
+    chi2 = np.zeros(endid-startid+1)
+    for ievt in tqdm(range(startid, endid, 1)):
+        tmpchi2 = scanning_toyMC_oneEvt(dt_arr, channels, ievt, MO)
+        Tbest, _, _ = find_locMin(dt_arr, tmpchi2)
+        fine_dt_arr = generate_fine_dtarr(Tbest)
+        tmpchi2 = scanning_toyMC_oneEvt(fine_dt_arr, channels, ievt, MO)
+        Tbest, locMin, a, b, c = parabola_fit(fine_dt_arr, tmpchi2)
+        chi2[ievt-startid] = locMin
+    return chi2
 
-def scanning_toyMC1D_oneEvt(dt_arr, channels, evtNO, dataMO, pdfMO):
-    pass
+import random
+def scanning_randomModels_chain(channels, MO, mode="random", dataModel="unknown", pdfModel="unknown", group="Garching"):
+    Garching_models = [81123, 82503, 82703, 84003, 91123, 92503, 92703, 94003]
+    if mode == "random":
+        dataModel, pdfModel = random.sample(Garching_models, 2)
+    print(dataModel, pdfModel)
+    for cha in channels:
+        cha.setMO(MO)
+        cha.data_model = group
+        cha.data_modelNo = dataModel
+        cha.pdf_model = group
+        cha.pdf_modelNo = pdfModel
+        cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{group}{pdfModel}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{group}{pdfModel}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha._load_pdf()
+        cha.setNODataPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{group}{dataModel}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha.setIODataPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{group}{dataModel}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha._load_datapdf()
+
+    dt_arrNO = np.arange(-0.010, 0.011, 0.001)
+    chi2NO = scanning_asimov1D_randomModel(dt_arrNO, channels, "NO")
+    Tbest, _, _, = find_locMin(dt_arrNO, chi2NO)
+    dt_arrNO_fine = generate_fine_dtarr(Tbest)
+    chi2NO = scanning_asimov1D_randomModel(dt_arrNO_fine, channels, "NO")
+    TbestNO, locMinNO, aNO, bNO, cNO = parabola_fit(dt_arrNO_fine, chi2NO)
+
+    dt_arrIO = np.arange(-0.010, 0.011, 0.001)
+    chi2IO = scanning_asimov1D_randomModel(dt_arrIO, channels, "IO")
+    Tbest, _, _, = find_locMin(dt_arrIO, chi2IO)
+    dt_arrIO_fine = generate_fine_dtarr(Tbest)
+    chi2IO = scanning_asimov1D_randomModel(dt_arrIO_fine, channels, "IO")
+    TbestIO, locMinIO, aIO, bIO, cIO = parabola_fit(dt_arrIO_fine, chi2IO)
+
+    print(locMinNO, locMinIO)
+    if MO == "NO":
+        dchi2 = locMinIO - locMinNO
+    else:
+        dchi2 = locMinNO - locMinIO
+    return dchi2
+
+
+
+def scanning_toyMC_oneEvt(dt_arr, channels, evtNO, pdfMO, reverse=False):
+    nll = np.zeros(len(dt_arr))
+    for i, dT in enumerate(dt_arr):
+        for cha in channels:
+            if cha.name == "eES" or cha.name == "IBD":
+                oneevt = cha.get_one_event(evtNO)
+                if pdfMO == "NO":
+                    tmpnll = cha.calc_NLL_NO(oneevt, dT)
+                else:
+                    tmpnll = cha.calc_NLL_IO(oneevt, dT)
+            elif cha.name == "pES":
+                dataT, dataE = cha.get_one_event2D(evtNO)
+                if pdfMO == "NO":
+                    tmpnll = cha.calc_NLL_NO2D(dataT, dataE, dT)
+                else:
+                    tmpnll = cha.calc_NLL_IO2D(dataT, dataE, dT)
+
+            nll[i] += tmpnll
+    return 2 * nll
+
+
+def gauss_fit(x, A, mu, sigma):
+    return A * np.exp(-(x-mu)**2/2/sigma**2)
+
+def load_C14(level):
+    f = up.open("/junofs/users/miaoyu/supernova/production/PDFs/backgrounds/C14/C14_rate_JUNO.root")
+    g = f["c14_"+level]
+
+    x, y = g.values("x"), g.values("y")
+    return x, y
+
+def getC14Rate(level, Ethr):
+    x, y = load_C14(level)
+    return np.interp(Ethr, x, y)
