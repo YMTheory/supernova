@@ -57,35 +57,6 @@ def scanning_asimov1D(dT_arr, channels, MO, ty, useC14, level):
     return nll
 
 
-def scanning_asimov2D_withBkg(dT_arr, channels, MO, ty):
-    nll = np.zeros(len(dT_arr))
-    for idx, dT in enumerate(dT_arr):
-        val = 0
-        for cha in channels:
-            if MO == "NO":
-                if cha.name == "pES":
-                    tmpval = cha.calc_Asimov_NLL_NO2D_withBkg(dT)
-                    val += tmpval
-                    #print("NO", cha.name, dT, tmpval)
-                else:
-                    tmpval = cha.calc_Asimov_NLL_NO(dT, "MO")
-                    #print("NO", cha.name, dT, tmpval)
-                    val += tmpval
-            else:
-                if cha.name == "pES":
-                    tmpval = cha.calc_Asimov_NLL_IO2D_withBkg(dT)
-                    #print("IO", cha.name, dT, tmpval)
-                    val += tmpval
-                else:
-                    tmpval = cha.calc_Asimov_NLL_IO(dT, "MO")
-                    #print("IO", cha.name, dT, tmpval)
-                    val += tmpval
-
-        #print(idx, dT, val)
-        nll[idx] = val
-    return nll
-
-
 def scanning_asimov2D_withBkg_MP(dT_arr, channels, MO, ty):
     start_time = time.time()
     nll = np.zeros(len(dT_arr))
@@ -246,10 +217,84 @@ def parabola_fit(dT_arr, nll_arr, param=False):
 def load_C14():
     f = ROOT.TFile("/junofs/users/miaoyu/supernova/production/PDFs/backgrounds/C14/C14_rate_JUNO.root", "read")
     ghig = f.Get("c14_high")
+    glow = f.Get("c14_low")
     return glow, ghig
 
 
 
+def scanning_asimov_chain(channels, MO, fitDim):
+    ## NO Pdf fitting chain
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    if fitDim == 2:
+        nllNO_coarse = scanning_asimov2D_withBkg_MP(dt_arr, channels, "NO", "MO")
+    else:
+        nllNO_coarse = scanning_asimov1D(dt_arr, channels, "NO", "MO")
+    Tbest, locMin, _ = find_locMin(dt_arr, nllNO)
+    dt_arr_fine = generate_fine_dTarr(Tbest)
+    if fitDim == 2:
+        nllNO_fine = scanning_asimov2D_withBkg_MP(dt_arr_fine, channels, "NO", "MO")
+    else:
+        nllNO_fine = scanning_asimov1D(dt_arr, channels, "NO" , "MO")
+    TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
+
+    ## IO Pdf fitting chain
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    if fitDim == 2:
+        nllIO_coarse = scanning_asimov2D_withBkg_MP(dt_arr, channels, "IO", "MO")
+    else:
+        nllIO_coarse = scanning_asimov1D(dt_arr, channels, "IO", "MO")
+    Tbest, locMin, _ = find_locMin(dt_arr, nllIO)
+    dt_arr_fine = generate_fine_dTarr(Tbest)
+    if fitDim == 2:
+        nllIO_fine = scanning_asimov2D_withBkg_MP(dt_arr_fine, channels, "IO", "MO")
+    else:
+        nllIO_fine = scanning_asimov1D(dt_arr, channels, "IO" , "MO")
+    TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
+
+    if MO == "NO":
+        dchi2 = 2 * locMinFitIO - 2 * locMinFitNO
+    else:
+        dchi2 = 2 * locMinFitNO - 2 * locMinFitIO
+
+    return TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2
+
+
+
+def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
+    ## NO Pdf fitting chain
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    if fitDim == 2:
+        nllNO_coarse = scanning2D(dt_arr, channels, evtNO,  "NO")
+    else:
+        nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
+    Tbest, locMin, _ = find_locMin(dt_arr, nllNO)
+    dt_arr_fine = generate_fine_dTarr(Tbest)
+    if fitDim == 2:
+        nllNO_fine = scanning2D(dt_arr_fine, channels, evtNO, "NO")
+    else:
+        nllNO_fine = scanning1D(dt_arr, channels, evtNO, "NO" )
+    TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
+
+    ## IO Pdf fitting chain
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    if fitDim == 2:
+        nllIO_coarse = scanning2D(dt_arr, channels, evtNO, "IO")
+    else:
+        nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
+    Tbest, locMin, _ = find_locMin(dt_arr, nllIO)
+    dt_arr_fine = generate_fine_dTarr(Tbest)
+    if fitDim == 2:
+        nllIO_fine = scanning2D(dt_arr_fine, channels, evtNO, "IO")
+    else:
+        nllIO_fine = scanning1D(dt_arr, channels, evtNO, "IO" )
+    TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
+
+    if MO == "NO":
+        dchi2 = 2 * locMinFitIO - 2 * locMinFitNO
+    else:
+        dchi2 = 2 * locMinFitNO - 2 * locMinFitIO
+
+    return TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2
 
 
 
