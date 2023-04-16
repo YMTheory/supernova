@@ -166,10 +166,6 @@ if __name__ == "__main__" :
     if pES:
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fitEmax=5, fileNo=fileNo, dist=dist, exp=exp)
         channels["pES"].setC14rate(c14rate)
-        if C14:
-            channels["pES"].setNOPdfwithBkgFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14{C14level}_new.root")
-            channels["pES"].setIOPdfwithBkgFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_rebin_c14{C14level}_new.root")
-            channels["pES"]._load_pdf2DwithBkg()
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, Eibd, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
         channels["IBD"].setC14rate(0)
@@ -436,4 +432,6 @@ if __name__ == "__main__" :
                     C14label = "lowC14"
                 elif C14level == "high":
                     C14label = "highC14"
-            df.to_csv(f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv")
+            outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv"
+            df.to_csv(outfilename)
+            print(f"******* Data written in {outfilename}")

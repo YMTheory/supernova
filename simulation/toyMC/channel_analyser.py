@@ -129,15 +129,6 @@ class channel :
         self.pdf2DIOE0    = None
         self.pdf2DIO0    = None
         self.f2dIO0     = None
-        # for 2D with bkg:
-        self.pdf2DwithBkgNOT     = None
-        self.pdf2DwithBkgNOE     = None
-        self.pdf2DwithBkgNO     = None
-        self.f2dNOwithBkg      = None
-        self.pdf2DwithBkgIOT     = None
-        self.pdf2DwithBkgIOE     = None
-        self.pdf2DwithBkgIO     = None
-        self.f2dIOwithBkg      = None
 
         self.loadData_flag = False
         self.load1DPDF_flag = False
@@ -208,12 +199,6 @@ class channel :
 
     def setIOPdf2DFile0Path(self, pdffile) -> None:
         self.pdf2DIOfile0 = pdffile
-
-    def setNOPdfwithBkgFilePath(self, pdffile) -> None:
-        self.pdf2DwithBkgNOfile = pdffile
-
-    def setIOPdfwithBkgFilePath(self, pdffile) -> None:
-        self.pdf2DwithBkgIOfile = pdffile
 
     def setStartEvtId(self, idd):
         self.startEvt = idd
@@ -506,37 +491,6 @@ class channel :
         self.f2dIO0 = interpolate.interp2d(self.pdf2DIOT0, self.pdf2DIOE0, self.pdf2DIO0.T, kind="linear")
 
 
-    def _load_pdf2DwithBkg(self) -> None:
-        print(f"\n ========= Load {self.name} 2D PDF ========= \n")
-        try:
-            print(self.pdf2DwithBkgNOfile)
-            f = up.open(self.pdf2DwithBkgNOfile)
-            tmp_h1 = f["h1"]
-        except FileNotFoundError:
-            print(f"THe pdf file {self.pdf2DwithBkgNOfile} does not exist! :(")
-            sys.exit(-1)
-        xaxis = tmp_h1.axis("x")    
-        yaxis = tmp_h1.axis("y")
-        self.pdf2DwithBkgNOT = xaxis.centers()
-        self.pdf2DwithBkgNOE = yaxis.centers()
-        self.pdf2DwithBkgNO  = tmp_h1.values()
-        self.f2dNOwithBkg = interpolate.interp2d(self.pdf2DwithBkgNOT, self.pdf2DwithBkgNOE, self.pdf2DwithBkgNO.T, kind="linear")
-             
-        try:
-            print(self.pdf2DwithBkgIOfile)
-            f = up.open(self.pdf2DwithBkgIOfile)
-            tmp_h1 = f["h1"]
-        except FileNotFoundError:
-            print(f"THe pdf file {self.pdf2DwithBkgIOfile} does not exist! :(")
-            sys.exit(-1)
-        xaxis = tmp_h1.axis("x")    
-        yaxis = tmp_h1.axis("y")
-        self.pdf2DwithBkgIOT = xaxis.centers()
-        self.pdf2DwithBkgIOE = yaxis.centers()
-        self.pdf2DwithBkgIO  = tmp_h1.values()
-        self.f2dIOwithBkg = interpolate.interp2d(self.pdf2DwithBkgIOT, self.pdf2DwithBkgIOE, self.pdf2DwithBkgIO.T, kind="linear")
-        
-
         
     def get_one_event(self, event_id:int):
         """
@@ -588,11 +542,11 @@ class channel :
     def _pdf2DNOwithBkg_func(self, t, E):
         return self.f2dNOwithBkg(t, E)[0]
 
-    def _pdf2DIOwithBkg_func(self, t, E):
-        return self.f2dIOwithBkg(t, E)[0]
+    #def _pdf2DIOwithBkg_func(self, t, E):
+    #    return self.f2dIOwithBkg(t, E)[0]
 
-    def _pdf2DNO_func0(self, t, E):
-        return self.f2dNO0(t, E)[0]
+    #def _pdf2DNO_func0(self, t, E):
+    #    return self.f2dNO0(t, E)[0]
 
     def _pdf2DIO_func0(self, t, E):
         return self.f2dIO0(t, E)[0] 
