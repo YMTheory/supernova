@@ -245,10 +245,8 @@ def parabola_fit(dT_arr, nll_arr, param=False):
 
 def load_C14():
     f = ROOT.TFile("/junofs/users/miaoyu/supernova/production/PDFs/backgrounds/C14/C14_rate_JUNO.root", "read")
-    glow = f.Get("c14_low")
-    return glow
-    #ghig = f.Get("c14_high")
-    #return glow, ghig
+    ghig = f.Get("c14_high")
+    return glow, ghig
 
 
 
