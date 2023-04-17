@@ -177,6 +177,9 @@ if __name__ == "__main__" :
         cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
         cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
         cha._load_pdf()
+        cha.setNODataPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha.setIODataPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha._load_datapdf()
         if fitDim == 2:
             if cha.name == "pES":
                 if not C14:
@@ -195,7 +198,7 @@ if __name__ == "__main__" :
         if not asimov:
             cha.setDataFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D.root")
             cha._load_data_ak()
-            if fitDim == 2 and cha == "pES":
+            if fitDim == 2 and cha.name == "pES":
                 if not C14:
                     cha.setData2DFilePath(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_noC14.root")
                 else:
@@ -208,7 +211,7 @@ if __name__ == "__main__" :
 
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
-    
+
     if asimov:
         # asimov dataset test
         logging.debug("\n ========= FITTING ASIMOV DATASET ========= \n")
@@ -241,6 +244,9 @@ if __name__ == "__main__" :
                 if IBD:
                     NIBD[ievt-startevt] = channels["IBD"].getNsigCurrentEvent(ievt)
 
+                N = len(channels["pES"].get_one_event2D(ievt)[0])
+                print(f"\n Event number of pES in ROI = {N}.")
+
                 TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2 = scanner.scanning_toyMC_chain(channels.values(), MO, fitDim, ievt) 
                 TbestNO[ievt-startevt] = TbestFitNO
                 locMinNO[ievt-startevt] = locMinFitNO
@@ -271,6 +277,6 @@ if __name__ == "__main__" :
                     C14label = "lowC14"
                 elif C14level == "high":
                     C14label = "highC14"
-            outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_useMass{useMass}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv"
+            outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv"
             df.to_csv(outfilename)
-            print(f"******* Data written in {outfilename}")
+            print(f"\n *********** Data written in {outfilename}")

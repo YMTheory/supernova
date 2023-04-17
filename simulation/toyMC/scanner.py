@@ -1,5 +1,6 @@
 import numpy as np
 import ROOT
+import time
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -43,7 +44,7 @@ def scanning2D(dT_arr, channels, ievt, MO):
     return nll
 
 
-def scanning_asimov1D(dT_arr, channels, MO, ty, useC14, level):
+def scanning_asimov1D(dT_arr, channels, MO, ty):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
         val = 0

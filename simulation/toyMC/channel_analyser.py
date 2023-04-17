@@ -289,7 +289,7 @@ class channel :
         try:
             with up.open(self.data2Dfile) as f:
                 print("--------------------------------------------------------------")
-                print(f"Load datafile of channel {self.name} from ->")
+                print(f"Load 2D datafile of channel {self.name} from ->")
                 print(self.data2Dfile)
                 print("--------------------------------------------------------------")
                 numEntries = f["binned"]["TbinConts"].num_entries
