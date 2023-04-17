@@ -27,7 +27,7 @@ def scanning2D(dT_arr, channels, ievt, MO):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            if cha == "pES":   # then do 2D fit
+            if cha.name == "pES":   # then do 2D fit
                 dataT, dataE = cha.get_one_event2D(ievt)
                 if MO == "NO":
                     val += cha.calc_NLL_NO2D(dataT, dataE, dT)
@@ -229,7 +229,7 @@ def scanning_asimov_chain(channels, MO, fitDim):
         nllNO_coarse = scanning_asimov2D_withBkg_MP(dt_arr, channels, "NO", "MO")
     else:
         nllNO_coarse = scanning_asimov1D(dt_arr, channels, "NO", "MO")
-    Tbest, locMin, _ = find_locMin(dt_arr, nllNO)
+    Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllNO_fine = scanning_asimov2D_withBkg_MP(dt_arr_fine, channels, "NO", "MO")
@@ -243,7 +243,7 @@ def scanning_asimov_chain(channels, MO, fitDim):
         nllIO_coarse = scanning_asimov2D_withBkg_MP(dt_arr, channels, "IO", "MO")
     else:
         nllIO_coarse = scanning_asimov1D(dt_arr, channels, "IO", "MO")
-    Tbest, locMin, _ = find_locMin(dt_arr, nllIO)
+    Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllIO_fine = scanning_asimov2D_withBkg_MP(dt_arr_fine, channels, "IO", "MO")
@@ -267,7 +267,7 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
         nllNO_coarse = scanning2D(dt_arr, channels, evtNO,  "NO")
     else:
         nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
-    Tbest, locMin, _ = find_locMin(dt_arr, nllNO)
+    Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllNO_fine = scanning2D(dt_arr_fine, channels, evtNO, "NO")
@@ -281,7 +281,7 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
         nllIO_coarse = scanning2D(dt_arr, channels, evtNO, "IO")
     else:
         nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
-    Tbest, locMin, _ = find_locMin(dt_arr, nllIO)
+    Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllIO_fine = scanning2D(dt_arr_fine, channels, evtNO, "IO")
