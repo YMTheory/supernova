@@ -45,6 +45,8 @@ if __name__ == "__main__" :
     MO          = "NO"
     model       = "Garching"
     modelNo     = 82703
+    fitmodel    = "Garching"
+    fitmodelNo  = 82703
     Ethr        = 0.10
     fitTmin     = -0.02
     fitTmax     = 0.02
@@ -65,8 +67,10 @@ if __name__ == "__main__" :
     C14level    ="low"
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
-    parser.add_argument('--model',      type=str,       default="Garching",     help="Model name (option: Garching, Burrows).")
-    parser.add_argument('--modelNo',    type=int,       default=82703,          help="Model number.")
+    parser.add_argument('--model',      type=str,       default="Garching",     help="Data model name (option: Garching, Burrows).")
+    parser.add_argument('--modelNo',    type=int,       default=82703,          help="Data model number.")
+    parser.add_argument('--fitmodel',   type=str,       default="Garching",     help="Fit model name (option: Garching, Burrows).")
+    parser.add_argument('--fitmodelNo', type=int,       default=82703,          help="Fit model number.")
     parser.add_argument('--MO',         type=str,       default="NO",           help="Mass ordering for the dataset.")
     parser.add_argument("--start",      type=int,       default=0,              help="Start event for fit.")
     parser.add_argument("--end",        type=int,       default=0,              help="End event for fit.")
@@ -95,6 +99,8 @@ if __name__ == "__main__" :
 
     model       = args.model
     modelNo     = args.modelNo
+    fitmodel    = args.fitmodel
+    fitmodelNo  = args.fitmodelNo
     MO          = args.MO
     startevt    = args.start
     endevt      = args.end
@@ -174,8 +180,8 @@ if __name__ == "__main__" :
         #cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_THEIA100.root")
         #cha.setNOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_HyperK.root")
         #cha.setIOPdfFilePath(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/Garching82703_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_HyperK.root")
-        cha.setNOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
-        cha.setIOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha.setNOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{fitmodel}{fitmodelNo}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+        cha.setIOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{fitmodel}{fitmodelNo}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
         cha._load_pdf1D()
         cha.setDataPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
         cha._load_datapdf1D()
