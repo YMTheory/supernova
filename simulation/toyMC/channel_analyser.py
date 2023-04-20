@@ -213,7 +213,9 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
+        print(f"\n ========= Load {self.name} 1D PDF ========= \n")
         try:
+            print(self.pdfNOfile1D)
             f = up.open(self.pdfNOfile1D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
@@ -225,6 +227,7 @@ class channel :
         self.pdfNO1Dy = tmp_h1.values()
         
         try:
+            print(self.pdfIOfile1D)
             f = up.open(self.pdfIOfile1D)
             tmp_h1 = f["h1"] 
         except FileNotFoundError:
@@ -240,7 +243,9 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
+        print(f"\n ========= Load {self.name} 1D data PDF ========= \n")
         try:
+            print(self.datapdffile1D)
             f = up.open(self.datapdffile1D)
             tmp_h1 = f["h1"]
             axis = tmp_h1.axis()

@@ -44,6 +44,20 @@ def scanning2D(dT_arr, channels, ievt, MO):
     return nll
 
 
+def scanning2D_allchannels(dT_arr, channels, ievt, MO):
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            dataT, dataE = cha.get_one_event2D(ievt)
+            if MO == "NO":
+                val += cha.calc_Asimov_NLL_NO2D(dataT, dataE, dT)
+            else:
+                val += cha.calc_Asimov_NLL_IO2D(dataT, dataE, dT)
+        nll[idx] = val
+    return nll
+
+
 def scanning_asimov1D(dT_arr, channels, MO):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
@@ -91,22 +105,27 @@ def scanning_asimov2D_MP(dT_arr, channels, MO):
     return nll
 
 
-def scanning_asimov2D_eESonly_MP(dT_arr, channels, MO):
+def scanning_asimov2D_allchannels_MP(dT_arr, channels, MO):
     start_time = time.time()
     nll = np.zeros(len(dT_arr))
     for cha in channels:
-        if cha.name == "eES" :
-            if MO == "NO":
-                with multiprocessing.Pool(processes=cpu_count()) as pool:
-                    nlleES = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
-            else:
-                with multiprocessing.Pool(processes=cpu_count()) as pool:
-                    nlleES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
-    for i in range(len(dT_arr)):
-        nll[i] = nll[i] + nlleES[i]
+        #if cha.name == "eES" :
+        if MO == "NO":
+            with multiprocessing.Pool(processes=cpu_count()) as pool:
+                tmpnll = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
+        else:
+            with multiprocessing.Pool(processes=cpu_count()) as pool:
+                tmpnll = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+        for i in range(len(dT_arr)):
+            nll[i] = nll[i] + tmpnll[i]
+
+        #elif cha.name == "pES":
+        #    nllpES = scanning_asimov1D(dT_arr, [cha], MO)
+        #    for i in range(len(dT_arr)):
+        #        nll[i] = nll[i] +  nllpES[i]
 
     stop_time = time.time()
-    print(f"Time collapsed for scanning_asimov2D_eESonly_MP is {stop_time - start_time}.")
+    print(f"Time collapsed for scanning_asimov2D_allchannels_MP is {stop_time - start_time}.")
 
     return nll
 
@@ -135,6 +154,7 @@ def parabola_fit(dT_arr, nll_arr, param=False):
     ## check if Tbest at the edge:
     N = len(dT_arr)
     if idx < 2 or idx > N-3: # not enough points to fit
+        print("Local minimum found at the edge")
         return Tbest, locMin
     else:
         a, b, c = np.polyfit(dT_arr[idx-2:idx+3], nll_arr[idx-2:idx+3], 2)
@@ -195,13 +215,13 @@ def scanning_asimov_chain_absoluteMass(channels, MO, fitDim):
     if MO == "NO":
         dt_arr = np.arange(-0.01, 0.011, 0.001)
         if fitDim == 2:
-            nllNO_coarse = scanning_asimov2D_eESonly_MP(dt_arr, channels, MO)
+            nllNO_coarse = scanning_asimov2D_allchannels_MP(dt_arr, channels, MO)
         if fitDim == 1:
             nllNO_coarse = scanning_asimov1D(dt_arr, channels, MO)
         Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
-            nllNO_fine = scanning_asimov2D_eESonly_MP(dt_arr_fine, channels, MO)
+            nllNO_fine = scanning_asimov2D_allchannels_MP(dt_arr_fine, channels, MO)
         if fitDim == 1:
             nllNO_fine = scanning_asimov1D(dt_arr_fine, channels, MO)
         TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
@@ -210,18 +230,42 @@ def scanning_asimov_chain_absoluteMass(channels, MO, fitDim):
     elif MO == "IO":
         dt_arr = np.arange(-0.01, 0.011, 0.001)
         if fitDim == 2:
-            nllIO_coarse = scanning_asimov2D_eESonly_MP(dt_arr, channels, MO)
+            nllIO_coarse = scanning_asimov2D_allchannels_MP(dt_arr, channels, MO)
         if fitDim == 1:
             nllIO_coarse = scanning_asimov1D(dt_arr, channels, MO)
         Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
-            nllIO_fine = scanning_asimov2D_eESonly_MP(dt_arr_fine, channels, MO)
+            nllIO_fine = scanning_asimov2D_allchannels_MP(dt_arr_fine, channels, MO)
         if fitDim == 1:
             nllIO_fine = scanning_asimov1D(dt_arr_fine, channels, MO)
         TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
 
         return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
+
+
+def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    if MO == "NO":
+        if fitDim == 2:
+            nllNO_coarse = scanning2D_allchannels(dt_arr, channels, evtNO, "NO")
+        Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
+        dt_arr_fine = generate_fine_dTarr(Tbest)
+        if fitDim == 2:
+            nllNO_fine = scanning2D_allchannels(dt_arr_fine, channels, evtNO, "NO")
+        TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
+        return dt_arr_fine, nllNO_fine, TbestFitNO, locMinFitNO, aNO, bNO, cNO
+
+    elif MO == "IO":
+        if fitDim == 2:
+            nllIO_coarse = scanning2D_allchannels(dt_arr, channels, evtNO, "IO")
+        Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
+        dt_arr_fine = generate_fine_dTarr(Tbest)
+        if fitDim == 2:
+            nllIO_fine = scanning2D_allchannels(dt_arr_fine, channels, evtNO, "IO")
+        TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
+        return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
+
 
 
 def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
