@@ -172,7 +172,7 @@ class visible_spectrum:
     """
 
 
-    #@profile
+
     def getVisibleEventAtTEvisIntegral_root(self, t, Evismin, Evismax, mo):
 
         if self.channel == "IBD":
