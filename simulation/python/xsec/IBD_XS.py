@@ -6,14 +6,15 @@ class IBD_XS(reaction_XS) :
     def __init__(self) -> None:
         super().__init__(name="IBD")
 
-    def diffXS(self, Ev, T, flavour):
+    def diffXS(self, Ev, T, flavor):
         return 0.
 
 
-    def totXS(self, Ev, flavour):
+    def totXS(self, Ev, flavor):
         """
         return IBD xs: unit cm2
         """
+        if flavor.name == "NU_E"
         Ethr = 1.8022
         if Ev < Ethr:
             return 0
