@@ -4,7 +4,10 @@ import uproot as up
 class toyDetector :
 
     def __init__(self, mass, fracH, fracC)->None:
-        self.mass = mass * 1e6
+        """
+        Mass unit: kton (e.g. for JUNO mass = 20)
+        """
+        self.mass = mass * 1e9
         self.fracH = fracH
         self.fracC = fracC
 
@@ -27,4 +30,5 @@ class toyDetector :
 
     def proton_unquenchedE(self, T):
         return np.interp(T, self.proton_unquench_x, self.proton_unquench_y)
+
 
