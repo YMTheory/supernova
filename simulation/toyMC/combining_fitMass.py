@@ -144,7 +144,7 @@ if __name__ == "__main__" :
         print(f"***** Carbon-14 rate with detection threshold {Ethr:.2f} MeV = {c14rate} /s.\n") 
 
     if Ethr > 0.2:
-        Eibd = Ethr
+        Eibd = Eth
     else:
         Eibd = 0.2
 
@@ -170,19 +170,19 @@ if __name__ == "__main__" :
 
         # 1D PDF setting:
 
-        if cha.name == "eES" or cha.name == "IBD":
+        if cha.name == "eES" or cha.name == "IBD" or cha.name == "pES":
             if fitDim == 1:
-                cha.setDataPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+                cha.setDataPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
                 cha._load_datapdf1D()
-                cha.setNOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_NO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
-                cha.setIOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_PDF_IO_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_newshortPDF_v2.root")
+                cha.setNOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+                cha.setIOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
                 cha._load_pdf1D()
 
             if fitDim == 2:
-                cha.setDataPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_v2.root")
+                cha.setDataPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO.root")
                 cha._load_datapdf2D()
-                cha.setNOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
-                cha.setIOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
+                cha.setNOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
+                cha.setIOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
                 cha._load_pdf2D()
 
         # Set Data Files
@@ -210,15 +210,13 @@ if __name__ == "__main__" :
     
 
         if doFit:
-            for cha in channels.values():
-                cha.setNOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
-                cha.setIOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_v2.root")
-                cha._load_pdf2D()
 
             dt_arr, nll_arr, TbestFit, locMinFit, _, _, _ = scanner.scanning_asimov_chain_absoluteMass(channels.values(), MO, fitDim)
             X = np.vstack((nuMass*np.ones_like(dt_arr), dt_arr, nll_arr))
-            #with open(f"{model}{modelNo}_{dist}kpc_fit{fitDim}D_midNLL_{MO}_fitMass{nuMass:.1f}eV_IBD2D.csv", "ab") as f:
-            #    np.savetxt(f, X.T)
+            outfilename = f"{model}{modelNo}_{dist}kpc_fit{fitDim}D_midNLL_{MO}_fitMass{nuMass:.1f}eV_IBD{IBD}eES{eES}pES{pES}.csv"
+            print(f"***** Output filename = {outfilename}.")
+            with open(outfilename, "ab") as f:
+                np.savetxt(f, X.T)
         else:
             for nuMass in np.arange(0.0, 2.1, 0.1):
                 for cha in channels.values():
