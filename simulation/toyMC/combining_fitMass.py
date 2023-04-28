@@ -57,6 +57,7 @@ if __name__ == "__main__" :
     startevt    = 0
     endevt      = 100
     doFit       = True
+    output      = True
     fitDim      = 2
     asimov      = False
     eES         = True
@@ -74,6 +75,8 @@ if __name__ == "__main__" :
     parser.add_argument("--fileNo",     type=int,       default=0,              help="File No.")
     parser.add_argument("--doFit",      dest="fit",     action="store_true",    help="enable fitting.")
     parser.add_argument("--no-doFit",   dest="fit",     action="store_false",   help="disable fitting.")
+    parser.add_argument("--output",     dest="output",  action="store_true",    help="enable output.")
+    parser.add_argument("--no-output",  dest="output",  action="store_false",   help="disable output.")
     parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
     parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
     parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
@@ -100,6 +103,7 @@ if __name__ == "__main__" :
     startevt    = args.start
     endevt      = args.end
     doFit       = args.fit
+    output      = args.output
     fileNo      = args.fileNo
     fitDim      = args.fitDim
     nuMass      = args.nuMass
@@ -212,11 +216,12 @@ if __name__ == "__main__" :
         if doFit:
 
             dt_arr, nll_arr, TbestFit, locMinFit, _, _, _ = scanner.scanning_asimov_chain_absoluteMass(channels.values(), MO, fitDim)
-            X = np.vstack((nuMass*np.ones_like(dt_arr), dt_arr, nll_arr))
-            outfilename = f"{model}{modelNo}_{dist}kpc_fit{fitDim}D_midNLL_{MO}_fitMass{nuMass:.1f}eV_IBD{IBD}eES{eES}pES{pES}.csv"
-            print(f"***** Output filename = {outfilename}.")
-            with open(outfilename, "ab") as f:
-                np.savetxt(f, X.T)
+            if output:
+                X = np.vstack((nuMass*np.ones_like(dt_arr), dt_arr, nll_arr))
+                outfilename = f"{model}{modelNo}_{dist}kpc_fit{fitDim}D_midNLL_{MO}_fitMass{nuMass:.1f}eV_IBD{IBD}eES{eES}pES{pES}_NonlRes.csv"
+                print(f"***** Output filename = {outfilename}.")
+                with open(outfilename, "ab") as f:
+                    np.savetxt(f, X.T)
         else:
             for nuMass in np.arange(0.0, 2.1, 0.1):
                 for cha in channels.values():
