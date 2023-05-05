@@ -14,6 +14,7 @@ import time
 from channel_analyser import channel
 import scanner
 
+import os
 
 
 if __name__ == "__main__" :
@@ -42,6 +43,9 @@ if __name__ == "__main__" :
     print("==================================\n")
     print(f"Total CPU number is {cpu_count()}")
     print("==================================\n")
+
+    setupscript = "./setup.sh"
+    os.system(f"source {setupscript}")
 
     MO          = "NO"
     model       = "Garching"
@@ -176,17 +180,20 @@ if __name__ == "__main__" :
 
         if cha.name == "eES" or cha.name == "IBD" or cha.name == "pES":
             if fitDim == 1:
-                cha.setDataPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
+                pdffile1dpath = os.getenv("PDF1DFILEPATH")
+                cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
                 cha._load_datapdf1D()
-                cha.setNOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
-                cha.setIOPdfFile1D(f"/junofs/users/miaoyu/supernova/simulation/C++/jobs/{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+                cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+                cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
                 cha._load_pdf1D()
 
             if fitDim == 2:
-                cha.setDataPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO.root")
+                pdffile2dpath = os.getenv("PDF2DFILEPATH")
+                print(f"2D PDF file path: {pdffile2dpath}")
+                cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_Res10.root")
                 cha._load_datapdf2D()
-                cha.setNOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
-                cha.setIOPdfFile2D(f"/junofs/users/miaoyu/supernova/simulation/C++/PDFs2d/Garching82703_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
+                cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO_Res10.root")
+                cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO_Res10.root")
                 cha._load_pdf2D()
 
         # Set Data Files
