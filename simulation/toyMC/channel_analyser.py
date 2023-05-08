@@ -24,7 +24,7 @@ class channel :
     Define a new class describing a specific detection channel in JUNO.
     """
     
-    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=10, fitTmax=50, fitEmax=80, fileNo=0, exp="", nuMass=0.0) -> None:
+    def __init__(self, name:str, MH:str, model:str, modelNo:int, Ethr:float, dist=10, fitTmin=-0.02, fitTmax=0.02, fitEmax=80, fileNo=0, exp="", nuMass=0.0) -> None:
         self.name   = name
         self.MH     = MH
         self.model  = model
@@ -198,7 +198,7 @@ class channel :
                 Nsubarr = np.array(Nsubarr)
                 Nave = np.mean(Nsubarr)
                 Nsigma = np.std(Nsubarr)
-                print(f"Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt} in channel {self.name}, where the average signal number in one event is {Nave} and sigma is {Nsigma}.")
+                print(f"\n*****Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt} in channel {self.name}, where the average signal number in one event is {Nave} and sigma is {Nsigma}.\n")
                 self.dataT_array = nuTime
                 self.dataE_array = nuEnergy
                 self.nentries = evtNum
@@ -266,7 +266,7 @@ class channel :
             f = up.open(self.pdfNOfile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"THe pdf file {self.pdfNOfile2D} does not exist! :(")
+            print(f"The pdf file {self.pdfNOfile2D} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -280,7 +280,7 @@ class channel :
             f = up.open(self.pdfIOfile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"THe pdf file {self.pdf2DIOfile} does not exist! :(")
+            print(f"The pdf file {self.pdf2DIOfile} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -299,7 +299,7 @@ class channel :
             f = up.open(self.datapdffile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"THe pdf file {self.pdf2DNOfile} does not exist! :(")
+            print(f"The pdf file {self.datapdffile2D} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -438,6 +438,7 @@ class channel :
 
     def calc_Asimov_NLL_NO2D(self, dT) -> float:
         nll = 0
+        test_n = 0
         stepT = self.Tbinwidth
         stepE = self.Ebinwidth
         Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
@@ -447,6 +448,7 @@ class channel :
                 t_data = stepT * (it + 0.5)
                 E_data = stepE * (iE + 0.5)
                 n = self._datapdf2D_func(t_data, E_data) * stepT * stepE
+                test_n += n
 
                 t_pdf = t_data + dT
                 s = self._pdf2DNO_func(t_pdf, E_data) * stepT * stepE
@@ -461,7 +463,8 @@ class channel :
                 if s != 0 and n == 0:
                     tmp_nll = s
                     nll += tmp_nll
-
+        
+        print(f"Total measured event number = {test_n}.")
         return nll
             
 

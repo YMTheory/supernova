@@ -44,7 +44,21 @@ def scanning2D(dT_arr, channels, ievt, MO):
     return nll
 
 
-def scanning2D_allchannels(dT_arr, channels, ievt, MO):
+def scanning2D_absoluteMass(dT_arr, channels, ievt, MO):
+    nll = np.zeros((len(dT_arr)))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            dataT, dataE = cha.get_one_event2D(ievt)
+            if MO == "NO":
+                val += cha.calc_NLL_NO2D(dataT, dataE, dT)
+            else:
+                val += cha.calc_NLL_IO2D(dataT, dataE, dT)
+        nll[idx] = val
+    return nll
+
+
+def scanning_asimov2D_allchannels(dT_arr, channels, ievt, MO):
     nll = np.zeros(len(dT_arr))
     for idx, dT in enumerate(dT_arr):
         val = 0
@@ -64,9 +78,13 @@ def scanning_asimov1D(dT_arr, channels, MO):
         val = 0
         for cha in channels:
             if MO == "NO":
-                val += cha.calc_Asimov_NLL_NO(dT)
+                tmpval = cha.calc_Asimov_NLL_NO(dT)
+                #print(cha.name, dT, tmpval)
+                val += tmpval
             else:
-                val += cha.calc_Asimov_NLL_IO(dT)
+                tmpval = cha.calc_Asimov_NLL_IO(dT)
+                #print(cha.name, dT, tmpval)
+                val += tmpval
         nll[idx] = val
 
     return nll
@@ -155,11 +173,12 @@ def parabola_fit(dT_arr, nll_arr, param=False):
     N = len(dT_arr)
     if idx < 2 or idx > N-3: # not enough points to fit
         print("Local minimum found at the edge")
-        return Tbest, locMin
+        if not param:
+            return Tbest, locMin
+        else:
+            return Tbest, locMin, 0, 0, 0
     else:
         a, b, c = np.polyfit(dT_arr[idx-2:idx+3], nll_arr[idx-2:idx+3], 2)
-        print(dT_arr[idx-2:idx+3])
-        print(nll_arr[idx-2:idx+3])
         Tbest = - b / 2 / a
         locMin = (4*a*c - b**2) / 4 / a
         if not param:
@@ -256,21 +275,21 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
     dt_arr = np.arange(-0.01, 0.011, 0.001)
     if MO == "NO":
         if fitDim == 2:
-            nllNO_coarse = scanning2D_allchannels(dt_arr, channels, evtNO, "NO")
+            nllNO_coarse = scanning2D_absoluteMass(dt_arr, channels, evtNO, "NO")
         Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
-            nllNO_fine = scanning2D_allchannels(dt_arr_fine, channels, evtNO, "NO")
+            nllNO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "NO")
         TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
         return dt_arr_fine, nllNO_fine, TbestFitNO, locMinFitNO, aNO, bNO, cNO
 
     elif MO == "IO":
         if fitDim == 2:
-            nllIO_coarse = scanning2D_allchannels(dt_arr, channels, evtNO, "IO")
+            nllIO_coarse = scanning2D_absoluteMass(dt_arr, channels, evtNO, "IO")
         Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
-            nllIO_fine = scanning2D_allchannels(dt_arr_fine, channels, evtNO, "IO")
+            nllIO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "IO")
         TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
         return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
 
