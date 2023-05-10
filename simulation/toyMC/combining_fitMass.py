@@ -44,9 +44,6 @@ if __name__ == "__main__" :
     print(f"Total CPU number is {cpu_count()}")
     print("==================================\n")
 
-    setupscript = "./setup.sh"
-    os.system(f"source {setupscript}")
-
     MO          = "NO"
     model       = "Garching"
     modelNo     = 82703
@@ -265,20 +262,21 @@ if __name__ == "__main__" :
                 locMin[ievt-startevt] = locMinFit
 
                 
-            df = pd.DataFrame({
-                "Tbest" : Tbest,
-                "locMin" : locMin,
-            })
+            if output:
+                df = pd.DataFrame({
+                    "Tbest" : Tbest,
+                    "locMin" : locMin,
+                })
 
-            target = target * 20
-            if not C14:
-                C14label = "noC14"
-            else:
-                if C14level == "low":
-                    C14label = "lowC14"
-                elif C14level == "high":
-                    C14label = "highC14"
-            outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass.csv"
-            df.to_csv(outfilename)
-            print(f"\n *********** Data written in {outfilename}")
+                target = target * 20
+                if not C14:
+                    C14label = "noC14"
+                else:
+                    if C14level == "low":
+                        C14label = "lowC14"
+                    elif C14level == "high":
+                        C14label = "highC14"
+                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass.csv"
+                df.to_csv(outfilename)
+                print(f"\n *********** Data written in {outfilename}")
 
