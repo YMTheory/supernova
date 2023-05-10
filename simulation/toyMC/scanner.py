@@ -147,6 +147,13 @@ def scanning_asimov2D_allchannels_MP(dT_arr, channels, MO):
 
     return nll
 
+
+def sanity_check(nll_arr):
+    idx = np.argmin(nll_arr)
+    if idx == len(nll_arr) - 1:
+        return False
+    else:
+        return True
     
 def find_locMin(dT_arr, nll_arr):
     idx = np.argmin(nll_arr)
@@ -172,7 +179,8 @@ def parabola_fit(dT_arr, nll_arr, param=False):
     ## check if Tbest at the edge:
     N = len(dT_arr)
     if idx < 2 or idx > N-3: # not enough points to fit
-        print("Local minimum found at the edge")
+        print(f"Local minimum at {Tbest} with NLL = {locMin}.")
+        print(f"Local minimum found at the edge at {dT_arr[idx]}.")
         if not param:
             return Tbest, locMin
         else:
@@ -280,6 +288,17 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
             nllNO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "NO")
+        # sanity check :
+        while True:
+            if dt_arr_fine[-1] > 0.05:
+                break
+            if not sanity_check(nllNO_fine):
+                print("Sanity check not satisfied -> run fine scanning again.")
+                dt_arr_fine = generate_fine_dTarr(dt_arr_fine[-1])
+                nllNO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "NO")
+            else:
+                break
+            
         TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
         return dt_arr_fine, nllNO_fine, TbestFitNO, locMinFitNO, aNO, bNO, cNO
 
@@ -290,6 +309,17 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
         dt_arr_fine = generate_fine_dTarr(Tbest)
         if fitDim == 2:
             nllIO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "IO")
+        # sanity check :
+        while True:
+            if dt_arr_fine[-1] > 0.05:
+                break
+            if not sanity_check(nllIO_fine):
+                print("Sanity check not satisfied -> run fine scanning again.")
+                dt_arr_fine = generate_fine_dTarr(dt_arr_fine[-1])
+                nllIO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "IO")
+            else:
+                break
+            
         TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
         return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
 
