@@ -19,17 +19,17 @@ import matplotlib.pyplot as plt
 import plotConfig
 
 
-def readCSV(filename, start, end):
+def readCSV(filename, evtid):
     df1 = pd.read_csv(filename)
-    Tbest = df1["Tbest"][start:end]
-    locMin = df1["locMin"][start:end]
+    Tbest = df1["Tbest"][evtid]
+    locMin = df1["locMin"][evtid]
     return Tbest, locMin
 
 
 def loadFit(MO, mass, evtID):
     csvfilepath = os.getenv("CSVFILEPATH")
     filename = f"{csvfilepath}Garching82703_10.0kpc_20.0kton_{MO}_pESeESIBD_nuMass{mass:.1f}eV_0.10MeV_fitTmin-0.020sfitTmax0.020s_noC14_tot_unbinnedData_unbinnedNLL_PosiToyDataTobs2D_JUNO.csv"
-    tmp_Tbest, tmp_locMin = readCSV(filename, evtID, evtID+1)
+    tmp_Tbest, tmp_locMin = readCSV(filename, evtID)
     return tmp_Tbest, tmp_locMin
 
 
@@ -59,37 +59,40 @@ if __name__ == "__main__" :
     pES         = True
     C14         = False
     C14level    ="low"
-    plot        = True
+    plotOne     = False
+    plotAll     = True
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
-    parser.add_argument('--model',      type=str,       default="Garching",     help="Model name (option: Garching, Burrows).")
-    parser.add_argument('--modelNo',    type=int,       default=82703,          help="Model number.")
-    parser.add_argument('--MO',         type=str,       default="NO",           help="Mass ordering for the dataset.")
-    parser.add_argument("--start",      type=int,       default=0,              help="Start event for fit.")
-    parser.add_argument("--end",        type=int,       default=0,              help="End event for fit.")
-    parser.add_argument("--fileNo",     type=int,       default=0,              help="File No.")
-    parser.add_argument("--doFit",      dest="fit",     action="store_true",    help="enable fitting.")
-    parser.add_argument("--no-doFit",   dest="fit",     action="store_false",   help="disable fitting.")
-    parser.add_argument("--doPlot",      dest="plot",     action="store_true",    help="enable plotting.")
-    parser.add_argument("--no-doPlot",   dest="plot",     action="store_false",   help="disable plotting.")
-    parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
-    parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
-    parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
-    parser.add_argument("--no-C14",     dest="C14",     action="store_false",   help="disable C14 background.")
-    parser.add_argument("--fitDim",     type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
-    parser.add_argument("--C14level",   type=str,       default="low",          help="C14 concentration level (low or high).")
-    parser.add_argument("--Ethr",       type=float,     default=0.1,            help="Detection threshold MeV. ")
-    parser.add_argument("--nuMass",     type=float,     default=0.0,            help="Neutrino mass in fit PDFs.")
-    parser.add_argument("--fitTmin",    type=float,     default=-0.02,          help="Minimum fit time [s].")
-    parser.add_argument("--fitTmax",    type=float,     default=0.02,           help="Maximum fit time [s].")
-    parser.add_argument('--eES',        dest='eES',     action="store_true",    help="enable eES")
-    parser.add_argument('--no-eES',     dest='eES',     action="store_false",   help="disable eES")
-    parser.add_argument('--IBD',        dest='IBD',     action="store_true",    help="enable IBD")
-    parser.add_argument('--no-IBD',     dest='IBD',     action="store_false",   help="disable IBD")
-    parser.add_argument('--pES',        dest='pES',     action="store_true",    help="enable pES")
-    parser.add_argument('--no-pES',     dest='pES',     action="store_false",   help="disable pES")
-    parser.add_argument('--dist',       type=float,     default=10.,            help="distance of CCSNe.")
-    parser.add_argument('--target',     type=float,     default=1.,             help="normalized target mass, JUNO 20kton scaled as 1.")
+    parser.add_argument('--model',          type=str,       default="Garching",     help="Model name (option: Garching, Burrows).")
+    parser.add_argument('--modelNo',        type=int,       default=82703,          help="Model number.")
+    parser.add_argument('--MO',             type=str,       default="NO",           help="Mass ordering for the dataset.")
+    parser.add_argument("--start",          type=int,       default=0,              help="Start event for fit.")
+    parser.add_argument("--end",            type=int,       default=0,              help="End event for fit.")
+    parser.add_argument("--fileNo",         type=int,       default=0,              help="File No.")
+    parser.add_argument("--doFit",          dest="fit",     action="store_true",    help="enable fitting.")
+    parser.add_argument("--no-doFit",       dest="fit",     action="store_false",   help="disable fitting.")
+    parser.add_argument("--doPlotAll",      dest="plotAll", action="store_true",    help="enable plotting all.")
+    parser.add_argument("--no-doPlotAll",   dest="plotAll", action="store_false",   help="disable plotting all.")
+    parser.add_argument("--doPlotOne",      dest="plotOne", action="store_true",    help="enable plotting one.")
+    parser.add_argument("--no-doPlotOne",   dest="plotOne", action="store_false",   help="disable plotting one.")
+    parser.add_argument("--Asimov",         dest="asimov",  action="store_true",    help="enable asimov dataset.")
+    parser.add_argument("--no-Asimov",      dest="asimov",  action="store_false",   help="disable asimov dataset.")
+    parser.add_argument("--C14",            dest="C14",     action="store_true",    help="enable C14 background.")
+    parser.add_argument("--no-C14",         dest="C14",     action="store_false",   help="disable C14 background.")
+    parser.add_argument("--fitDim",         type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
+    parser.add_argument("--C14level",       type=str,       default="low",          help="C14 concentration level (low or high).")
+    parser.add_argument("--Ethr",           type=float,     default=0.1,            help="Detection threshold MeV. ")
+    parser.add_argument("--nuMass",         type=float,     default=0.0,            help="Neutrino mass in fit PDFs.")
+    parser.add_argument("--fitTmin",        type=float,     default=-0.02,          help="Minimum fit time [s].")
+    parser.add_argument("--fitTmax",        type=float,     default=0.02,           help="Maximum fit time [s].")
+    parser.add_argument('--eES',            dest='eES',     action="store_true",    help="enable eES")
+    parser.add_argument('--no-eES',         dest='eES',     action="store_false",   help="disable eES")
+    parser.add_argument('--IBD',            dest='IBD',     action="store_true",    help="enable IBD")
+    parser.add_argument('--no-IBD',         dest='IBD',     action="store_false",   help="disable IBD")
+    parser.add_argument('--pES',            dest='pES',     action="store_true",    help="enable pES")
+    parser.add_argument('--no-pES',         dest='pES',     action="store_false",   help="disable pES")
+    parser.add_argument('--dist',           type=float,     default=10.,            help="distance of CCSNe.")
+    parser.add_argument('--target',         type=float,     default=1.,             help="normalized target mass, JUNO 20kton scaled as 1.")
     args = parser.parse_args()
 
     model       = args.model
@@ -112,7 +115,8 @@ if __name__ == "__main__" :
     C14level    = args.C14level
     dist        = args.dist
     target      = args.target
-    plot        = args.plot
+    plotAll     = args.plotAll
+    plotOne     = args.plotOne
 
     scale = target * 10.0 * 10.0 / (dist * dist)  ## due to the PDFs are generated based on 10 kpc CCSNe and 20kton LS...
     bkgscale = target
@@ -185,10 +189,30 @@ if __name__ == "__main__" :
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
 
+    if plotOne:
+        dt_arr, nll_arr, TbestFit, locMinFit, _, _, _ = scanner.scanning_toyMC_chain_absoluteMass(channels.values(), MO, fitDim, startevt)
+
     
-    if plot:
+    if plotAll:
         FIGSIZE = 4
         colors0 = mpl.cm.viridis(np.linspace(0.1,1, 21))
+        colors1 = ["tab:blue", "tab:orange", "tab:green", "tab:red"]
+
+        fig0, ax0 = plt.subplots(1, 2, figsize=(2*FIGSIZE+1, FIGSIZE))
+        masses = np.arange(0, 2.0, 0.1)
+        dTbest_arr, locMin_arr = np.zeros(len(masses)), np.zeros(len(masses))
+        for im, mass in enumerate(masses):
+            dTbest, locMin = loadFit("NO", mass, startevt)
+            dTbest_arr[im] = dTbest
+            locMin_arr[im] = locMin
+        ax0[0].plot(masses, dTbest_arr, "o-", lw=2)
+        ax0[1].plot(masses, 2*locMin_arr-2*np.min(locMin_arr), "o-", lw=2)
+        ax0[0].grid(True)
+        ax0[1].grid(True)
+        plotConfig.setaxis(ax0[0], xlabel=r"$m_\nu$ [eV]", ylabel=r"$\Delta t$ [s]", title="Fit time")
+        plotConfig.setaxis(ax0[1], xlabel=r"$m_\nu$ [eV]", ylabel=r"$\Delta \chi^2$ [s]", title="Fit chisquare")
+        plt.tight_layout()
+
         fig, ax = plt.subplots(1, len(channels), figsize=(len(channels)*FIGSIZE+FIGSIZE, FIGSIZE) )
         for ich, cha in enumerate(channels.values()):
             for ievt in range(startevt, endevt, 1):
@@ -203,17 +227,28 @@ if __name__ == "__main__" :
                         dyerr.append(np.sqrt(conts[idd]))
                 ax[ich].errorbar(dx, dy, yerr=dyerr, fmt="o", ms=5, fillstyle="none", color="black")
                 # load and draw PDFs
-                for im, mass in enumerate(np.arange(0, 2.0, 0.1)):
-                    dTbest, _ = loadFit("NO", mass, startevt)
+                for im, mass in enumerate(np.arange(1.0, 1.3, 0.1)):
+                    dTbest, locMinFit = loadFit(MO, mass, startevt)
+                    print(f"***Best fit time for nuMass = {mass:.1f}eV is {dTbest}s.")
                     cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{mass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
                     cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{mass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+                    cha._load_pdf1D()
                     x = np.arange(-0.02, 0.02, 0.001)
+                    y0 = np.zeros(len(x))
                     y = np.zeros(len(x))
                     for ix, ex in enumerate(x):
-                        y[ix] = cha._pdfNO_func(ex+dTbest)
-                    ax[ich].plot(x, y/1000., ":", lw=1.5, label=f"{mass:.1f}eV", color=colors0[im])
+                        if MO == "NO":
+                            y0[ix] = cha._pdfNO_func(ex)
+                            y[ix] = cha._pdfNO_func(ex+dTbest)
+                        elif MO == "IO":
+                            y0[ix] = cha._pdfIO_func(ex)
+                            y[ix] = cha._pdfIO_func(ex+dTbest)
+                    ax[ich].plot(x, y0/1000., ":", lw=1.5)
+                    ax[ich].plot(x, y/1000., "-", lw=1.5, label=f"{mass:.1f}eV", color=colors1[im])
+                    #ax[ich].plot(x, y/1000., ":", lw=1.5, label=f"{mass:.1f}eV", color=colors0[im])
             plotConfig.setaxis(ax[ich], xlabel="Post-bounce time [ms]", ylabel="Counts per ms", title=cha.name, lg=True, lgsize=10, ncol=2)
-        #plt.tight_layout()
+        
+        plt.tight_layout()
         plt.show()
 
                     

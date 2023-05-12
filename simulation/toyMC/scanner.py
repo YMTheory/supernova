@@ -299,7 +299,11 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
             else:
                 break
             
+        print(dt_arr_fine)
+        print(nllNO_fine)
+
         TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
+        print(f"TbestFitNO = {TbestFitNO} with locMinFitNO = {locMinFitNO}.")
         return dt_arr_fine, nllNO_fine, TbestFitNO, locMinFitNO, aNO, bNO, cNO
 
     elif MO == "IO":
