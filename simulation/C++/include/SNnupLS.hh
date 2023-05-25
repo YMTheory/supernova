@@ -18,6 +18,10 @@ class SNnupLS : public SNeffectLS{
 
         virtual double differentialXS(double E, double T, int type);
         virtual double totalXS(double E, int type);
+        
+        // from JUNO offline CCSNe generator:
+        virtual double differentialXS_old(double E, double T, int type);
+        virtual double totalXS_old(double E, int type);
 
 
     //public:
