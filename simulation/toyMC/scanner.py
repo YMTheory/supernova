@@ -31,9 +31,9 @@ def scanning2D(dT_arr, channels, ievt, MO):
             if cha.name == "pES":   # then do 2D fit
                 dataT, dataE = cha.get_one_event2D(ievt)
                 if MO == "NO":
-                    val += cha.calc_NLL_NO2D(dataT, dataE, dT)
+                    val += cha.calc_NLL_NO2D(dataT, dataE, dT)[0]
                 else:
-                    val += cha.calc_NLL_IO2D(dataT, dataE, dT)
+                    val += cha.calc_NLL_IO2D(dataT, dataE, dT)[0]
             else:
                 dataT = cha.get_one_event(ievt)
                 if MO == "NO":
@@ -45,17 +45,31 @@ def scanning2D(dT_arr, channels, ievt, MO):
 
 
 def scanning2D_absoluteMass(dT_arr, channels, ievt, MO):
-    nll = np.zeros((len(dT_arr)))
+    dt_used, nll = [], []
     for idx, dT in enumerate(dT_arr):
         val = 0
+        totflag = False
         for cha in channels:
             dataT, dataE = cha.get_one_event2D(ievt)
             if MO == "NO":
-                val += cha.calc_NLL_NO2D(dataT, dataE, dT)
+                #val += cha.calc_NLL_NO2D(dataT, dataE, dT)
+                tmp_val, flag = cha.calc_NLL_NO2D(dataT, dataE, dT)
+                val += tmp_val
+                if flag:
+                    totflag = True
             else:
-                val += cha.calc_NLL_IO2D(dataT, dataE, dT)
-        nll[idx] = val
-    return nll
+                #val += cha.calc_NLL_IO2D(dataT, dataE, dT)
+                tmp_val, flag = cha.calc_NLL_IO2D(dataT, dataE, dT)
+                val += tmp_val
+                if flag:
+                    totflag = True
+        if not totflag:
+            dt_used.append(dT)
+            nll.append(val)
+
+    dt_used = np.array(dt_used)
+    nll = np.array(nll)
+    return dt_used, nll
 
 
 def scanning_asimov2D_allchannels(dT_arr, channels, ievt, MO):
@@ -279,6 +293,27 @@ def scanning_asimov_chain_absoluteMass(channels, MO, fitDim):
         return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
 
 
+
+def scanning_toyMC_chain_absoluteMass_2Dnew(channels, MO, evtNO):
+    # directly scanning a large window -> avoid drop into local minimum.. Bad property of NLL
+    dt_arr = np.arange(-0.01, 0.05, 0.001)
+    if MO == "NO":
+        dt_used, nll = scanning2D_absoluteMass(dt_arr, channels, evtNO, "NO")
+        if len(dt_used) == 0:
+            print("********** No time window satisties requirements.\n")
+            return dt_used, nll, -10000, -10000, 0, 0, 0
+        TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_used, nll, param=True)
+        return dt_used, nll, TbestFitNO, locMinFitNO, aNO, bNO, cNO
+    elif MO == "IO":
+        dt_used, nll = scanning2D_absoluteMass(dt_arr, channels, evtNO, "IO")
+        if len(dt_used) == 0:
+            print("********** No time window satisties requirements.\n")
+            return dt_used, nll, -10000, -10000, 0, 0, 0
+        TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_used, nll, param=True)
+        return dt_used, nll, TbestFitIO, locMinFitIO, aIO, bIO, cIO
+
+
+
 def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
     dt_arr = np.arange(-0.01, 0.011, 0.001)
     if MO == "NO":
@@ -298,12 +333,8 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
                 nllNO_fine = scanning2D_absoluteMass(dt_arr_fine, channels, evtNO, "NO")
             else:
                 break
-            
-        print(dt_arr_fine)
-        print(nllNO_fine)
-
         TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
-        print(f"TbestFitNO = {TbestFitNO} with locMinFitNO = {locMinFitNO}.")
+        #print(f"Best fit point at {TbestFitNO} with {locMinFitNO}.") 
         return dt_arr_fine, nllNO_fine, TbestFitNO, locMinFitNO, aNO, bNO, cNO
 
     elif MO == "IO":

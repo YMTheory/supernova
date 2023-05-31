@@ -15,9 +15,12 @@ from channel_analyser import channel
 import scanner
 
 import os
+import sys
+sys.path.append("/junofs/users/miaoyu/supernova/simulation/toyMC/script/")
+import stat_tool
 
 
-if __name__ == "__main__" :
+def fit_absolute_mass():
 
     """
     This script is used to do combining fitting: neutrino mass ordering and absolute neutrion mass.
@@ -66,6 +69,7 @@ if __name__ == "__main__" :
     pES         = True
     C14         = False
     C14level    ="low"
+    scanning    = False
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--model',      type=str,       default="Garching",     help="Model name (option: Garching, Burrows).")
@@ -80,6 +84,8 @@ if __name__ == "__main__" :
     parser.add_argument("--no-output",  dest="output",  action="store_false",   help="disable output.")
     parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
     parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
+    parser.add_argument("--scanning",   dest="scanning", action="store_true",   help="enable scanning.")
+    parser.add_argument("--no-scanning",dest="scanning", action="store_false",  help="disable scanning.")
     parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
     parser.add_argument("--no-C14",     dest="C14",     action="store_false",   help="disable C14 background.")
     parser.add_argument("--fitDim",     type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
@@ -109,6 +115,7 @@ if __name__ == "__main__" :
     fitDim      = args.fitDim
     nuMass      = args.nuMass
     asimov      = args.asimov
+    scanning    = args.scanning
     eES         = args.eES
     IBD         = args.IBD
     pES         = args.pES
@@ -175,22 +182,24 @@ if __name__ == "__main__" :
 
         # 1D PDF setting:
 
-        if cha.name == "eES" or cha.name == "IBD" or cha.name == "pES":
-            pdffile1dpath = os.getenv("PDF1DFILEPATH")
-            cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
-            cha._load_datapdf1D()
-            cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
-            cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
-            cha._load_pdf1D()
+        pdffile1dpath = os.getenv("PDF1DFILEPATH")
+        cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
+        cha._load_datapdf1D()
+        cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+        cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+        cha._load_pdf1D()
 
-            if fitDim == 2:
-                pdffile2dpath = os.getenv("PDF2DFILEPATH")
-                print(f"2D PDF file path: {pdffile2dpath}")
-                cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO.root")
-                cha._load_datapdf2D()
-                cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
-                cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
-                cha._load_pdf2D()
+        N_1DNO = stat_tool.get_statROI_from1Dpdf(cha.pdfNOfile1D)
+        N_1DIO = stat_tool.get_statROI_from1Dpdf(cha.pdfIOfile1D)
+        print(f"{cha.name} channel: 1D NO event number in ROI = {N_1DNO}, IO event number in ROI = {N_1DIO}.")
+
+        if fitDim == 2:
+            pdffile2dpath = os.getenv("PDF2DFILEPATH")
+            cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO.root")
+            cha._load_datapdf2D()
+            cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
+            cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
+            cha._load_pdf2D()
 
         # Set Data Files
         if not asimov:
@@ -198,22 +207,47 @@ if __name__ == "__main__" :
                 cha.setDataFile1D(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data1d/Garching82703_{cha.name}_unbinneddata_{cha.MH}_10.0kpc_thr{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_T1D.root")
                 cha._load_data1D()
             if fitDim == 2:
-                if cha.name == "pES":
-                    if not C14:
-                        cha.setDataFile2D(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_noC14.root")
-                    else:
-                        if C14level == "low":
-                            cha.setDataFile2D(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_C14low.root")
-                        elif C14level == "high":
-                            cha.setDataFile2D(f"/junofs/users/miaoyu/supernova/simulation/toyMC/Data2d/Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_C14high.root")
-                else:
-                    datapath = os.getenv("DATA2DFILEPATH")
-                    cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_JUNO.root")
+                datapath = os.getenv("DATA2DFILEPATH")
+                cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_JUNO.root")
+
+                #if cha.name == "pES":
+                #    if not C14:
+                #        cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_JUNO_scale25.0.root")
+                #        #cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_noC14.root")
+                #    else:
+                #        if C14level == "low":
+                #            cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_C14low.root")
+                #        elif C14level == "high":
+                #            cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_rebin_C14high.root")
+                #else:
+                #    cha.setDataFile2D(f"{datapath}Garching82703_unbinnedData_{cha.MH}_10kpc_{cha.name}_{cha.Ethr:.2f}MeV_Tmin-20msTmax20ms_TEobs2D_JUNO.root")
 
                 cha._load_data2D()    # could get 1D or 2D dataset from the fitting requirement.
 
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
+
+    if scanning and not asimov:
+
+        dt_scan = np.arange(-0.01, 0.04, 0.001)
+        #dt_scan = np.array([0.0])
+        chi2_scan = np.zeros(len(dt_scan))
+
+        for i, dt in enumerate(dt_scan):
+            scan = 0
+            for cha in channels.values():
+                if MO == "NO":
+                    scan += cha.calc_Asimov_NLL_NO2D(dt)
+                elif MO == "IO":
+                    scan += cha.calc_Asimov_NLL_IO2D(dt)
+            chi2_scan[i] = 2 * scan
+
+        arr = np.vstack((dt_scan, chi2_scan))
+
+        target = 20 * target
+        filename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/scanRes/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_asimov2Dscan_{exp}_absMass.csv"
+        np.savetxt(filename, arr.T)
+        sys.exit(-1)
 
     if asimov:
 
@@ -241,7 +275,7 @@ if __name__ == "__main__" :
                 print(nuMass, tmpnll)
 
     
-    else:
+    elif (not asimov) and (not scanning):
         ## fit toyMC fitting
         if doFit:
             ## Do fitting
@@ -257,7 +291,7 @@ if __name__ == "__main__" :
 
             for ievt in tqdm(range(startevt, endevt, 1)):
 
-                dt_arr, nll_arr, TbestFit, locMinFit, _, _, _ = scanner.scanning_toyMC_chain_absoluteMass(channels.values(), MO, fitDim, ievt)
+                dt_arr, nll_arr, TbestFit, locMinFit, _, _, _ = scanner.scanning_toyMC_chain_absoluteMass_2Dnew(channels.values(), MO,  ievt)
                 Tbest[ievt-startevt] = TbestFit
                 locMin[ievt-startevt] = locMinFit
 
@@ -276,7 +310,12 @@ if __name__ == "__main__" :
                         C14label = "lowC14"
                     elif C14level == "high":
                         C14label = "highC14"
-                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass.csv"
+                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass_limitdTtoAvoid1e-10LessProb.csv"
                 df.to_csv(outfilename)
                 print(f"\n *********** Data written in {outfilename}")
+
+
+if __name__ == "__main__":
+    fit_absolute_mass()
+
 

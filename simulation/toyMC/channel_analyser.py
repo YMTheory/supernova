@@ -49,10 +49,14 @@ class channel :
         self.datapdf1Dy = None
 
         self.pdfNOfile1D = None
+        self.pdfNOhist1D = None
         self.pdfNO1Dx     = None
+        self.pdfNO1Dbins  = None
         self.pdfNO1Dy     = None
         self.pdfIOfile1D = None
+        self.pdfIOhist1D = None
         self.pdfIO1Dx     = None
+        self.pdfIO1Dbins  = None
         self.pdfIO1Dy     = None
 
         ### 2D:
@@ -181,10 +185,10 @@ class channel :
         """
         try:
             with up.open(self.datafile2D) as f:
-                print("--------------------------------------------------------------")
-                print(f"Load 2D datafile2D of channel {self.name} from ->")
-                print(self.datafile2D)
-                print("--------------------------------------------------------------")
+                logging.debug("--------------------------------------------------------------")
+                logging.debug(f"Load 2D datafile2D of channel {self.name} from ->")
+                logging.debug(self.datafile2D)
+                logging.debug("--------------------------------------------------------------")
                 numEntries = f["binned"]["TbinConts"].num_entries
                 if self.endEvt == 0:
                     self.startEvt = 0
@@ -198,14 +202,14 @@ class channel :
                 Nsubarr = np.array(Nsubarr)
                 Nave = np.mean(Nsubarr)
                 Nsigma = np.std(Nsubarr)
-                print(f"\n*****Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt} in channel {self.name}, where the average signal number in one event is {Nave} and sigma is {Nsigma}.\n")
+                logging.debug(f"\n*****Total loaded event number = {evtNum} from Event {self.startEvt} to {self.endEvt} in channel {self.name}, where the average signal number in one event is {Nave} and sigma is {Nsigma}.\n")
                 self.dataT_array = nuTime
                 self.dataE_array = nuEnergy
                 self.nentries = evtNum
 
                 self.load2DPDF_flag = True
         except FileExistsError:
-            print(f"The data file {self.datafile2D} dose not exist! :(")
+            lbEogging.critical(f"The data file {self.datafile2D} dose not exist! :(")
             sys.exit(-1)
 
 
@@ -213,27 +217,31 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
-        print(f"\n ========= Load {self.name} 1D PDF ========= \n")
+        logging.debug(f"\n ========= Load {self.name} 1D PDF ========= \n")
         try:
-            print(self.pdfNOfile1D)
+            logging.debug(self.pdfNOfile1D)
             f = up.open(self.pdfNOfile1D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
             print(f"The pdf file {self.pdfNOfile1D} dose not exist! :(")
             sys.exit(-1)
             
+        self.pdfNO1Dbins = tmp_h1.to_numpy()[1]
+        #self.pdfNOhist1D = tmp_h1.to_hist()
         axis = tmp_h1.axis()    
         self.pdfNO1Dx = axis.centers()
         self.pdfNO1Dy = tmp_h1.values()
         
         try:
-            print(self.pdfIOfile1D)
+            logging.debug(self.pdfIOfile1D)
             f = up.open(self.pdfIOfile1D)
             tmp_h1 = f["h1"] 
         except FileNotFoundError:
             print(f"The pdf file {self.pdfIOfile1D} dose not exist! :(")
             sys.exit(-1)
             
+        self.pdfIO1Dbins = tmp_h1.to_numpy()[1]
+        #self.pdfIOhist1D = tmp_h1.to_hist()
         axis = tmp_h1.axis()    
         self.pdfIO1Dx = axis.centers()
         self.pdfIO1Dy = tmp_h1.values()
@@ -243,9 +251,9 @@ class channel :
         """
         Load TH1 PDFs from root files for both NO and IO cases.
         """
-        print(f"\n ========= Load {self.name} 1D data PDF ========= \n")
+        logging.debug(f"\n ========= Load {self.name} 1D data PDF ========= \n")
         try:
-            print(self.datapdffile1D)
+            logging.debug(self.datapdffile1D)
             f = up.open(self.datapdffile1D)
             tmp_h1 = f["h1"]
             axis = tmp_h1.axis()
@@ -260,13 +268,13 @@ class channel :
     
 
     def _load_pdf2D(self) -> None:
-        print(f"\n ========= Load {self.name} 2D PDF ========= \n")
+        logging.debug(f"\n ========= Load {self.name} 2D PDF ========= \n")
         try:
-            print(self.pdfNOfile2D)
+            logging.debug(self.pdfNOfile2D)
             f = up.open(self.pdfNOfile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"The pdf file {self.pdfNOfile2D} does not exist! :(")
+            logging.debug(f"The pdf file {self.pdfNOfile2D} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -276,11 +284,11 @@ class channel :
         self.f2dNO = interpolate.interp2d(self.pdf2DNOT, self.pdf2DNOE, self.pdf2DNO.T, kind="linear")
              
         try:
-            print(self.pdfIOfile2D)
+            logging.debug(self.pdfIOfile2D)
             f = up.open(self.pdfIOfile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"The pdf file {self.pdf2DIOfile} does not exist! :(")
+            logging.debug(f"The pdf file {self.pdf2DIOfile} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -293,13 +301,13 @@ class channel :
     
 
     def _load_datapdf2D(self) -> None:
-        print(f"\n ========= Load {self.name} 2D data PDF ========= \n")
+        logging.debug(f"\n ========= Load {self.name} 2D data PDF ========= \n")
         try:
-            print(self.datapdffile2D)
+            logging.debug(self.datapdffile2D)
             f = up.open(self.datapdffile2D)
             tmp_h1 = f["h1"]
         except FileNotFoundError:
-            print(f"The pdf file {self.datapdffile2D} does not exist! :(")
+            logging.debug(f"The pdf file {self.datapdffile2D} does not exist! :(")
             sys.exit(-1)
         xaxis = tmp_h1.axis("x")    
         yaxis = tmp_h1.axis("y")
@@ -389,29 +397,39 @@ class channel :
     def calc_NLL_NO2D(self, dataT, dataE, dT) -> float: ## input data time unit: ms
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
+        flag = False
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DNO_func((t+dT), E) * self.scale
-            if tmp_nll <= 0:
-                tmp_nll = 1e-10
-            nll += np.log(tmp_nll)
+            tmp_prob = self._pdf2DNO_func((t+dT), E) * self.scale
+            #if tmp_prob <= 1e-20:
+            #    tmp_prob = 1e-20
+            if tmp_prob <= 1e-10:
+                flag = True
+                tmp_prob = 1e-10
+            nll += np.log(tmp_prob)
+            #print(dT, t, E, tmp_prob)
         
         intg = integrate.quad(self._pdfNO_func, tmin, tmax)[0] * self.scale
         nll -= intg
-        return -nll
+        #print(f"Result: {dT}, {intg}, {nll}.")
+        return -nll, flag
 
 
     def calc_NLL_IO2D(self, dataT, dataE, dT) -> float:
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
+        flag = False
         for t, E in zip(dataT, dataE):
-            tmp_nll = self._pdf2DIO_func((t+dT), E)  * self.scale
-            if tmp_nll <= 0:
-                tmp_nll = 1e-10
-            nll += np.log(tmp_nll)
+            tmp_prob = self._pdf2DIO_func((t+dT), E)  * self.scale
+            #if tmp_prob <= 1e-20:
+            #    tmp_prob = 1e-20
+            if tmp_prob <=1e-10:
+                flag = True
+                tmp_prob = 1e-10
+            nll += np.log(tmp_prob)
         
         intg = integrate.quad(self._pdfIO_func, tmin, tmax)[0] * self.scale
         nll -= intg
-        return -nll
+        return -nll, flag
 
 
     def calc_Asimov_NLL_NO(self, dT) -> float:
