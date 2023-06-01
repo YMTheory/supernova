@@ -182,23 +182,26 @@ def fit_absolute_mass():
 
         # 1D PDF setting:
 
-        pdffile1dpath = os.getenv("PDF1DFILEPATH")
-        cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
+        pdffile1dpath = os.getenv("PDF1DFILEPATHNEW")
+        #cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDFintegral_JUNO.root")
+        cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
         cha._load_datapdf1D()
-        cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
-        cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+        #cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+        cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass{nuMass:.1f}eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+        #cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDFintegral_JUNO.root")
+        cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass{nuMass:.1f}eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
         cha._load_pdf1D()
 
-        N_1DNO = stat_tool.get_statROI_from1Dpdf(cha.pdfNOfile1D)
-        N_1DIO = stat_tool.get_statROI_from1Dpdf(cha.pdfIOfile1D)
-        print(f"{cha.name} channel: 1D NO event number in ROI = {N_1DNO}, IO event number in ROI = {N_1DIO}.")
+        #N_1DNO = stat_tool.get_statROI_from1Dpdf(cha.pdfNOfile1D)
+        #N_1DIO = stat_tool.get_statROI_from1Dpdf(cha.pdfIOfile1D)
+        #print(f"{cha.name} channel: 1D NO event number in ROI = {N_1DNO}, IO event number in ROI = {N_1DIO}.")
 
         if fitDim == 2:
-            pdffile2dpath = os.getenv("PDF2DFILEPATH")
-            cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO.root")
+            pdffile2dpath = os.getenv("PDF2DFILEPATHNEW")
+            cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
             cha._load_datapdf2D()
-            cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
-            cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO.root")
+            cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO_newXS.root")
+            cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass{nuMass:.1f}eV_TEobs2dPDF_JUNO_newXS.root")
             cha._load_pdf2D()
 
         # Set Data Files
@@ -310,7 +313,7 @@ def fit_absolute_mass():
                         C14label = "lowC14"
                     elif C14level == "high":
                         C14label = "highC14"
-                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass_limitdTtoAvoid1e-10LessProb.csv"
+                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_absMass_limitdTtoAvoidZeroProb.csv"
                 df.to_csv(outfilename)
                 print(f"\n *********** Data written in {outfilename}")
 
