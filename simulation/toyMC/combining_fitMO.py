@@ -37,7 +37,7 @@ if __name__ == "__main__" :
     - Argument --fitDim to specify the fitting dimensions, 1 for all time spectral fit, 2 for only pES 2D fit and eES/IBD still 1D fit.
     """
 
-    logging.basicConfig(filename='example.log',level=logging.DEBUG)
+    logging.basicConfig(filename='config.log',level=logging.DEBUG)
 
     print("==================================\n")
     print(f"Total CPU number is {cpu_count()}")
@@ -66,6 +66,7 @@ if __name__ == "__main__" :
     pES         = True
     C14         = False
     C14level    ="low"
+    output      = False
 
     parser = argparse.ArgumentParser(description='Arguments of SNNu analyser.')
     parser.add_argument('--model',      type=str,       default="Garching",     help="Data model name (option: Garching, Burrows).")
@@ -80,6 +81,8 @@ if __name__ == "__main__" :
     parser.add_argument("--no-doFit",   dest="fit",     action="store_false",   help="disable fitting.")
     parser.add_argument("--Asimov",     dest="asimov",  action="store_true",    help="enable asimov dataset.")
     parser.add_argument("--no-Asimov",  dest="asimov",  action="store_false",   help="disable asimov dataset.")
+    parser.add_argument("--output",     dest="output",  action="store_true",    help="enable output print.")
+    parser.add_argument("--no-output",  dest="output",  action="store_false",   help="disable output print.")
     parser.add_argument("--C14",        dest="C14",     action="store_true",    help="enable C14 background.")
     parser.add_argument("--no-C14",     dest="C14",     action="store_false",   help="disable C14 background.")
     parser.add_argument("--fitDim",     type=int,       default=2,              help="Fitting dimensions (1 for time only, 2 to time combining energy.)")
@@ -120,6 +123,7 @@ if __name__ == "__main__" :
     C14level    = args.C14level
     dist        = args.dist
     target      = args.target
+    output      = args.output
 
     scale = target * 10.0 * 10.0 / (dist * dist)  ## due to the PDFs are generated based on 10 kpc CCSNe and 20kton LS...
     bkgscale = target
@@ -160,6 +164,13 @@ if __name__ == "__main__" :
     if pES:
         channels["pES"] = channel("pES", MO, model, modelNo, Ethr, fitTmin=fitTmin, fitTmax=fitTmax, fitEmax=5, fileNo=fileNo, dist=dist, exp=exp)
         channels["pES"].setC14rate(c14rate)
+        if not C14:
+            channels["pES"].setC14concentration(0)
+        else:
+            if C14level == "low":
+                channels["pES"].setC14concentration(1e-18)
+            elif C14level == "high":
+                channels["pES"].setC14concentration(1e-17)
     if IBD:
         channels["IBD"] = channel("IBD", MO, model, modelNo, Eibd, fitTmin=fitTmin, fitTmax=fitTmax, fileNo=fileNo, dist=dist, exp=exp)
         channels["IBD"].setC14rate(0)
@@ -178,36 +189,59 @@ if __name__ == "__main__" :
 
         # PDF and data loading:
         pdffile1dpath = os.getenv("PDF1DFILEPATHNEW")
-        cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
-        cha._load_datapdf1D()
-        cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
-        cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
-        cha._load_pdf1D()
+        if cha.name != "pES":
+            cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}/{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+            cha._load_datapdf1D()
+            cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}/{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+            cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}/{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+            cha._load_pdf1D()
+
+        else:
+            if not C14:
+                cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+                cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+                cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_integral_newXS_JUNO.root")
+            elif C14level == "low":
+                cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-18gperg_integral_newXS_JUNO.root")
+                cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-18gperg_integral_newXS_JUNO.root")
+                cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-18gperg_integral_newXS_JUNO.root")
+            elif C14level == "high":
+                cha.setDataPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_{cha.MH}_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-17gperg_integral_newXS_JUNO.root")
+                cha.setNOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_NO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-17gperg_integral_newXS_JUNO.root")
+                cha.setIOPdfFile1D(f"{pdffile1dpath}{model}{modelNo}_PDF_{cha.name}_IO_10kpc_Ethr{cha.Ethr:.2f}MeV_nuMass0.0eV_tmin-0.030tmax0.170s_c14level1e-17gperg_integral_newXS_JUNO.root")
+
+            cha._load_datapdf1D()
+            cha._load_pdf1D()
+
+
         if fitDim == 2:
             pdffile2dpath = os.getenv("PDF2DFILEPATHNEW")
-            if cha.name != "pES":
-                cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                cha._load_datapdf2D()
-                cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                cha._load_pdf2D()
+            cha.setC14PdfFile2D(f"{pdffile2dpath}C14_20.0kton_TEobs2dPDF_c14level1e-17gperg.root")
+            cha._load_C14pdf2D()
 
-            else:
-                if C14level == "no":
-                    cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                    cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                    cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
-                elif C14level == "low":
-                    cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root")
-                    f = f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root"
-                    cha.setNOPdfFile2D(f)
-                    cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root")
-                elif C14level == "high":
-                    cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
-                    cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
-                    cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
+            #if cha.name != "pES":
+            cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
             cha._load_datapdf2D()
+            cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
+            cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
             cha._load_pdf2D()
+
+            #else:
+            #    if not C14:
+            #        cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
+            #        cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
+            #        cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_{cha.name}_nuMass0.0eV_TEobs2dPDF_JUNO_newXS.root")
+            #    elif C14level == "low":
+            #        cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root")
+            #        f = f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root"
+            #        cha.setNOPdfFile2D(f)
+            #        cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-18gperg_newXS.root")
+            #    elif C14level == "high":
+            #        cha.setDataPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_{cha.MH}_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
+            #        cha.setNOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_NO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
+            #        cha.setIOPdfFile2D(f"{pdffile2dpath}{model}{modelNo}_nuePDF_IO_10kpc_pES_nuMass0.0eV_TEobs2dPDF_c14level1e-17gperg_newXS.root")
+            #cha._load_datapdf2D()
+            #cha._load_pdf2D()
 
 
         # Set Data Files
@@ -228,45 +262,46 @@ if __name__ == "__main__" :
         FITTING_EVENT_NUM =  cha.getNevtPerFile() # the sample number to run...
     
     if asimov:
-        # asimov dataset test
-        print("\n ========= FITTING ASIMOV DATASET ========= \n")
-        #TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2Fit = scanner.scanning_asimov_chain(channels.values(), MO, fitDim)
-        #print(f"Output {modelNo} {fitmodelNo} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO*1000} {locMinFitIO} {dchi2Fit}")
-        TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2Fit, aNO, bNO, cNO, aIO, bIO, cIO = scanner.scanning_asimov_chain(channels.values(), MO, fitDim, param=True)
-        print(f"Output {modelNo} {fitmodelNo} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO*1000} {locMinFitIO} {dchi2Fit} {aNO}, {bNO}, {cNO}, {aIO}, {bIO}, {cIO}")
+        if doFit:
+            # asimov dataset test
+            print("\n ========= FITTING ASIMOV DATASET ========= \n")
+            #TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2Fit = scanner.scanning_asimov_chain(channels.values(), MO, fitDim)
+            #print(f"Output {modelNo} {fitmodelNo} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO*1000} {locMinFitIO} {dchi2Fit}")
+            TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2Fit, aNO, bNO, cNO, aIO, bIO, cIO = scanner.scanning_asimov_chain(channels.values(), MO, fitDim, param=True)
+            print(f"Output {modelNo} {fitmodelNo} {TbestFitNO*1000} {locMinFitNO} {TbestFitIO*1000} {locMinFitIO} {dchi2Fit} {aNO}, {bNO}, {cNO}, {aIO}, {bIO}, {cIO}")
 
-        if output:
-            res = []
-            res.append(modelNo)
-            res.append(fitmodelNo)
-            res.append(TbestFitNO)
-            res.append(locMinFitNO)
-            res.append(TbestFitIO)
-            res.append(locMinFitIO)
-            res.append(dchi2Fit)
-            res.append(aNO)
-            res.append(bNO)
-            res.append(cNO)
-            res.append(aIO)
-            res.append(bIO)
-            res.append(cIO)
-            res = np.array(res)
+            if output:
+                res = []
+                res.append(modelNo)
+                res.append(fitmodelNo)
+                res.append(TbestFitNO)
+                res.append(locMinFitNO)
+                res.append(TbestFitIO)
+                res.append(locMinFitIO)
+                res.append(dchi2Fit)
+                res.append(aNO)
+                res.append(bNO)
+                res.append(cNO)
+                res.append(aIO)
+                res.append(bIO)
+                res.append(cIO)
+                res = np.array(res)
 
-            asimov_job_path = os.getenv("MOASIMOVJOBPATH")
-            target = target * 20
-            if not C14:
-                C14label = "noC14"
-            else:
-                if C14level == "low":
-                    C14label = "lowC14"
-                elif C14level == "high":
-                    C14label = "highC14"
-            outfilename = f"{asimov_job_path}{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_AsimovFit{fitDim:d}D.csv"
-            with open(outfilename, "w") as fo:
-                for rr in res:
-                    fo.write(str(rr)+" ")
+                asimov_job_path = os.getenv("MOASIMOVJOBPATH")
+                target = target * 20
+                if not C14:
+                    C14label = "noC14"
+                else:
+                    if C14level == "low":
+                        C14label = "lowC14"
+                    elif C14level == "high":
+                        C14label = "highC14"
+                outfilename = f"{asimov_job_path}target{bkgscale:.1f}/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pES{pES}eES{eES}IBD{IBD}_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_AsimovFit{fitDim:d}D.csv"
+                with open(outfilename, "w") as fo:
+                    for rr in res:
+                        fo.write(str(rr)+" ")
 
-            print(f"\n *********** Data written in {outfilename}")
+                print(f"\n *********** Data written in {outfilename}")
 
 
     else:
@@ -305,29 +340,30 @@ if __name__ == "__main__" :
                 locMinIO[ievt-startevt] = locMinFitIO
 
                 
-            if MO == "NO":
-                sens = 2 * (locMinIO - locMinNO)
-            else:
-                sens = -2 * (locMinIO - locMinNO)
+            if output:
+                if MO == "NO":
+                    sens = 2 * (locMinIO - locMinNO)
+                else:
+                    sens = -2 * (locMinIO - locMinNO)
 
-            df = pd.DataFrame({
-                "locMinNO" : locMinNO,
-                "locMinIO" : locMinIO,
-                "sens" : sens,
-                "TbestNO" : TbestNO,
-                "TbestIO" : TbestIO,
-                "NeES"    : NeES,
-                "NpES"    : NpES,
-                "NIBD"    : NIBD,
-            })
-            target = target * 20
-            if not C14:
-                C14label = "noC14"
-            else:
-                if C14level == "low":
-                    C14label = "lowC14"
-                elif C14level == "high":
-                    C14label = "highC14"
-            outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv"
-            df.to_csv(outfilename)
-            print(f"\n *********** Data written in {outfilename}")
+                df = pd.DataFrame({
+                    "locMinNO" : locMinNO,
+                    "locMinIO" : locMinIO,
+                    "sens" : sens,
+                    "TbestNO" : TbestNO,
+                    "TbestIO" : TbestIO,
+                    "NeES"    : NeES,
+                    "NpES"    : NpES,
+                    "NIBD"    : NIBD,
+                })
+                target = target * 20
+                if not C14:
+                    C14label = "noC14"
+                else:
+                    if C14level == "low":
+                        C14label = "lowC14"
+                    elif C14level == "high":
+                        C14label = "highC14"
+                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}.csv"
+                df.to_csv(outfilename)
+                print(f"\n *********** Data written in {outfilename}")
