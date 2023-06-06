@@ -43,6 +43,13 @@ class channel :
         self.NevtPerFile = 1000
 
         ## Initialize PDFs:
+        ### bkg
+        self.c14file = None
+        self.c14pdf2Dx = None
+        self.c14pdf2Dy = None
+        self.c14pdf2D = None
+        self.f2dC14 = None
+
         ### 1D:
         self.datapdffile1D = None
         self.datapdf1Dx = None
@@ -96,6 +103,7 @@ class channel :
         self.load2DdatdataaPDF_flag = False
 
         self.c14rate    = 0
+        self.c14concentration = 0.0
 
         self.Tbinwidth   = 0.00001
         self.Ebinwidth  = 0.2
@@ -114,6 +122,12 @@ class channel :
 
     def setC14rate(self, rate):
         self.c14rate = rate
+
+    def setC14concentration(self, c):
+        self.c14concentration = c
+
+    def setC14PdfFile2D(self, pdffile) -> None:
+        self.c14file = pdffile
 
     def setDistance(self, dist):
         self.dist = dist
@@ -153,6 +167,7 @@ class channel :
         
     def setEndEvtId(self, idd):
         self.endEvt = idd
+
 
     def _load_data1D(self) -> None:
         """
@@ -265,6 +280,28 @@ class channel :
             print(f"The pdf file {self.datapdffile1D} dose not exist! :(")
             sys.exit(-1)
 
+    def _load_C14pdf2D(self) -> None:
+        """
+        Load C-14 2D pdf from root files.
+        """
+        try: 
+            logging.debug(f"\n ======= Load {self.c14file} 2D c14 PDF ======== \n")
+            f = up.open(self.c14file)
+            tmp_h1 = f["c14"]
+        except:
+            logging.debug(f"The c14 2D pdf file {self.c14file} does not exist! :(")
+            sys.exit(-1)
+
+        
+        c14concentration0 = 1e-17
+        ratio = self.c14concentration / c14concentration0
+        xaxis = tmp_h1.axis("x")
+        yaxis = tmp_h1.axis("y")
+        self.c14pdf2Dx = xaxis.centers()
+        self.c14pdf2Dy = yaxis.centers()
+        self.c14pdf2D  = tmp_h1.values() * ratio * self.bkgscale
+        self.f2dC14 = interpolate.interp2d(self.c14pdf2Dx, self.c14pdf2Dy, self.c14pdf2D.T, kind="linear")
+
     
 
     def _load_pdf2D(self) -> None:
@@ -354,6 +391,9 @@ class channel :
     def _datapdf2D_func(self, t, E):
         return self.f2ddatapdf(t, E)[0]
 
+    def _c14pdf2D_func(self, t, E):
+        return self.f2dC14(t, E)[0]
+
     def getNsigCurrentEvent(self, evtid:int) -> int:
         evtid = evtid - self.startEvt
         return len(self.data_array[evtid])
@@ -365,7 +405,8 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
-            tmp_nll = np.interp(i+dT, self.pdfNO1Dx, self.pdfNO1Dy) * self.scale
+            #tmp_nll = np.interp(i+dT, self.pdfNO1Dx, self.pdfNO1Dy) * self.scale
+            tmp_nll = _pdfNO_func(i+dT) * self.scale 
             if tmp_nll <= 0:
                 continue
             nll += np.log(tmp_nll)
@@ -382,7 +423,7 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
-            tmp_nll = np.interp(i+dT, self.pdfIO1Dx, self.pdfIO1Dy) * self.scale
+            tmp_nll = _pdfIO_func(i+dT) * self.scale
             if tmp_nll <= 0:
                 continue
             nll += np.log(tmp_nll)
@@ -399,10 +440,10 @@ class channel :
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         flag = False
         for t, E in zip(dataT, dataE):
-            tmp_prob = self._pdf2DNO_func((t+dT), E) * self.scale
+            tmp_prob = self._pdf2DNO_func((t+dT), E) * self.scale + self._c14pdf2D_func((t+dT), E)
             #if tmp_prob <= 1e-20:
             #    tmp_prob = 1e-20
-            if tmp_prob <= 1e-10:
+            if tmp_prob <= 0:
                 flag = True
                 tmp_prob = 1e-10
             nll += np.log(tmp_prob)
@@ -419,10 +460,11 @@ class channel :
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         flag = False
         for t, E in zip(dataT, dataE):
-            tmp_prob = self._pdf2DIO_func((t+dT), E)  * self.scale
+            #tmp_prob = self._pdf2DIO_func((t+dT), E)  * self.scale
+            tmp_prob = self._pdf2DIO_func((t+dT), E) * self.scale + self._c14pdf2D_func((t+dT), E)
             #if tmp_prob <= 1e-20:
             #    tmp_prob = 1e-20
-            if tmp_prob <=1e-10:
+            if tmp_prob <= 0:
                 flag = True
                 tmp_prob = 1e-10
             nll += np.log(tmp_prob)
@@ -439,9 +481,9 @@ class channel :
         binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * (ibin + 0.5)
-            n = self._datapdf_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
+            n = self._datapdf_func(t_data) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
             t_pdf = t_data + dT
-            s = self._pdfNO_func(t_pdf) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
+            s = self._pdfNO_func(t_pdf) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
             
             if s != 0 and n!=0:
                 tmp_nll = s - n + n * np.log(n/s)
@@ -484,6 +526,42 @@ class channel :
         
         print(f"Total measured event number = {test_n}.")
         return nll
+
+
+    def calc_Asimov_NLL_NO2D_withC14(self, dT) -> float:
+        nll = 0
+        stepT, stepE = self.Tbinwidth, self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+                n_sig = self._datapdf2D_func(t_data, E_data) * stepT * stepE
+
+                t_pdf = t_data + dT
+                s_sig = self._pdf2DNO_func(t_pdf, E_data) * stepT * stepE
+
+                n_sig = n_sig * self.scale
+                s_sig = s_sig * self.scale
+
+                ## Add C14 into fitter:
+                n_bkg = self._c14pdf2D_func(t_data, E_data) * stepT * stepE
+                s_bkg = self._c14pdf2D_func(t_pdf, E_data) * stepT * stepE
+            
+                s = s_sig + s_bkg
+                n = n_sig + n_bkg
+
+                if s != 0 and n!=0:
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+        
+        return nll
+
             
 
     def calc_Asimov_NLL_IO(self, dT) -> float:
@@ -492,9 +570,9 @@ class channel :
         binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
         for ibin in range(binlow, binhig, 1):
             t_data = stepT * (ibin + 0.5)
-            n = self._datapdf_func(t_data) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
+            n = self._datapdf_func(t_data) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
             t_pdf = t_data + dT
-            s = self._pdfIO_func(t_pdf) * stepT * self.scale + self.c14rate * stepT * self.bkgscale
+            s = self._pdfIO_func(t_pdf) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
             
             if s != 0 and n!=0:
                 tmp_nll = s - n + n * np.log(n/s)
@@ -537,4 +615,37 @@ class channel :
         return nll
             
 
+    def calc_Asimov_NLL_IO2D_withC14(self, dT) -> float:
+        nll = 0
+        stepT, stepE = self.Tbinwidth, self.Ebinwidth
+        Tbinlow, Tbinhig = int(self.fitTmin / stepT), int(self.fitTmax / stepT)
+        Ebinlow, Ebinhig = int(self.Ethr / stepE), int(self.fitEmax / stepE)
+        for it in tqdm(range(Tbinlow, Tbinhig, 1)):
+            for iE in range(Ebinlow, Ebinhig, 1):
+                t_data = stepT * (it + 0.5)
+                E_data = stepE * (iE + 0.5)
+                n_sig = self._datapdf2D_func(t_data, E_data) * stepT * stepE
+
+                t_pdf = t_data + dT
+                s_sig = self._pdf2DIO_func(t_pdf, E_data) * stepT * stepE
+
+                n_sig = n_sig * self.scale
+                s_sig = s_sig * self.scale
+
+                ## Add C14 into fitter:
+                n_bkg = self._c14pdf2D_func(t_data, E_data) * stepT * stepE
+                s_bkg = self._c14pdf2D_func(t_pdf, E_data) * stepT * stepE
+            
+                s = s_sig + s_bkg
+                n = n_sig + n_bkg
+
+                if s != 0 and n!=0:
+                    tmp_nll = s - n + n * np.log(n/s)
+                    #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                    nll += tmp_nll
+                if s != 0 and n == 0:
+                    tmp_nll = s
+                    nll += tmp_nll
+        
+        return nll
 
