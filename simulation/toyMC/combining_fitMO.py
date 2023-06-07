@@ -287,12 +287,14 @@ if __name__ == "__main__" :
             if exp == "SKGd":
 
                 dt_arr = np.arange(-0.01, 0.01, 0.001)
-                _, _, TbestFitNO, locMinFitNO, aNO, bNO, cNO = fitter.scanning_chain("1D_part", dt_arr, channels.values(), "NO", tag_eff=eff)
-                _, _, TbestFitIO, locMinFitIO, aIO, bIO, cIO = fitter.scanning_chain("1D_part", dt_arr, channels.values(), "IO", tag_eff=eff)
+                _, _, TbestFit, locMinFit, a, b, c = fitter.scanning_chain("1D_part", dt_arr, channels.values(), MO, tag_eff=eff)
+                dchi2Fit = 2 * locMinFit
                 if MO == "NO":
-                    dchi2Fit = 2 * (locMinFitIO - locMinFitNO)
+                    TbestFitIO, locMinFitIO, aIO, bIO, cIO = TbestFit, locMinFit, a, b, c
+                    TbestFitNO, locMinFitNO, aNO, bNO, cNO = 0, 0, 0, 0, 0
                 elif MO == "IO":
-                    dchi2Fit = -2 * (locMinFitIO - locMinFitNO)
+                    TbestFitNO, locMinFitNO, aNO, bNO, cNO = TbestFit, locMinFit, a, b, c
+                    TbestFitIO, locMinFitIO, aIO, bIO, cIO = 0, 0, 0, 0, 0
 
                 #TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2Fit, aNO, bNO, cNO, aIO, bIO, cIO = scanner.scanning_asimov_chain(channels.values(), MO, fitDim, param=True)
 
