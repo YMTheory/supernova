@@ -396,7 +396,7 @@ class channel :
 
     def getNsigCurrentEvent(self, evtid:int) -> int:
         evtid = evtid - self.startEvt
-        return len(self.data_array[evtid])
+        return len(self.dataT_array[evtid])
 
     def calc_NLL_NO(self, data, dT) -> float:
         """
@@ -406,7 +406,7 @@ class channel :
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
             #tmp_nll = np.interp(i+dT, self.pdfNO1Dx, self.pdfNO1Dy) * self.scale
-            tmp_nll = _pdfNO_func(i+dT) * self.scale 
+            tmp_nll = self._pdfNO_func(i+dT) * self.scale 
             if tmp_nll <= 0:
                 continue
             nll += np.log(tmp_nll)
@@ -423,7 +423,7 @@ class channel :
         nll = 0
         tmin, tmax = self.fitTmin + dT, self.fitTmax + dT
         for i in data:
-            tmp_nll = _pdfIO_func(i+dT) * self.scale
+            tmp_nll = self._pdfIO_func(i+dT) * self.scale
             if tmp_nll <= 0:
                 continue
             nll += np.log(tmp_nll)
@@ -433,6 +433,52 @@ class channel :
         nll -= intg 
 
         return -nll
+
+    def calc_binnedNLL_NO(self, data, dT):
+        nll = 0
+        stepT = self.Tbinwidth
+        binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
+        data = np.array(data)
+        conts, _ = np.histogram(data, bins=int(binhig-binlow), range=(self.fitTmin, self.fitTmax))
+        for ibin in range(binlow, binhig, 1):
+            t_data = stepT * (ibin + 0.5)
+            n = conts[ibin]
+            t_pdf = t_data + dT
+            s = self._pdfNO_func(t_pdf) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
+            
+            if s != 0 and n!=0:
+                tmp_nll = s - n + n * np.log(n/s)
+                #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                nll += tmp_nll
+            if s != 0 and n == 0:
+                tmp_nll = s
+                nll += tmp_nll
+
+        return nll
+
+
+    def calc_binnedNLL_IO(self, data, dT):
+        nll = 0
+        stepT = self.Tbinwidth
+        binlow, binhig = int(self.fitTmin / stepT) - 1, int(self.fitTmax / stepT) + 1
+        data = np.array(data)
+        conts, _ = np.histogram(data, bins=(binhig-binlow), range=(self.fitTmin, self.fitTmax))
+        for ibin in range(binlow, binhig, 1):
+            t_data = stepT * (ibin + 0.5)
+            n = conts[ibin]
+            t_pdf = t_data + dT
+            s = self._pdfIO_func(t_pdf) * stepT * self.scale #+ self.c14rate * stepT * self.bkgscale
+            
+            if s != 0 and n!=0:
+                tmp_nll = s - n + n * np.log(n/s)
+                #tmp_nll = s - n * np.log(s) + np.log(gamma(n+1))
+                nll += tmp_nll
+            if s != 0 and n == 0:
+                tmp_nll = s
+                nll += tmp_nll
+
+        return nll
+
 
 
     def calc_NLL_NO2D(self, dataT, dataE, dT) -> float: ## input data time unit: ms

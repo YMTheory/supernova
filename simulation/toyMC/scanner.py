@@ -13,13 +13,29 @@ def scanning1D(dT_arr, channels, ievt, MO):
     for idx, dT in enumerate(dT_arr):
         val = 0
         for cha in channels:
-            dataT = cha.get_one_event(ievt)
+            dataT, _ = cha.get_one_event2D(ievt)
             if MO == "NO":
                 val += cha.calc_NLL_NO(dataT, dT)
             else:
                 val += cha.calc_NLL_IO(dataT, dT)
         nll[idx] = val
     return nll
+
+
+def scanning1D_binned(dT_arr, channels, ievt, MO):
+    # test Marta's binned likelihood analysis
+    nll = np.zeros(len(dT_arr))
+    for idx, dT in enumerate(dT_arr):
+        val = 0
+        for cha in channels:
+            dataT, _ = cha.get_one_event2D(ievt)
+            if MO == "NO":
+                val += cha.calc_binnedNLL_NO(dataT, dT)
+            else:
+                val += cha.calc_binnedNLL_IO(dataT, dT)
+        nll[idx] = val
+    return nll
+
 
 
 
@@ -35,7 +51,7 @@ def scanning2D(dT_arr, channels, ievt, MO):
                 else:
                     val += cha.calc_NLL_IO2D(dataT, dataE, dT)[0]
             else:
-                dataT = cha.get_one_event(ievt)
+                dataT = cha.get_one_event2D(ievt)[0]
                 if MO == "NO":
                     val += cha.calc_NLL_NO(dataT, dT)
                 else:
@@ -123,10 +139,10 @@ def scanning_asimov2D_MP(dT_arr, channels, MO):
         if cha.name == "pES":
             if MO == "NO":
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
-                    nllpES = pool.map(cha.calc_Asimov_NLL_NO2D, dT_arr)
+                    nllpES = pool.map(cha.calc_Asimov_NLL_NO2D_withC14, dT_arr)
             else:
                 with multiprocessing.Pool(processes=cpu_count()) as pool:
-                    nllpES = pool.map(cha.calc_Asimov_NLL_IO2D, dT_arr)
+                    nllpES = pool.map(cha.calc_Asimov_NLL_IO2D_withC14, dT_arr)
 
             for i in range(len(dT_arr)):
                 nll[i] = nll[i] + nllpES[i]
@@ -296,7 +312,7 @@ def scanning_asimov_chain_absoluteMass(channels, MO, fitDim):
 
 def scanning_toyMC_chain_absoluteMass_2Dnew(channels, MO, evtNO):
     # directly scanning a large window -> avoid drop into local minimum.. Bad property of NLL
-    dt_arr = np.arange(-0.01, 0.05, 0.001)
+    dt_arr = np.arange(-0.01, 0.15, 0.001)
     if MO == "NO":
         dt_used, nll = scanning2D_absoluteMass(dt_arr, channels, evtNO, "NO")
         if len(dt_used) == 0:
@@ -366,13 +382,15 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
     if fitDim == 2:
         nllNO_coarse = scanning2D(dt_arr, channels, evtNO,  "NO")
     else:
-        nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
+        #nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
+        nllNO_coarse = scanning1D_binned(dt_arr, channels, evtNO, "NO")
     Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllNO_fine = scanning2D(dt_arr_fine, channels, evtNO, "NO")
     else:
-        nllNO_fine = scanning1D(dt_arr, channels, evtNO, "NO" )
+        #nllNO_fine = scanning1D(dt_arr, channels, evtNO, "NO" )
+        nllNO_fine = scanning1D_binned(dt_arr_fine, channels, evtNO, "NO" )
     TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
 
     ## IO Pdf fitting chain
@@ -380,13 +398,15 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
     if fitDim == 2:
         nllIO_coarse = scanning2D(dt_arr, channels, evtNO, "IO")
     else:
-        nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
+        #nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
+        nllIO_coarse = scanning1D_binned(dt_arr, channels, evtNO, "IO")
     Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllIO_fine = scanning2D(dt_arr_fine, channels, evtNO, "IO")
     else:
-        nllIO_fine = scanning1D(dt_arr, channels, evtNO, "IO" )
+        #nllIO_fine = scanning1D(dt_arr, channels, evtNO, "IO" )
+        nllIO_fine = scanning1D_binned(dt_arr_fine, channels, evtNO, "IO" )
     TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
 
     if MO == "NO":
