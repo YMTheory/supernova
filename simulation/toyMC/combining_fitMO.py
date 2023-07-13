@@ -185,6 +185,8 @@ if __name__ == "__main__" :
         channels["eES"].setC14rate(0)
 
     for cha in channels.values():
+        ## For testing 1ms binning in Marta's analysis:
+        cha.Tbinwidth = 0.001
 
         cha.setNevtPerFile(1e5)
         cha.setStartEvtId(startevt)
@@ -373,6 +375,8 @@ if __name__ == "__main__" :
                 print(f"\n Event number of pES in ROI = {N}.")
 
                 TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2 = scanner.scanning_toyMC_chain(channels.values(), MO, fitDim, ievt) 
+                #TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2 = scanner.test_toyMC_binned_likelihood_v1(channels.values(), MO, ievt) 
+
                 TbestNO[ievt-startevt] = TbestFitNO
                 locMinNO[ievt-startevt] = locMinFitNO
                 TbestIO[ievt-startevt] = TbestFitIO
@@ -403,6 +407,6 @@ if __name__ == "__main__" :
                         C14label = "lowC14"
                     elif C14level == "high":
                         C14label = "highC14"
-                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/newXS_MO/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_newXS.csv"
+                outfilename = f"/junofs/users/miaoyu/supernova/simulation/toyMC/results/newXS_MO/{model}{modelNo}_{dist}kpc_{target}kton_{MO}_pESeESIBD_nuMass{nuMass:.1f}eV_{Ethr:.2f}MeV_fitTmin{fitTmin:.3f}sfitTmax{fitTmax:.3f}s_{C14label}_start{startevt}end{endevt}_PoisToyDataTobs{fitDim:d}D_{exp}_binned1ms_newXS.csv"
                 df.to_csv(outfilename)
                 print(f"\n *********** Data written in {outfilename}")

@@ -193,7 +193,7 @@ def find_locMin(dT_arr, nll_arr):
 
 
 def generate_fine_dTarr(Tbest):
-    TMIN = -9
+    TMIN = -0.009
     if Tbest < TMIN:
         Tbest = TMIN
     HALF_FITTING_NUM = 20
@@ -201,6 +201,8 @@ def generate_fine_dTarr(Tbest):
     dT_arr = np.zeros(2 * HALF_FITTING_NUM + 1)
     for i in range(2*HALF_FITTING_NUM+1):
         dT_arr[i] = Tbest - HALF_FITTING_NUM * TSTEP + i * TSTEP
+    print(Tbest)
+    print(dT_arr)
     return dT_arr
 
 
@@ -375,6 +377,21 @@ def scanning_toyMC_chain_absoluteMass(channels, MO, fitDim, evtNO):
         return dt_arr_fine, nllIO_fine, TbestFitIO, locMinFitIO, aIO, bIO, cIO
 
 
+def test_toyMC_binned_likelihood_v1(channels, MO, evtNO):
+    dt_arr = np.arange(-0.01, 0.011, 0.001)
+    nllNO_coarse = scanning1D_binned(dt_arr, channels, evtNO, 'NO')
+    TbestNO, locMinNO, _ = find_locMin(dt_arr, nllNO_coarse)
+
+    nllIO_coarse = scanning1D_binned(dt_arr, channels, evtNO, 'IO')
+    TbestIO, locMinIO, _ = find_locMin(dt_arr, nllIO_coarse)
+
+    if MO == "NO":
+        dchi2 = 2 * locMinIO - 2 * locMinNO
+    else:
+        dchi2 = 2 * locMinNO - 2 * locMinIO
+
+    return TbestNO, locMinNO, TbestIO, locMinIO, dchi2
+
 
 def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
     ## NO Pdf fitting chain
@@ -382,32 +399,44 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
     if fitDim == 2:
         nllNO_coarse = scanning2D(dt_arr, channels, evtNO,  "NO")
     else:
-        #nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
-        nllNO_coarse = scanning1D_binned(dt_arr, channels, evtNO, "NO")
+        nllNO_coarse = scanning1D(dt_arr, channels, evtNO, "NO")
     Tbest, locMin, _ = find_locMin(dt_arr, nllNO_coarse)
+    with open('rough_NO.txt', 'w') as f:
+        for t, nll in zip(dt_arr, nllNO_coarse):
+            f.write(f"{t} {nll}\n")
+        f.write(f"{Tbest} {locMin}")
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllNO_fine = scanning2D(dt_arr_fine, channels, evtNO, "NO")
     else:
-        #nllNO_fine = scanning1D(dt_arr, channels, evtNO, "NO" )
-        nllNO_fine = scanning1D_binned(dt_arr_fine, channels, evtNO, "NO" )
+        nllNO_fine = scanning1D(dt_arr_fine, channels, evtNO, "NO" )
     TbestFitNO, locMinFitNO, aNO, bNO, cNO = parabola_fit(dt_arr_fine, nllNO_fine, param=True)
+    with open('fine_NO.txt', 'w') as f:
+        for t, nll in zip(dt_arr_fine, nllNO_fine):
+            f.write(f"{t} {nll}\n")
+        f.write(f"{TbestFitNO} {locMinFitNO} {aNO} {bNO} {cNO}")
 
     ## IO Pdf fitting chain
     dt_arr = np.arange(-0.01, 0.011, 0.001)
     if fitDim == 2:
         nllIO_coarse = scanning2D(dt_arr, channels, evtNO, "IO")
     else:
-        #nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
-        nllIO_coarse = scanning1D_binned(dt_arr, channels, evtNO, "IO")
+        nllIO_coarse = scanning1D(dt_arr, channels, evtNO, "IO")
     Tbest, locMin, _ = find_locMin(dt_arr, nllIO_coarse)
+    with open('rough_IO.txt', 'w') as f:
+        for t, nll in zip(dt_arr, nllIO_coarse):
+            f.write(f"{t} {nll}\n")
+        f.write(f"{Tbest} {locMin}")
     dt_arr_fine = generate_fine_dTarr(Tbest)
     if fitDim == 2:
         nllIO_fine = scanning2D(dt_arr_fine, channels, evtNO, "IO")
     else:
-        #nllIO_fine = scanning1D(dt_arr, channels, evtNO, "IO" )
-        nllIO_fine = scanning1D_binned(dt_arr_fine, channels, evtNO, "IO" )
+        nllIO_fine = scanning1D(dt_arr_fine, channels, evtNO, "IO" )
     TbestFitIO, locMinFitIO, aIO, bIO, cIO = parabola_fit(dt_arr_fine, nllIO_fine, param=True)
+    with open('fine_IO.txt', 'w') as f:
+        for t, nll in zip(dt_arr_fine, nllIO_fine):
+            f.write(f"{t} {nll}\n")
+        f.write(f"{TbestFitIO} {locMinFitIO} {aIO} {bIO} {cIO}")
 
     if MO == "NO":
         dchi2 = 2 * locMinFitIO - 2 * locMinFitNO
@@ -415,6 +444,7 @@ def scanning_toyMC_chain(channels, MO, fitDim, evtNO):
         dchi2 = 2 * locMinFitNO - 2 * locMinFitIO
 
     return TbestFitNO, locMinFitNO, TbestFitIO, locMinFitIO, dchi2
+
 
 
 
